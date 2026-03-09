@@ -18,8 +18,8 @@ import type {
   SessionMetrics,
   ModelMetrics,
   ToolCallStats,
-} from '@google/gemini-cli-core';
-import { uiTelemetryService, sessionId } from '@google/gemini-cli-core';
+} from '@bare-ai/core';
+import { uiTelemetryService, sessionId } from '@bare-ai/core';
 
 export enum ToolCallDecision {
   ACCEPT = 'accept',

@@ -9,7 +9,7 @@ import * as os from 'node:os';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import {
-  GEMINI_DIR,
+  BARE_AI_DIR,
   homedir,
   GOOGLE_ACCOUNTS_FILENAME,
   isSubpath,
@@ -45,9 +45,9 @@ export class Storage {
   static getGlobalGeminiDir(): string {
     const homeDir = homedir();
     if (!homeDir) {
-      return path.join(os.tmpdir(), GEMINI_DIR);
+      return path.join(os.tmpdir(), BARE_AI_DIR);
     }
-    return path.join(homeDir, GEMINI_DIR);
+    return path.join(homeDir, BARE_AI_DIR);
   }
 
   static getGlobalAgentsDir(): string {
@@ -114,9 +114,9 @@ export class Storage {
     if (os.platform() === 'darwin') {
       return '/Library/Application Support/GeminiCli';
     } else if (os.platform() === 'win32') {
-      return 'C:\\ProgramData\\gemini-cli';
+      return 'C:\\ProgramData\\bare-ai-cli';
     } else {
-      return '/etc/gemini-cli';
+      return '/etc/bare-ai-cli';
     }
   }
 
@@ -140,7 +140,7 @@ export class Storage {
   }
 
   getGeminiDir(): string {
-    return path.join(this.targetDir, GEMINI_DIR);
+    return path.join(this.targetDir, BARE_AI_DIR);
   }
 
   /**

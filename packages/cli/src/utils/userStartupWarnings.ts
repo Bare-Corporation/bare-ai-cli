@@ -12,7 +12,7 @@ import {
   getCompatibilityWarnings,
   WarningPriority,
   type StartupWarning,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { Settings } from '../config/settingsSchema.js';
 import {
   isFolderTrustEnabled,

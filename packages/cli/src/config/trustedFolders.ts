@@ -13,12 +13,12 @@ import {
   getErrorMessage,
   isWithinRoot,
   ideContextStore,
-  GEMINI_DIR,
+  BARE_AI_DIR,
   homedir,
   isHeadlessMode,
   coreEvents,
   type HeadlessModeOptions,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { Settings } from './settings.js';
 import stripJsonComments from 'strip-json-comments';
 
@@ -27,7 +27,7 @@ const { promises: fsPromises } = fs;
 export const TRUSTED_FOLDERS_FILENAME = 'trustedFolders.json';
 
 export function getUserSettingsDir(): string {
-  return path.join(homedir(), GEMINI_DIR);
+  return path.join(homedir(), BARE_AI_DIR);
 }
 
 export function getTrustedFoldersPath(): string {

@@ -17,7 +17,7 @@ import {
   loadTrustedFolders,
   isWorkspaceTrusted,
 } from './trustedFolders.js';
-import { getRealPath } from '@google/gemini-cli-core';
+import { getRealPath } from '@bare-ai/core';
 import type { MergedSettings } from './settings.js';
 
 const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/mock-home'));
@@ -30,9 +30,9 @@ vi.mock('os', async (importOriginal) => {
   };
 });
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: mockHomedir,
@@ -48,10 +48,10 @@ describe('ExtensionManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     tempHomeDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'gemini-cli-test-home-'),
+      path.join(os.tmpdir(), 'bare-ai-cli-test-home-'),
     );
     tempWorkspaceDir = fs.mkdtempSync(
-      path.join(tempHomeDir, 'gemini-cli-test-workspace-'),
+      path.join(tempHomeDir, 'bare-ai-cli-test-workspace-'),
     );
     mockHomedir.mockReturnValue(tempHomeDir);
     userExtensionsDir = path.join(tempHomeDir, EXTENSIONS_DIRECTORY_NAME);

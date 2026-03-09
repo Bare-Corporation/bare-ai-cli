@@ -10,14 +10,14 @@ import * as path from 'node:path';
 import { renderHook } from '../../test-utils/render.js';
 import { waitFor } from '../../test-utils/async.js';
 import { useAtCompletion } from './useAtCompletion.js';
-import type { Config, FileSearch } from '@google/gemini-cli-core';
+import type { Config, FileSearch } from '@bare-ai/core';
 import {
   FileSearchFactory,
   FileDiscoveryService,
   escapePath,
-} from '@google/gemini-cli-core';
-import type { FileSystemStructure } from '@google/gemini-cli-test-utils';
-import { createTmpDir, cleanupTmpDir } from '@google/gemini-cli-test-utils';
+} from '@bare-ai/core';
+import type { FileSystemStructure } from '@google/bare-ai-cli-test-utils';
+import { createTmpDir, cleanupTmpDir } from '@google/bare-ai-cli-test-utils';
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 
 // Test harness to capture the state from the hook's callbacks.

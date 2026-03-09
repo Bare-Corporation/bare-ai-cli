@@ -22,7 +22,7 @@ import {
   MINIMUM_MAX_HEIGHT,
 } from '../components/shared/MaxSizedBox.js';
 import type { LoadedSettings } from '../../config/settings.js';
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger } from '@bare-ai/core';
 
 // Configure theming and parsing utilities.
 const lowlight = createLowlight(common);

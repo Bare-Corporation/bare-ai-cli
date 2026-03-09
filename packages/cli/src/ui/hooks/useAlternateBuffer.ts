@@ -5,7 +5,7 @@
  */
 
 import { useConfig } from '../contexts/ConfigContext.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@bare-ai/core';
 
 export const isAlternateBufferEnabled = (config: Config): boolean =>
   config.getUseAlternateBuffer();

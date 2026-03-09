@@ -379,7 +379,7 @@ describe('BrowserManager', () => {
       // Verify we're using the raw Client from MCP SDK
       expect(Client).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'gemini-cli-browser-agent',
+          name: 'bare-ai-cli-browser-agent',
         }),
         expect.any(Object),
       );

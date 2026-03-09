@@ -1,16 +1,16 @@
 {
-  "name": "@google/gemini-cli",
+  "name": "@bare-ai/cli",
   "version": "0.34.0-nightly.20260304.28af4e127",
   "description": "Gemini CLI",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/google-gemini/gemini-cli.git"
+    "url": "git+https://github.com/Cian-CloudIntCorp/bare-ai-cli.git"
   },
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "gemini": "dist/index.js"
+    "bare-ai": "dist/index.js"
   },
   "scripts": {
     "build": "node ../../scripts/build_package.js",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.12.0",
-    "@google/gemini-cli-core": "file:../core",
+    "@bare-ai/cli-core": "file:../core",
     "@google/genai": "1.41.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.23.0",
@@ -71,7 +71,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@google/gemini-cli-test-utils": "file:../test-utils",
+    "@bare-ai/cli-test-utils": "file:../test-utils",
     "@types/command-exists": "^1.2.3",
     "@types/hast": "^3.0.4",
     "@types/node": "^20.11.24",

@@ -24,7 +24,7 @@ import {
   exitAlternateScreen,
   enableLineWrapping,
   disableLineWrapping,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   cleanupTerminalOnExit,
   terminalCapabilityManager,
@@ -32,8 +32,8 @@ import {
 import { formatCommand } from '../utils/keybindingUtils.js';
 import { Command } from '../../config/keyBindings.js';
 
-vi.mock('@google/gemini-cli-core', async () => {
-  const actual = await vi.importActual('@google/gemini-cli-core');
+vi.mock('@bare-ai/core', async () => {
+  const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
     writeToStdout: vi.fn(),

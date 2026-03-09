@@ -21,7 +21,7 @@ import {
   useFocusHint,
   FocusHint,
 } from './ToolShared.js';
-import { type Config, CoreToolCallStatus } from '@google/gemini-cli-core';
+import { type Config, CoreToolCallStatus } from '@bare-ai/core';
 import { ShellInputPrompt } from '../ShellInputPrompt.js';
 
 export type { TextEmphasis };

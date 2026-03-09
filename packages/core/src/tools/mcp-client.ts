@@ -1726,7 +1726,7 @@ export async function connectToMcpServer(
 ): Promise<Client> {
   const mcpClient = new Client(
     {
-      name: 'gemini-cli-mcp-client',
+      name: 'bare-ai-cli-mcp-client',
       version: clientVersion,
     },
     {

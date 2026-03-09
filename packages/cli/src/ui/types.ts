@@ -17,7 +17,7 @@ import {
   type ApprovalMode,
   CoreToolCallStatus,
   checkExhaustive,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { PartListUnion } from '@google/genai';
 import { type ReactNode } from 'react';
 

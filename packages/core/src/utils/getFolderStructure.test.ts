@@ -10,7 +10,7 @@ import * as os from 'node:os';
 import { getFolderStructure } from './getFolderStructure.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import * as path from 'node:path';
-import { GEMINI_DIR } from './paths.js';
+import { BARE_AI_DIR } from './paths.js';
 import { GEMINI_IGNORE_FILE_NAME } from 'src/config/constants.js';
 
 describe('getFolderStructure', () => {
@@ -256,8 +256,8 @@ ${testRootDir}${path.sep}
       await createTestFile('file1.txt');
       await createTestFile('node_modules', 'some-package', 'index.js');
       await createTestFile('ignored.txt');
-      await createTestFile(GEMINI_DIR, 'config.yaml');
-      await createTestFile(GEMINI_DIR, 'logs.json');
+      await createTestFile(BARE_AI_DIR, 'config.yaml');
+      await createTestFile(BARE_AI_DIR, 'logs.json');
 
       const fileService = new FileDiscoveryService(testRootDir);
       const structure = await getFolderStructure(testRootDir, {
@@ -303,8 +303,8 @@ ${testRootDir}${path.sep}
       await createTestFile('file1.txt');
       await createTestFile('node_modules', 'some-package', 'index.js');
       await createTestFile('ignored.txt');
-      await createTestFile(GEMINI_DIR, 'config.yaml');
-      await createTestFile(GEMINI_DIR, 'logs.json');
+      await createTestFile(BARE_AI_DIR, 'config.yaml');
+      await createTestFile(BARE_AI_DIR, 'logs.json');
 
       const fileService = new FileDiscoveryService(testRootDir);
       const structure = await getFolderStructure(testRootDir, {
@@ -323,8 +323,8 @@ ${testRootDir}${path.sep}
       await createTestFile('file1.txt');
       await createTestFile('node_modules', 'some-package', 'index.js');
       await createTestFile('ignored.txt');
-      await createTestFile(GEMINI_DIR, 'config.yaml');
-      await createTestFile(GEMINI_DIR, 'logs.json');
+      await createTestFile(BARE_AI_DIR, 'config.yaml');
+      await createTestFile(BARE_AI_DIR, 'logs.json');
 
       const fileService = new FileDiscoveryService(testRootDir);
       const structure = await getFolderStructure(testRootDir, {

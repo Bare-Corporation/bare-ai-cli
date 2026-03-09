@@ -9,7 +9,7 @@ import chalk from 'chalk';
 import {
   debugLogger,
   type ExtensionInstallMetadata,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 
 import { getErrorMessage } from '../../utils/errors.js';
 import {

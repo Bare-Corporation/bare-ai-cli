@@ -18,7 +18,7 @@ import {
   type AuthType,
   type AgentOverride,
   type CustomTheme,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { SessionRetentionSettings } from './settings.js';
 import { DEFAULT_MIN_RETENTION } from '../utils/sessionCleanup.js';
 
@@ -553,7 +553,7 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: false,
         description:
-          'Hide the context summary (GEMINI.md, MCP servers) above the input.',
+          'Hide the context summary (BARE_AI.md, MCP servers) above the input.',
         showInDialog: true,
       },
       footer: {
@@ -1169,7 +1169,7 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: false,
         description: oneLine`
-          Controls how /memory reload loads GEMINI.md files.
+          Controls how /memory reload loads BARE_AI.md files.
           When true, include directories are scanned; when false, only the current directory is used.
         `,
         showInDialog: true,

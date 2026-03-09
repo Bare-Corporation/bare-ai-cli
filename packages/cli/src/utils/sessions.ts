@@ -10,7 +10,7 @@ import {
   writeToStderr,
   writeToStdout,
   type Config,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   formatRelativeTime,
   SessionSelector,

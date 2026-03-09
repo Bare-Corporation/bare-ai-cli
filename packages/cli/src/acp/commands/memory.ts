@@ -9,7 +9,7 @@ import {
   listMemoryFiles,
   refreshMemory,
   showMemory,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type {
   Command,
   CommandContext,
@@ -70,7 +70,7 @@ export class RefreshMemoryCommand implements Command {
 
 export class ListMemoryCommand implements Command {
   readonly name = 'memory list';
-  readonly description = 'Lists the paths of the GEMINI.md files in use.';
+  readonly description = 'Lists the paths of the BARE_AI.md files in use.';
 
   async execute(
     context: CommandContext,

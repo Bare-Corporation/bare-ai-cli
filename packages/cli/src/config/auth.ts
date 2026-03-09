@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from '@google/gemini-cli-core';
+import { AuthType } from '@bare-ai/core';
 import { loadEnvironment, loadSettings } from './settings.js';
 
 export function validateAuthMethod(authMethod: string): string | null {
@@ -17,9 +17,9 @@ export function validateAuthMethod(authMethod: string): string | null {
   }
 
   if (authMethod === AuthType.USE_GEMINI) {
-    if (!process.env['GEMINI_API_KEY']) {
+    if (!process.env['BARE_AI_API_KEY']) {
       return (
-        'When using Gemini API, you must specify the GEMINI_API_KEY environment variable.\n' +
+        'When using Gemini API, you must specify the BARE_AI_API_KEY environment variable.\n' +
         'Update your environment and try again (no reload needed if using .env)!'
       );
     }
@@ -30,12 +30,12 @@ export function validateAuthMethod(authMethod: string): string | null {
     const hasVertexProjectLocationConfig =
       !!process.env['GOOGLE_CLOUD_PROJECT'] &&
       !!process.env['GOOGLE_CLOUD_LOCATION'];
-    const hasGoogleApiKey = !!process.env['GOOGLE_API_KEY'];
+    const hasGoogleApiKey = !!process.env['BARE_AI_API_KEY'];
     if (!hasVertexProjectLocationConfig && !hasGoogleApiKey) {
       return (
         'When using Vertex AI, you must specify either:\n' +
         '• GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION environment variables.\n' +
-        '• GOOGLE_API_KEY environment variable (if using express mode).\n' +
+        '• BARE_AI_API_KEY environment variable (if using express mode).\n' +
         'Update your environment and try again (no reload needed if using .env)!'
       );
     }

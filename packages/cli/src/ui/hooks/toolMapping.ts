@@ -10,7 +10,7 @@ import {
   type ToolResultDisplay,
   debugLogger,
   CoreToolCallStatus,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   type HistoryItemToolGroup,
   type IndividualToolCallDisplay,

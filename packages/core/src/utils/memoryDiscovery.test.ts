@@ -22,7 +22,7 @@ import {
 } from '../tools/memoryTool.js';
 import { flattenMemory, type HierarchicalMemory } from '../config/memory.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
-import { GEMINI_DIR, normalizePath, homedir as pathsHomedir } from './paths.js';
+import { BARE_AI_DIR, normalizePath, homedir as pathsHomedir } from './paths.js';
 
 function flattenResult(result: {
   memoryContent: HierarchicalMemory;
@@ -153,7 +153,7 @@ describe('memoryDiscovery', () => {
 
       const filepathInput = path.join(
         homedir,
-        GEMINI_DIR,
+        BARE_AI_DIR,
         DEFAULT_CONTEXT_FILENAME,
       );
       const filepath = await createTestFile(
@@ -196,7 +196,7 @@ describe('memoryDiscovery', () => {
 
   it('should load only the global context file if present and others are not (default filename)', async () => {
     const defaultContextFile = await createTestFile(
-      path.join(homedir, GEMINI_DIR, DEFAULT_CONTEXT_FILENAME),
+      path.join(homedir, BARE_AI_DIR, DEFAULT_CONTEXT_FILENAME),
       'default context content',
     );
 
@@ -228,7 +228,7 @@ default context content
     setGeminiMdFilename(customFilename);
 
     const customContextFile = await createTestFile(
-      path.join(homedir, GEMINI_DIR, customFilename),
+      path.join(homedir, BARE_AI_DIR, customFilename),
       'custom context content',
     );
 
@@ -396,7 +396,7 @@ Subdir memory
 
   it('should load and correctly order global, upward, and downward ORIGINAL_GEMINI_MD_FILENAME files', async () => {
     const defaultContextFile = await createTestFile(
-      path.join(homedir, GEMINI_DIR, DEFAULT_CONTEXT_FILENAME),
+      path.join(homedir, BARE_AI_DIR, DEFAULT_CONTEXT_FILENAME),
       'default context content',
     );
     const rootGeminiFile = await createTestFile(
@@ -544,7 +544,7 @@ My code memory
 
   it('should load extension context file paths', async () => {
     const extensionFilePath = await createTestFile(
-      path.join(testRootDir, 'extensions/ext1/GEMINI.md'),
+      path.join(testRootDir, 'extensions/ext1/BARE_AI.md'),
       'Extension memory content',
     );
 
@@ -603,7 +603,7 @@ included directory memory
   });
 
   it('should handle multiple directories and files in parallel correctly', async () => {
-    // Create multiple test directories with GEMINI.md files
+    // Create multiple test directories with BARE_AI.md files
     const numDirs = 5;
     const createdFiles: string[] = [];
 
@@ -685,7 +685,7 @@ included directory memory
   describe('getGlobalMemoryPaths', () => {
     it('should find global memory file if it exists', async () => {
       const globalMemoryFile = await createTestFile(
-        path.join(homedir, GEMINI_DIR, DEFAULT_CONTEXT_FILENAME),
+        path.join(homedir, BARE_AI_DIR, DEFAULT_CONTEXT_FILENAME),
         'Global memory content',
       );
 
@@ -705,7 +705,7 @@ included directory memory
   describe('getExtensionMemoryPaths', () => {
     it('should return active extension context files', async () => {
       const extFile = await createTestFile(
-        path.join(testRootDir, 'ext', 'GEMINI.md'),
+        path.join(testRootDir, 'ext', 'BARE_AI.md'),
         'Extension content',
       );
       const loader = new SimpleExtensionLoader([
@@ -723,7 +723,7 @@ included directory memory
 
     it('should ignore inactive extensions', async () => {
       const extFile = await createTestFile(
-        path.join(testRootDir, 'ext', 'GEMINI.md'),
+        path.join(testRootDir, 'ext', 'BARE_AI.md'),
         'Extension content',
       );
       const loader = new SimpleExtensionLoader([
@@ -846,7 +846,7 @@ included directory memory
       );
 
       // create hard link to simulate case-insensitive filesystem behavior
-      const geminiFileLink = path.join(projectRoot, 'GEMINI.md');
+      const geminiFileLink = path.join(projectRoot, 'BARE_AI.md');
       try {
         await fsPromises.link(geminiFile, geminiFileLink);
       } catch (error) {
@@ -867,7 +867,7 @@ included directory memory
       expect(stats1.ino).toBe(stats2.ino);
       expect(stats1.dev).toBe(stats2.dev);
 
-      setGeminiMdFilename(['GEMINI.md', 'gemini.md']);
+      setGeminiMdFilename(['BARE_AI.md', 'gemini.md']);
 
       const result = flattenResult(
         await loadServerHierarchicalMemory(
@@ -898,7 +898,7 @@ included directory memory
         'Lowercase file content',
       );
       const geminiFileUpper = await createTestFile(
-        path.join(projectRoot, 'GEMINI.md'),
+        path.join(projectRoot, 'BARE_AI.md'),
         'Uppercase file content',
       );
 
@@ -906,7 +906,7 @@ included directory memory
       const stats2 = await fsPromises.lstat(geminiFileUpper);
 
       if (stats1.ino !== stats2.ino || stats1.dev !== stats2.dev) {
-        setGeminiMdFilename(['GEMINI.md', 'gemini.md']);
+        setGeminiMdFilename(['BARE_AI.md', 'gemini.md']);
 
         const result = flattenResult(
           await loadServerHierarchicalMemory(
@@ -953,7 +953,7 @@ included directory memory
         'Project root memory',
       );
 
-      const link1 = path.join(projectRoot, 'GEMINI.md');
+      const link1 = path.join(projectRoot, 'BARE_AI.md');
       const link2 = path.join(projectRoot, 'Gemini.md');
 
       try {
@@ -978,7 +978,7 @@ included directory memory
       expect(stats1.ino).toBe(stats2.ino);
       expect(stats1.ino).toBe(stats3.ino);
 
-      setGeminiMdFilename(['gemini.md', 'GEMINI.md', 'Gemini.md']);
+      setGeminiMdFilename(['gemini.md', 'BARE_AI.md', 'Gemini.md']);
 
       const result = flattenResult(
         await loadServerHierarchicalMemory(
@@ -1088,7 +1088,7 @@ included directory memory
         'JIT memory content',
       );
 
-      const geminiFileLink = path.join(subDir, 'GEMINI.md');
+      const geminiFileLink = path.join(subDir, 'BARE_AI.md');
       try {
         await fsPromises.link(geminiFile, geminiFileLink);
       } catch (error) {
@@ -1108,7 +1108,7 @@ included directory memory
       const stats2 = await fsPromises.lstat(geminiFileLink);
       expect(stats1.ino).toBe(stats2.ino);
 
-      setGeminiMdFilename(['gemini.md', 'GEMINI.md']);
+      setGeminiMdFilename(['gemini.md', 'BARE_AI.md']);
 
       const result = await loadJitSubdirectoryMemory(
         targetFile,

@@ -20,8 +20,8 @@ import {
   tmpdir,
   type Config,
   type Storage,
-} from '@google/gemini-cli-core';
-import { createMockMessageBus } from '@google/gemini-cli-core/src/test-utils/mock-message-bus.js';
+} from '@bare-ai/core';
+import { createMockMessageBus } from '@bare-ai/core/src/test-utils/mock-message-bus.js';
 import { expect, vi } from 'vitest';
 
 export function createMockConfig(

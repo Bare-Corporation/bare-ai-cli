@@ -12,11 +12,11 @@ import type { SessionMetrics } from '../contexts/SessionContext.js';
 import {
   ToolCallDecision,
   getShellConfiguration,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     getShellConfiguration: vi.fn(),

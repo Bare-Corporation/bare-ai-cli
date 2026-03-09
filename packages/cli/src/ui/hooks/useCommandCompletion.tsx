@@ -19,7 +19,7 @@ import {
   usePromptCompletion,
   PROMPT_COMPLETION_MIN_LENGTH,
 } from './usePromptCompletion.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@bare-ai/core';
 import { useCompletion } from './useCompletion.js';
 
 export enum CompletionMode {

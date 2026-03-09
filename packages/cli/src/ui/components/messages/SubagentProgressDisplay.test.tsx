@@ -6,7 +6,7 @@
 
 import { render, cleanup } from '../../../test-utils/render.js';
 import { SubagentProgressDisplay } from './SubagentProgressDisplay.js';
-import type { SubagentProgress } from '@google/gemini-cli-core';
+import type { SubagentProgress } from '@bare-ai/core';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Text } from 'ink';
 

@@ -10,7 +10,7 @@ import * as os from 'node:os';
 import * as crypto from 'node:crypto';
 import { BaseTokenStorage } from './base-token-storage.js';
 import type { OAuthCredentials } from './types.js';
-import { GEMINI_DIR, homedir } from '../../utils/paths.js';
+import { BARE_AI_DIR, homedir } from '../../utils/paths.js';
 
 export class FileTokenStorage extends BaseTokenStorage {
   private readonly tokenFilePath: string;
@@ -18,14 +18,14 @@ export class FileTokenStorage extends BaseTokenStorage {
 
   constructor(serviceName: string) {
     super(serviceName);
-    const configDir = path.join(homedir(), GEMINI_DIR);
+    const configDir = path.join(homedir(), BARE_AI_DIR);
     this.tokenFilePath = path.join(configDir, 'mcp-oauth-tokens-v2.json');
     this.encryptionKey = this.deriveEncryptionKey();
   }
 
   private deriveEncryptionKey(): Buffer {
-    const salt = `${os.hostname()}-${os.userInfo().username}-gemini-cli`;
-    return crypto.scryptSync('gemini-cli-oauth', salt, 32);
+    const salt = `${os.hostname()}-${os.userInfo().username}-bare-ai-cli`;
+    return crypto.scryptSync('bare-ai-cli-oauth', salt, 32);
   }
 
   private encrypt(text: string): string {

@@ -12,7 +12,7 @@ import {
   FatalConfigError,
   ideContextStore,
   coreEvents,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   loadTrustedFolders,
   TrustLevel,
@@ -26,9 +26,9 @@ import type { Settings } from './settings.js';
 // We explicitly do NOT mock 'fs' or 'proper-lockfile' here to ensure
 // we are testing the actual behavior on the real file system.
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: () => '/mock/home/user',
@@ -45,7 +45,7 @@ describe('Trusted Folders', () => {
 
   beforeEach(() => {
     // Create a temporary directory for each test
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-cli-test-'));
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bare-ai-cli-test-'));
     trustedFoldersPath = path.join(tempDir, 'trustedFolders.json');
 
     // Set the environment variable to point to the temp file
@@ -429,7 +429,7 @@ describe('Trusted Folders', () => {
     };
 
     it('should return true when isHeadlessMode is true, ignoring config', async () => {
-      const geminiCore = await import('@google/gemini-cli-core');
+      const geminiCore = await import('@bare-ai/core');
       vi.spyOn(geminiCore, 'isHeadlessMode').mockReturnValue(true);
 
       expect(isWorkspaceTrusted(mockSettings)).toEqual({
@@ -439,7 +439,7 @@ describe('Trusted Folders', () => {
     });
 
     it('should fall back to config when isHeadlessMode is false', async () => {
-      const geminiCore = await import('@google/gemini-cli-core');
+      const geminiCore = await import('@bare-ai/core');
       vi.spyOn(geminiCore, 'isHeadlessMode').mockReturnValue(false);
 
       const config = { '/projectA': TrustLevel.DO_NOT_TRUST };
@@ -451,7 +451,7 @@ describe('Trusted Folders', () => {
     });
 
     it('should return true for isPathTrusted when isHeadlessMode is true', async () => {
-      const geminiCore = await import('@google/gemini-cli-core');
+      const geminiCore = await import('@bare-ai/core');
       vi.spyOn(geminiCore, 'isHeadlessMode').mockReturnValue(true);
 
       const folders = loadTrustedFolders();
@@ -529,9 +529,9 @@ describe('Trusted Folders', () => {
       fs.writeFileSync(trustedFoldersPath, JSON.stringify(config), 'utf-8');
 
       const envPath = path.join(untrustedDir, '.env');
-      fs.writeFileSync(envPath, 'GEMINI_API_KEY=secret', 'utf-8');
+      fs.writeFileSync(envPath, 'BARE_AI_API_KEY=secret', 'utf-8');
 
-      vi.stubEnv('GEMINI_API_KEY', '');
+      vi.stubEnv('BARE_AI_API_KEY', '');
 
       const settings = createMockSettings({
         security: { folderTrust: { enabled: true } },
@@ -539,7 +539,7 @@ describe('Trusted Folders', () => {
 
       loadEnvironment(settings.merged, untrustedDir);
 
-      expect(process.env['GEMINI_API_KEY']).toBe('');
+      expect(process.env['BARE_AI_API_KEY']).toBe('');
 
       vi.unstubAllEnvs();
     });

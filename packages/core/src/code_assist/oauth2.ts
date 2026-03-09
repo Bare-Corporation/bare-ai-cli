@@ -230,7 +230,7 @@ async function initOauthClient(
       throw new FatalAuthenticationError(
         'Manual authorization is required but the current session is non-interactive. ' +
           'Please run the Gemini CLI in an interactive terminal to log in, ' +
-          'provide a GEMINI_API_KEY, or ensure Application Default Credentials are configured.',
+          'provide a BARE_AI_API_KEY, or ensure Application Default Credentials are configured.',
       );
     }
     let success = false;

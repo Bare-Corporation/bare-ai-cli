@@ -15,12 +15,12 @@ import {
   disableWorkspacePolicies,
   setDisableWorkspacePolicies,
 } from './policy.js';
-import { writeToStderr } from '@google/gemini-cli-core';
+import { writeToStderr } from '@bare-ai/core';
 
 // Mock debugLogger to avoid noise in test output
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     debugLogger: {
@@ -39,7 +39,7 @@ describe('resolveWorkspacePolicyState', () => {
 
   beforeEach(() => {
     // Create a temporary directory for the test
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-cli-test-'));
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bare-ai-cli-test-'));
     // Redirect GEMINI_CLI_HOME to the temp directory to isolate integrity storage
     vi.stubEnv('GEMINI_CLI_HOME', tempDir);
 
@@ -226,7 +226,7 @@ describe('resolveWorkspacePolicyState', () => {
     // Create a symlink to the home directory
     const symlinkDir = path.join(
       os.tmpdir(),
-      `gemini-cli-symlink-${Date.now()}`,
+      `bare-ai-cli-symlink-${Date.now()}`,
     );
     fs.symlinkSync(tempDir, symlinkDir, 'dir');
 

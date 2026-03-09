@@ -229,7 +229,7 @@ describe('createContentGenerator', () => {
     );
   });
 
-  it('should pass api key as Authorization Header when GEMINI_API_KEY_AUTH_MECHANISM is set to bearer', async () => {
+  it('should pass api key as Authorization Header when BARE_AI_API_KEY_AUTH_MECHANISM is set to bearer', async () => {
     const mockConfig = {
       getModel: vi.fn().mockReturnValue('gemini-pro'),
       getProxy: vi.fn().mockReturnValue(undefined),
@@ -240,7 +240,7 @@ describe('createContentGenerator', () => {
       models: {},
     } as unknown as GoogleGenAI;
     vi.mocked(GoogleGenAI).mockImplementation(() => mockGenerator as never);
-    vi.stubEnv('GEMINI_API_KEY_AUTH_MECHANISM', 'bearer');
+    vi.stubEnv('BARE_AI_API_KEY_AUTH_MECHANISM', 'bearer');
 
     await createContentGenerator(
       {
@@ -262,7 +262,7 @@ describe('createContentGenerator', () => {
     });
   });
 
-  it('should not pass api key as Authorization Header when GEMINI_API_KEY_AUTH_MECHANISM is not set (default behavior)', async () => {
+  it('should not pass api key as Authorization Header when BARE_AI_API_KEY_AUTH_MECHANISM is not set (default behavior)', async () => {
     const mockConfig = {
       getModel: vi.fn().mockReturnValue('gemini-pro'),
       getProxy: vi.fn().mockReturnValue(undefined),
@@ -273,7 +273,7 @@ describe('createContentGenerator', () => {
       models: {},
     } as unknown as GoogleGenAI;
     vi.mocked(GoogleGenAI).mockImplementation(() => mockGenerator as never);
-    // GEMINI_API_KEY_AUTH_MECHANISM is not stubbed, so it will be undefined, triggering default 'x-goog-api-key'
+    // BARE_AI_API_KEY_AUTH_MECHANISM is not stubbed, so it will be undefined, triggering default 'x-goog-api-key'
 
     await createContentGenerator(
       {
@@ -495,8 +495,8 @@ describe('createContentGeneratorConfig', () => {
     vi.unstubAllEnvs();
   });
 
-  it('should configure for Gemini using GEMINI_API_KEY when set', async () => {
-    vi.stubEnv('GEMINI_API_KEY', 'env-gemini-key');
+  it('should configure for Gemini using BARE_AI_API_KEY when set', async () => {
+    vi.stubEnv('BARE_AI_API_KEY', 'env-gemini-key');
     const config = await createContentGeneratorConfig(
       mockConfig,
       AuthType.USE_GEMINI,
@@ -505,8 +505,8 @@ describe('createContentGeneratorConfig', () => {
     expect(config.vertexai).toBe(false);
   });
 
-  it('should not configure for Gemini if GEMINI_API_KEY is empty', async () => {
-    vi.stubEnv('GEMINI_API_KEY', '');
+  it('should not configure for Gemini if BARE_AI_API_KEY is empty', async () => {
+    vi.stubEnv('BARE_AI_API_KEY', '');
     const config = await createContentGeneratorConfig(
       mockConfig,
       AuthType.USE_GEMINI,
@@ -515,8 +515,8 @@ describe('createContentGeneratorConfig', () => {
     expect(config.vertexai).toBeUndefined();
   });
 
-  it('should not configure for Gemini if GEMINI_API_KEY is not set and storage is empty', async () => {
-    vi.stubEnv('GEMINI_API_KEY', '');
+  it('should not configure for Gemini if BARE_AI_API_KEY is not set and storage is empty', async () => {
+    vi.stubEnv('BARE_AI_API_KEY', '');
     vi.mocked(loadApiKey).mockResolvedValue(null);
     const config = await createContentGeneratorConfig(
       mockConfig,
@@ -526,8 +526,8 @@ describe('createContentGeneratorConfig', () => {
     expect(config.vertexai).toBeUndefined();
   });
 
-  it('should configure for Vertex AI using GOOGLE_API_KEY when set', async () => {
-    vi.stubEnv('GOOGLE_API_KEY', 'env-google-key');
+  it('should configure for Vertex AI using BARE_AI_API_KEY when set', async () => {
+    vi.stubEnv('BARE_AI_API_KEY', 'env-google-key');
     const config = await createContentGeneratorConfig(
       mockConfig,
       AuthType.USE_VERTEX_AI,
@@ -537,7 +537,7 @@ describe('createContentGeneratorConfig', () => {
   });
 
   it('should configure for Vertex AI using GCP project and location when set', async () => {
-    vi.stubEnv('GOOGLE_API_KEY', undefined);
+    vi.stubEnv('BARE_AI_API_KEY', undefined);
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', 'env-gcp-project');
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', 'env-gcp-location');
     const config = await createContentGeneratorConfig(
@@ -549,7 +549,7 @@ describe('createContentGeneratorConfig', () => {
   });
 
   it('should not configure for Vertex AI if required env vars are empty', async () => {
-    vi.stubEnv('GOOGLE_API_KEY', '');
+    vi.stubEnv('BARE_AI_API_KEY', '');
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', '');
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', '');
     const config = await createContentGeneratorConfig(

@@ -20,7 +20,7 @@ describe('Core System Prompt Substitution', () => {
   let mockConfig: Config;
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.stubEnv('GEMINI_SYSTEM_MD', 'true');
+    vi.stubEnv('BARE_AI_SYSTEM_MD', 'true');
     mockConfig = {
       getToolRegistry: vi.fn().mockReturnValue({
         getAllToolNames: vi

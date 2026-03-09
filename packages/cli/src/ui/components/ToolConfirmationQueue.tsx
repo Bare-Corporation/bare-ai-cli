@@ -15,7 +15,7 @@ import type { ConfirmingToolState } from '../hooks/useConfirmingTool.js';
 import { OverflowProvider } from '../contexts/OverflowContext.js';
 import { ShowMoreLines } from './ShowMoreLines.js';
 import { StickyHeader } from './StickyHeader.js';
-import type { SerializableConfirmationDetails } from '@google/gemini-cli-core';
+import type { SerializableConfirmationDetails } from '@bare-ai/core';
 import { useUIActions } from '../contexts/UIActionsContext.js';
 
 function getConfirmationHeader(

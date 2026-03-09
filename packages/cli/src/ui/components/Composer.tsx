@@ -10,7 +10,7 @@ import {
   ApprovalMode,
   checkExhaustive,
   CoreToolCallStatus,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { LoadingIndicator } from './LoadingIndicator.js';
 import { StatusDisplay } from './StatusDisplay.js';
 import { ToastDisplay, shouldShowToast } from './ToastDisplay.js';

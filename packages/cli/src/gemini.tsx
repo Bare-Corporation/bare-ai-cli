@@ -73,7 +73,7 @@ import {
   ValidationCancelledError,
   ValidationRequiredError,
   type AdminControlsSettings,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   initializeApp,
   type InitializationResult,

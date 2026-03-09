@@ -18,7 +18,7 @@ import {
   useUIState,
   type UIState,
 } from '../contexts/UIStateContext.js';
-import { CoreToolCallStatus } from '@google/gemini-cli-core';
+import { CoreToolCallStatus } from '@bare-ai/core';
 import { type IndividualToolCallDisplay } from '../types.js';
 
 // Mock dependencies

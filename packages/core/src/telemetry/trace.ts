@@ -25,7 +25,7 @@ import {
 } from './constants.js';
 import { sessionId } from '../utils/session.js';
 
-const TRACER_NAME = 'gemini-cli';
+const TRACER_NAME = 'bare-ai-cli';
 const TRACER_VERSION = 'v1';
 
 /**

@@ -21,8 +21,8 @@ import {
   debugLogger,
   ExitCodes,
   coreEvents,
-} from '@google/gemini-cli-core';
-import type { Config } from '@google/gemini-cli-core';
+} from '@bare-ai/core';
+import type { Config } from '@bare-ai/core';
 import * as auth from './config/auth.js';
 import { type LoadedSettings } from './config/settings.js';
 
@@ -42,10 +42,10 @@ describe('validateNonInterActiveAuth', () => {
   let mockSettings: LoadedSettings;
 
   beforeEach(() => {
-    originalEnvGeminiApiKey = process.env['GEMINI_API_KEY'];
+    originalEnvGeminiApiKey = process.env['BARE_AI_API_KEY'];
     originalEnvVertexAi = process.env['GOOGLE_GENAI_USE_VERTEXAI'];
     originalEnvGcp = process.env['GOOGLE_GENAI_USE_GCA'];
-    delete process.env['GEMINI_API_KEY'];
+    delete process.env['BARE_AI_API_KEY'];
     delete process.env['GOOGLE_GENAI_USE_VERTEXAI'];
     delete process.env['GOOGLE_GENAI_USE_GCA'];
     debugLoggerErrorSpy = vi
@@ -83,9 +83,9 @@ describe('validateNonInterActiveAuth', () => {
 
   afterEach(() => {
     if (originalEnvGeminiApiKey !== undefined) {
-      process.env['GEMINI_API_KEY'] = originalEnvGeminiApiKey;
+      process.env['BARE_AI_API_KEY'] = originalEnvGeminiApiKey;
     } else {
-      delete process.env['GEMINI_API_KEY'];
+      delete process.env['BARE_AI_API_KEY'];
     }
     if (originalEnvVertexAi !== undefined) {
       process.env['GOOGLE_GENAI_USE_VERTEXAI'] = originalEnvVertexAi;
@@ -141,8 +141,8 @@ describe('validateNonInterActiveAuth', () => {
     expect(debugLoggerErrorSpy).not.toHaveBeenCalled();
   });
 
-  it('uses USE_GEMINI if GEMINI_API_KEY is set', async () => {
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+  it('uses USE_GEMINI if BARE_AI_API_KEY is set', async () => {
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     const nonInteractiveConfig = createLocalMockConfig({});
     await validateNonInteractiveAuth(
       undefined,
@@ -169,9 +169,9 @@ describe('validateNonInterActiveAuth', () => {
     expect(debugLoggerErrorSpy).not.toHaveBeenCalled();
   });
 
-  it('uses USE_VERTEX_AI if GOOGLE_GENAI_USE_VERTEXAI is true and GOOGLE_API_KEY is set', async () => {
+  it('uses USE_VERTEX_AI if GOOGLE_GENAI_USE_VERTEXAI is true and BARE_AI_API_KEY is set', async () => {
     process.env['GOOGLE_GENAI_USE_VERTEXAI'] = 'true';
-    process.env['GOOGLE_API_KEY'] = 'vertex-api-key';
+    process.env['BARE_AI_API_KEY'] = 'vertex-api-key';
     const nonInteractiveConfig = createLocalMockConfig({});
     await validateNonInteractiveAuth(
       undefined,
@@ -185,7 +185,7 @@ describe('validateNonInterActiveAuth', () => {
 
   it('uses LOGIN_WITH_GOOGLE if GOOGLE_GENAI_USE_GCA is set, even with other env vars', async () => {
     process.env['GOOGLE_GENAI_USE_GCA'] = 'true';
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     process.env['GOOGLE_GENAI_USE_VERTEXAI'] = 'true';
     process.env['GOOGLE_CLOUD_PROJECT'] = 'test-project';
     process.env['GOOGLE_CLOUD_LOCATION'] = 'us-central1';
@@ -200,8 +200,8 @@ describe('validateNonInterActiveAuth', () => {
     expect(debugLoggerErrorSpy).not.toHaveBeenCalled();
   });
 
-  it('uses USE_VERTEX_AI if both GEMINI_API_KEY and GOOGLE_GENAI_USE_VERTEXAI are set', async () => {
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+  it('uses USE_VERTEX_AI if both BARE_AI_API_KEY and GOOGLE_GENAI_USE_VERTEXAI are set', async () => {
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     process.env['GOOGLE_GENAI_USE_VERTEXAI'] = 'true';
     process.env['GOOGLE_CLOUD_PROJECT'] = 'test-project';
     process.env['GOOGLE_CLOUD_LOCATION'] = 'us-central1';
@@ -216,9 +216,9 @@ describe('validateNonInterActiveAuth', () => {
     expect(debugLoggerErrorSpy).not.toHaveBeenCalled();
   });
 
-  it('uses USE_GEMINI if GOOGLE_GENAI_USE_VERTEXAI is false, GEMINI_API_KEY is set, and project/location are available', async () => {
+  it('uses USE_GEMINI if GOOGLE_GENAI_USE_VERTEXAI is false, BARE_AI_API_KEY is set, and project/location are available', async () => {
     process.env['GOOGLE_GENAI_USE_VERTEXAI'] = 'false';
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     process.env['GOOGLE_CLOUD_PROJECT'] = 'test-project';
     process.env['GOOGLE_CLOUD_LOCATION'] = 'us-central1';
     const nonInteractiveConfig = createLocalMockConfig({});
@@ -233,7 +233,7 @@ describe('validateNonInterActiveAuth', () => {
   });
 
   it('uses configuredAuthType over environment variables', async () => {
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     const nonInteractiveConfig = createLocalMockConfig({});
     await validateNonInteractiveAuth(
       AuthType.LOGIN_WITH_GOOGLE,
@@ -296,7 +296,7 @@ describe('validateNonInterActiveAuth', () => {
 
   it('succeeds if effectiveAuthType matches enforcedAuthType', async () => {
     mockSettings.merged.security.auth.enforcedType = AuthType.USE_GEMINI;
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     const nonInteractiveConfig = createLocalMockConfig({});
     await validateNonInteractiveAuth(
       undefined,
@@ -336,7 +336,7 @@ describe('validateNonInterActiveAuth', () => {
 
   it('exits if auth from env var does not match enforcedAuthType', async () => {
     mockSettings.merged.security.auth.enforcedType = AuthType.LOGIN_WITH_GOOGLE;
-    process.env['GEMINI_API_KEY'] = 'fake-key';
+    process.env['BARE_AI_API_KEY'] = 'fake-key';
     const nonInteractiveConfig = createLocalMockConfig({
       getOutputFormat: vi.fn().mockReturnValue(OutputFormat.TEXT),
     });
@@ -433,7 +433,7 @@ describe('validateNonInterActiveAuth', () => {
 
     it(`prints JSON error when validateAuthMethod fails and exits with code ${ExitCodes.FATAL_AUTHENTICATION_ERROR}`, async () => {
       vi.spyOn(auth, 'validateAuthMethod').mockReturnValue('Auth error!');
-      process.env['GEMINI_API_KEY'] = 'fake-key';
+      process.env['BARE_AI_API_KEY'] = 'fake-key';
 
       const nonInteractiveConfig = createLocalMockConfig({
         getOutputFormat: vi.fn().mockReturnValue(OutputFormat.JSON),

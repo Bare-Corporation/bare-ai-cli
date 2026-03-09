@@ -12,8 +12,8 @@ import type { AgentRegistry } from './registry.js';
 
 describe('GeneralistAgent', () => {
   beforeEach(() => {
-    vi.stubEnv('GEMINI_SYSTEM_MD', '');
-    vi.stubEnv('GEMINI_WRITE_SYSTEM_MD', '');
+    vi.stubEnv('BARE_AI_SYSTEM_MD', '');
+    vi.stubEnv('BARE_AI_WRITE_SYSTEM_MD', '');
   });
 
   afterEach(() => {

@@ -13,19 +13,19 @@ import {
   afterEach,
   type Mock,
 } from 'vitest';
-import { coreEvents } from '@google/gemini-cli-core';
+import { coreEvents } from '@bare-ai/core';
 import { type Argv } from 'yargs';
 import { handleLink, linkCommand } from './link.js';
 import { ExtensionManager } from '../../config/extension-manager.js';
 import { loadSettings, type LoadedSettings } from '../../config/settings.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const { mockCoreDebugLogger } = await import(
     '../../test-utils/mockDebugLogger.js'
   );
   return mockCoreDebugLogger(
-    await importOriginal<typeof import('@google/gemini-cli-core')>(),
+    await importOriginal<typeof import('@bare-ai/core')>(),
     { stripAnsi: true },
   );
 });

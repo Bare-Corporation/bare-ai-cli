@@ -9,14 +9,14 @@ import {
   ApprovalMode,
   PolicyDecision,
   PolicyEngine,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { createPolicyEngineConfig } from './policy.js';
 import type { Settings } from './settings.js';
 
 // Mock Storage to ensure tests are hermetic and don't read from user's home directory
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   const Storage = actual.Storage;
   // Monkey-patch static methods
   Storage.getUserPoliciesDir = () => '/non-existent/user/policies';
@@ -29,7 +29,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
 });
 
 describe('Policy Engine Integration Tests', () => {
-  beforeEach(() => vi.stubEnv('GEMINI_SYSTEM_MD', ''));
+  beforeEach(() => vi.stubEnv('BARE_AI_SYSTEM_MD', ''));
 
   afterEach(() => vi.unstubAllEnvs());
 
@@ -413,7 +413,7 @@ describe('Policy Engine Integration Tests', () => {
             '/home/user/.gemini/tmp/a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2/session-1/plans/feature_auth.md',
             '/home/user/.gemini/tmp/new-temp_dir_123/session-1/plans/plan.md', // new style of temp directory
             'C:\\Users\\user\\.gemini\\tmp\\project-id\\session-id\\plans\\plan.md',
-            'D:\\gemini-cli\\.gemini\\tmp\\project-id\\session-1\\plans\\plan.md', // no session ID
+            'D:\\bare-ai-cli\\.gemini\\tmp\\project-id\\session-1\\plans\\plan.md', // no session ID
           ];
 
           for (const file_path of validPaths) {

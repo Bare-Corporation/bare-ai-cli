@@ -16,13 +16,13 @@ import {
   IdeClient,
   CoreToolCallStatus,
   type SerializableConfirmationDetails,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { type IndividualToolCallDisplay } from '../types.js';
 
 // Mock IdeClient
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     IdeClient: {

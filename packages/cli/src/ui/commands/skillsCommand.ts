@@ -18,7 +18,7 @@ import {
 import { disableSkill, enableSkill } from '../../utils/skillSettings.js';
 import { getErrorMessage } from '../../utils/errors.js';
 
-import { getAdminErrorMessage } from '@google/gemini-cli-core';
+import { getAdminErrorMessage } from '@bare-ai/core';
 import {
   linkSkill,
   renderSkillActionFeedback,

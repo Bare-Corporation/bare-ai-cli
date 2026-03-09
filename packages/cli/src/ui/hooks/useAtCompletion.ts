@@ -7,12 +7,12 @@
 import { useEffect, useReducer, useRef } from 'react';
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises';
 import * as path from 'node:path';
-import type { Config, FileSearch } from '@google/gemini-cli-core';
+import type { Config, FileSearch } from '@bare-ai/core';
 import {
   FileSearchFactory,
   escapePath,
   FileDiscoveryService,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 import { MAX_SUGGESTIONS_TO_SHOW } from '../components/SuggestionsDisplay.js';
 import { CommandKind } from '../commands/types.js';

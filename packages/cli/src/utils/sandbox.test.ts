@@ -9,7 +9,7 @@ import { spawn, exec, execFile, execSync } from 'node:child_process';
 import os from 'node:os';
 import fs from 'node:fs';
 import { start_sandbox } from './sandbox.js';
-import { FatalSandboxError, type SandboxConfig } from '@google/gemini-cli-core';
+import { FatalSandboxError, type SandboxConfig } from '@bare-ai/core';
 import { EventEmitter } from 'node:events';
 
 const { mockedHomedir, mockedGetContainerPath } = vi.hoisted(() => ({
@@ -75,9 +75,9 @@ vi.mock('node:util', async (importOriginal) => {
   };
 });
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     debugLogger: {
@@ -94,7 +94,7 @@ vi.mock('@google/gemini-cli-core', async (importOriginal) => {
         this.name = 'FatalSandboxError';
       }
     },
-    GEMINI_DIR: '.gemini',
+    BARE_AI_DIR: '.gemini',
     homedir: mockedHomedir,
   };
 });
@@ -184,7 +184,7 @@ describe('sandbox', () => {
     it('should handle Docker execution', async () => {
       const config: SandboxConfig = {
         command: 'docker',
-        image: 'gemini-cli-sandbox',
+        image: 'bare-ai-cli-sandbox',
       };
 
       // Mock image check to return true (image exists)
@@ -340,7 +340,7 @@ describe('sandbox', () => {
     it('should mount volumes correctly', async () => {
       const config: SandboxConfig = {
         command: 'docker',
-        image: 'gemini-cli-sandbox',
+        image: 'bare-ai-cli-sandbox',
       };
       process.env['SANDBOX_MOUNTS'] = '/host/path:/container/path:ro';
       vi.mocked(fs.existsSync).mockReturnValue(true); // For mount path check
@@ -397,7 +397,7 @@ describe('sandbox', () => {
     it('should pass through GOOGLE_GEMINI_BASE_URL and GOOGLE_VERTEX_BASE_URL', async () => {
       const config: SandboxConfig = {
         command: 'docker',
-        image: 'gemini-cli-sandbox',
+        image: 'bare-ai-cli-sandbox',
       };
       process.env['GOOGLE_GEMINI_BASE_URL'] = 'http://gemini.proxy';
       process.env['GOOGLE_VERTEX_BASE_URL'] = 'http://vertex.proxy';
@@ -444,7 +444,7 @@ describe('sandbox', () => {
     it('should handle user creation on Linux if needed', async () => {
       const config: SandboxConfig = {
         command: 'docker',
-        image: 'gemini-cli-sandbox',
+        image: 'bare-ai-cli-sandbox',
       };
       process.env['SANDBOX_SET_UID_GID'] = 'true';
       vi.mocked(os.platform).mockReturnValue('linux');
@@ -579,7 +579,7 @@ describe('sandbox', () => {
       vi.mocked(os.platform).mockReturnValue('linux');
       const config: SandboxConfig = {
         command: 'runsc',
-        image: 'gemini-cli-sandbox',
+        image: 'bare-ai-cli-sandbox',
       };
 
       // Mock image check
@@ -614,7 +614,7 @@ describe('sandbox', () => {
       expect(spawn).toHaveBeenNthCalledWith(
         1,
         'docker',
-        expect.arrayContaining(['images', '-q', 'gemini-cli-sandbox']),
+        expect.arrayContaining(['images', '-q', 'bare-ai-cli-sandbox']),
       );
 
       // Verify docker run includes --runtime=runsc

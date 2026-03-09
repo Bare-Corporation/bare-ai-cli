@@ -28,7 +28,7 @@ import {
   type MessageBus,
   LlmRole,
   type GitService,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   SettingScope,
   type LoadedSettings,
@@ -37,7 +37,7 @@ import {
 import { loadCliConfig, type CliArgs } from '../config/config.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { ApprovalMode } from '@google/gemini-cli-core/src/policy/types.js';
+import { ApprovalMode } from '@bare-ai/core/src/policy/types.js';
 
 vi.mock('../config/config.js', () => ({
   loadCliConfig: vi.fn(),
@@ -92,9 +92,9 @@ vi.mock('../ui/commands/initCommand.js', () => ({
   },
 }));
 vi.mock(
-  '@google/gemini-cli-core',
+  '@bare-ai/core',
   async (
-    importOriginal: () => Promise<typeof import('@google/gemini-cli-core')>,
+    importOriginal: () => Promise<typeof import('@bare-ai/core')>,
   ) => {
     const actual = await importOriginal();
     return {

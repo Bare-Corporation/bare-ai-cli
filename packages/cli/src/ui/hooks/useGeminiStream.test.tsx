@@ -26,7 +26,7 @@ import type {
   EditorType,
   AnyToolInvocation,
   SpanMetadata,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   CoreToolCallStatus,
   ApprovalMode,
@@ -42,7 +42,7 @@ import {
   MCPDiscoveryState,
   GeminiCliOperation,
   getPlanModeExitMessage,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { Part, PartListUnion } from '@google/genai';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import type { SlashCommandProcessorResult } from '../types.js';
@@ -117,7 +117,7 @@ const mockRunInDevTraceSpan = vi.hoisted(() =>
   }),
 );
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actualCoreModule = (await importOriginal()) as any;
   return {
     ...actualCoreModule,

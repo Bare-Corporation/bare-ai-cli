@@ -11,7 +11,7 @@ import {
   debugLogger,
   FolderTrustDiscoveryService,
   getRealPath,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { getErrorMessage } from '../../utils/errors.js';
 import {
   INSTALL_WARNING_MESSAGE,

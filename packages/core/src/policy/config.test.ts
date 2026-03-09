@@ -1057,7 +1057,7 @@ name = "invalid-name"
         options?: Parameters<typeof actualFs.readdir>[1],
       ) => {
         const normalizedPath = nodePath.normalize(path.toString());
-        if (normalizedPath.includes('gemini-cli-test/user/policies')) {
+        if (normalizedPath.includes('bare-ai-cli-test/user/policies')) {
           return [
             {
               name: 'user-plan.toml',
@@ -1079,7 +1079,7 @@ name = "invalid-name"
         options?: Parameters<typeof actualFs.stat>[1],
       ) => {
         const normalizedPath = nodePath.normalize(path.toString());
-        if (normalizedPath.includes('gemini-cli-test/user/policies')) {
+        if (normalizedPath.includes('bare-ai-cli-test/user/policies')) {
           return {
             isDirectory: () => true,
             isFile: () => false,
@@ -1137,10 +1137,10 @@ modes = ["plan"]
       >('../config/storage.js');
       class MockStorage extends actual.Storage {
         static override getUserPoliciesDir() {
-          return '/tmp/gemini-cli-test/user/policies';
+          return '/tmp/bare-ai-cli-test/user/policies';
         }
         static override getSystemPoliciesDir() {
-          return '/tmp/gemini-cli-test/system/policies';
+          return '/tmp/bare-ai-cli-test/system/policies';
         }
       }
       return { ...actual, Storage: MockStorage };

@@ -104,7 +104,7 @@ describe('Linux Clipboard Integration', () => {
       // Expect the CLI to have processed the image and echoed back the path (or the prompt containing it)
       // The output usually contains the user's input echoed back + model response.
       // The pasted image path should look like @.../clipboard-....png
-      expect(result).toMatch(/@\/.*\.gemini-clipboard\/clipboard-.*\.png/);
+      expect(result).toMatch(/@\/.*\.bare-ai-clipboard\/clipboard-.*\.png/);
     },
   );
 });

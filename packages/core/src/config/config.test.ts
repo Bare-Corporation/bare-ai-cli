@@ -120,9 +120,9 @@ vi.mock('../tools/read-many-files');
 vi.mock('../tools/memoryTool', () => ({
   MemoryTool: vi.fn(),
   setGeminiMdFilename: vi.fn(),
-  getCurrentGeminiMdFilename: vi.fn(() => 'GEMINI.md'), // Mock the original filename
-  DEFAULT_CONTEXT_FILENAME: 'GEMINI.md',
-  GEMINI_DIR: '.gemini',
+  getCurrentGeminiMdFilename: vi.fn(() => 'BARE_AI.md'), // Mock the original filename
+  DEFAULT_CONTEXT_FILENAME: 'BARE_AI.md',
+  BARE_AI_DIR: '.gemini',
 }));
 
 vi.mock('../core/contentGenerator.js');
@@ -249,7 +249,7 @@ describe('Server Config (config.ts)', () => {
   const MODEL = DEFAULT_GEMINI_MODEL;
   const SANDBOX: SandboxConfig = {
     command: 'docker',
-    image: 'gemini-cli-sandbox',
+    image: 'bare-ai-cli-sandbox',
   };
   const TARGET_DIR = '/path/to/target';
   const DEBUG_MODE = false;
@@ -1483,7 +1483,7 @@ describe('GemmaModelRouterSettings', () => {
   const MODEL = DEFAULT_GEMINI_MODEL;
   const SANDBOX: SandboxConfig = {
     command: 'docker',
-    image: 'gemini-cli-sandbox',
+    image: 'bare-ai-cli-sandbox',
   };
   const TARGET_DIR = '/path/to/target';
   const DEBUG_MODE = false;
@@ -1863,7 +1863,7 @@ describe('BaseLlmClient Lifecycle', () => {
   const MODEL = 'gemini-pro';
   const SANDBOX: SandboxConfig = {
     command: 'docker',
-    image: 'gemini-cli-sandbox',
+    image: 'bare-ai-cli-sandbox',
   };
   const TARGET_DIR = '/path/to/target';
   const DEBUG_MODE = false;
@@ -1918,7 +1918,7 @@ describe('Generation Config Merging (HACK)', () => {
   const MODEL = 'gemini-pro';
   const SANDBOX: SandboxConfig = {
     command: 'docker',
-    image: 'gemini-cli-sandbox',
+    image: 'bare-ai-cli-sandbox',
   };
   const TARGET_DIR = '/path/to/target';
   const DEBUG_MODE = false;
@@ -2224,7 +2224,7 @@ describe('LocalLiteRtLmClient Lifecycle', () => {
   const MODEL = 'gemini-pro';
   const SANDBOX: SandboxConfig = {
     command: 'docker',
-    image: 'gemini-cli-sandbox',
+    image: 'bare-ai-cli-sandbox',
   };
   const TARGET_DIR = '/path/to/target';
   const DEBUG_MODE = false;
@@ -2541,7 +2541,7 @@ describe('Config Quota & Preview Model Access', () => {
     embeddingModel: 'gemini-embedding',
     sandbox: {
       command: 'docker',
-      image: 'gemini-cli-sandbox',
+      image: 'bare-ai-cli-sandbox',
     },
   };
 
@@ -2847,7 +2847,7 @@ describe('Config JIT Initialization', () => {
       getEnvironmentMemory: vi
         .fn()
         .mockReturnValue('Environment Memory\n\nMCP Instructions'),
-      getLoadedPaths: vi.fn().mockReturnValue(new Set(['/path/to/GEMINI.md'])),
+      getLoadedPaths: vi.fn().mockReturnValue(new Set(['/path/to/BARE_AI.md'])),
     } as unknown as ContextManager;
     (ContextManager as unknown as Mock).mockImplementation(
       () => mockContextManager,
@@ -2878,7 +2878,7 @@ describe('Config JIT Initialization', () => {
 
     // Verify state update (delegated to ContextManager)
     expect(config.getGeminiMdFileCount()).toBe(1);
-    expect(config.getGeminiMdFilePaths()).toEqual(['/path/to/GEMINI.md']);
+    expect(config.getGeminiMdFilePaths()).toEqual(['/path/to/BARE_AI.md']);
   });
 
   it('should NOT initialize ContextManager when experimentalJitContext is disabled', async () => {

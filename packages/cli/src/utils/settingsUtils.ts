@@ -12,8 +12,8 @@ import type {
   SettingsValue,
 } from '../config/settingsSchema.js';
 import { getSettingsSchema } from '../config/settingsSchema.js';
-import type { Config } from '@google/gemini-cli-core';
-import { ExperimentFlags } from '@google/gemini-cli-core';
+import type { Config } from '@bare-ai/core';
+import { ExperimentFlags } from '@bare-ai/core';
 
 // The schema is now nested, but many parts of the UI and logic work better
 // with a flattened structure and dot-notation keys. This section flattens the

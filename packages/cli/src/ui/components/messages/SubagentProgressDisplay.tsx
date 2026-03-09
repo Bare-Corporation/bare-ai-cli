@@ -11,7 +11,7 @@ import Spinner from 'ink-spinner';
 import type {
   SubagentProgress,
   SubagentActivityItem,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { TOOL_STATUS } from '../../constants.js';
 import { STATUS_INDICATOR_WIDTH } from './ToolShared.js';
 

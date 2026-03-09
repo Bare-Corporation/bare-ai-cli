@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Config } from '@google/gemini-cli-core';
-import { ChatRecordingService } from '@google/gemini-cli-core';
+import type { Config } from '@bare-ai/core';
+import { ChatRecordingService } from '@bare-ai/core';
 import { listSessions, deleteSession } from './sessions.js';
 import { SessionSelector, type SessionInfo } from './sessionUtils.js';
 
@@ -21,8 +21,8 @@ vi.mock('./sessionUtils.js', () => ({
   formatRelativeTime: vi.fn(() => 'some time ago'),
 }));
 
-vi.mock('@google/gemini-cli-core', async () => {
-  const actual = await vi.importActual('@google/gemini-cli-core');
+vi.mock('@bare-ai/core', async () => {
+  const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
     ChatRecordingService: vi.fn(),

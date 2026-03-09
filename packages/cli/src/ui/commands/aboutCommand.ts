@@ -13,7 +13,7 @@ import {
   UserAccountManager,
   debugLogger,
   getVersion,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 
 export const aboutCommand: SlashCommand = {
   name: 'about',

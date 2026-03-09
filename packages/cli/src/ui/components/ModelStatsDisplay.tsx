@@ -23,7 +23,7 @@ import {
   getDisplayString,
   isAutoModel,
   LlmRole,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type { QuotaStats } from '../types.js';
 import { QuotaStatsInfo } from './QuotaStatsInfo.js';
 

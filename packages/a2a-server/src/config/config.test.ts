@@ -19,12 +19,12 @@ import {
   AuthType,
   isHeadlessMode,
   FatalAuthenticationError,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 
 // Mock dependencies
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     Config: vi.fn().mockImplementation((params) => {
@@ -78,7 +78,7 @@ describe('loadConfig', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv('GEMINI_API_KEY', 'test-key');
+    vi.stubEnv('BARE_AI_API_KEY', 'test-key');
   });
 
   afterEach(() => {
@@ -343,7 +343,7 @@ describe('loadConfig', () => {
     describe('authentication fallback', () => {
       beforeEach(() => {
         vi.stubEnv('USE_CCPA', 'true');
-        vi.stubEnv('GEMINI_API_KEY', '');
+        vi.stubEnv('BARE_AI_API_KEY', '');
       });
 
       afterEach(() => {

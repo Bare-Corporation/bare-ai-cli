@@ -22,7 +22,7 @@ import {
   EDIT_DISPLAY_NAME,
   READ_FILE_DISPLAY_NAME,
   GLOB_DISPLAY_NAME,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import os from 'node:os';
 import { createMockSettings } from '../../../test-utils/settings.js';
 

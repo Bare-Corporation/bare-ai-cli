@@ -17,9 +17,9 @@ import {
   ExtensionRegistryClient,
   type RegistryExtension,
 } from './extensionRegistryClient.js';
-import { fetchWithTimeout } from '@google/gemini-cli-core';
+import { fetchWithTimeout } from '@bare-ai/core';
 
-vi.mock('@google/gemini-cli-core', () => ({
+vi.mock('@bare-ai/core', () => ({
   fetchWithTimeout: vi.fn(),
 }));
 

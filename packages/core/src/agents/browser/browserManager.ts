@@ -231,7 +231,7 @@ export class BrowserManager {
     // Create raw MCP SDK Client (not the wrapper McpClient)
     this.rawMcpClient = new Client(
       {
-        name: 'gemini-cli-browser-agent',
+        name: 'bare-ai-cli-browser-agent',
         version: '1.0.0',
       },
       {

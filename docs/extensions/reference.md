@@ -121,7 +121,7 @@ The manifest file defines the extension's behavior and configuration.
       "cwd": "${extensionPath}"
     }
   },
-  "contextFileName": "GEMINI.md",
+  "contextFileName": "BARE_AI.md",
   "excludeTools": ["run_shell_command"],
   "plan": {
     "directory": ".gemini/plans"
@@ -152,7 +152,7 @@ The manifest file defines the extension's behavior and configuration.
     instead of putting them both in `command`.
 - `contextFileName`: The name of the file that contains the context for the
   extension. This will be used to load the context from the extension directory.
-  If this property is not used but a `GEMINI.md` file is present in your
+  If this property is not used but a `BARE_AI.md` file is present in your
   extension directory, then that file will be loaded.
 - `excludeTools`: An array of tool names to exclude from the model. You can also
   specify command-specific restrictions for tools that support it, like the

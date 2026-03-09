@@ -23,16 +23,16 @@ import {
   type GitService,
   type CompletedToolCall,
   type ToolCall,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { createMockConfig } from '../utils/testing_utils.js';
 import type { ExecutionEventBus, RequestContext } from '@a2a-js/sdk/server';
 import { CoderAgentEvent } from '../types.js';
 
 const mockProcessRestorableToolCalls = vi.hoisted(() => vi.fn());
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const original =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
     processRestorableToolCalls: mockProcessRestorableToolCalls,

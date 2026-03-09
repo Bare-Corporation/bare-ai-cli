@@ -11,8 +11,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { env } from 'node:process';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { DEFAULT_GEMINI_MODEL, GEMINI_DIR } from '@google/gemini-cli-core';
-export { GEMINI_DIR };
+import { DEFAULT_GEMINI_MODEL, BARE_AI_DIR } from '@bare-ai/core';
+export { BARE_AI_DIR };
 import * as pty from '@lydell/node-pty';
 import stripAnsi from 'strip-ansi';
 import * as os from 'node:os';
@@ -359,7 +359,7 @@ export class TestRig {
     this.testName = testName;
     const sanitizedName = sanitizeTestName(testName);
     const testFileDir =
-      env['INTEGRATION_TEST_FILE_DIR'] || join(os.tmpdir(), 'gemini-cli-tests');
+      env['INTEGRATION_TEST_FILE_DIR'] || join(os.tmpdir(), 'bare-ai-cli-tests');
     this.testDir = join(testFileDir, sanitizedName);
     this.homeDir = join(testFileDir, sanitizedName + '-home');
 
@@ -415,10 +415,10 @@ export class TestRig {
   }
 
   private _createSettingsFile(overrideSettings?: Record<string, unknown>) {
-    const projectGeminiDir = join(this.testDir!, GEMINI_DIR);
+    const projectGeminiDir = join(this.testDir!, BARE_AI_DIR);
     mkdirSync(projectGeminiDir, { recursive: true });
 
-    const userGeminiDir = join(this.homeDir!, GEMINI_DIR);
+    const userGeminiDir = join(this.homeDir!, BARE_AI_DIR);
     mkdirSync(userGeminiDir, { recursive: true });
 
     // In sandbox mode, use an absolute path for telemetry inside the container
@@ -542,8 +542,8 @@ export class TestRig {
     for (const key of Object.keys(cleanEnv)) {
       if (
         (key.startsWith('GEMINI_') || key.startsWith('GOOGLE_GEMINI_')) &&
-        key !== 'GEMINI_API_KEY' &&
-        key !== 'GOOGLE_API_KEY' &&
+        key !== 'BARE_AI_API_KEY' &&
+        key !== 'BARE_AI_API_KEY' &&
         key !== 'GEMINI_MODEL' &&
         key !== 'GEMINI_DEBUG' &&
         key !== 'GEMINI_CLI_TEST_VAR' &&

@@ -32,7 +32,7 @@ describe('Tool Confirmation Policy Updates', () => {
   let mockMessageBus: MessageBus;
   const rootDir = path.join(
     os.tmpdir(),
-    `gemini-cli-policy-test-${Date.now()}`,
+    `bare-ai-cli-policy-test-${Date.now()}`,
   );
 
   beforeEach(() => {
@@ -74,7 +74,7 @@ describe('Tool Confirmation Policy Updates', () => {
       }),
       getDirectWebFetch: () => false,
       storage: {
-        getProjectTempDir: () => path.join(os.tmpdir(), 'gemini-cli-temp'),
+        getProjectTempDir: () => path.join(os.tmpdir(), 'bare-ai-cli-temp'),
       },
       isPathAllowed(this: Config, absolutePath: string): boolean {
         const workspaceContext = this.getWorkspaceContext();

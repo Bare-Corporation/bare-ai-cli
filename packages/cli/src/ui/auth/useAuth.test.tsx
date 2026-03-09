@@ -19,7 +19,7 @@ import {
   AuthType,
   type Config,
   ProjectIdRequiredError,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { AuthState } from '../types.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import { waitFor } from '../../test-utils/async.js';
@@ -28,9 +28,9 @@ import { waitFor } from '../../test-utils/async.js';
 const mockLoadApiKey = vi.fn();
 const mockValidateAuthMethod = vi.fn();
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+vi.mock('@bare-ai/core', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     loadApiKey: () => mockLoadApiKey(),

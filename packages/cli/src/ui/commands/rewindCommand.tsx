@@ -24,7 +24,7 @@ import {
   type ChatRecordingService,
   type GeminiClient,
   convertSessionToClientHistory,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 
 /**
  * Helper function to handle the core logic of rewinding a conversation.
@@ -58,7 +58,7 @@ async function rewindConversation(
     const { uiHistory } = convertSessionToHistoryFormats(conversation.messages);
     const clientHistory = convertSessionToClientHistory(conversation.messages);
 
-    client.setHistory(clientHistory as Content[]);
+    client.setHistory(clientHistory as Content[] as unknown[]);
 
     // Reset context manager as we are rewinding history
     await context.services.config?.getContextManager()?.refresh();

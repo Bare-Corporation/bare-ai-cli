@@ -7,7 +7,7 @@
 import type React from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
-import { ApprovalMode } from '@google/gemini-cli-core';
+import { ApprovalMode } from '@bare-ai/core';
 import { formatCommand } from '../utils/keybindingUtils.js';
 import { Command } from '../../config/keyBindings.js';
 

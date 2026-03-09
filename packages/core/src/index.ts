@@ -219,3 +219,5 @@ export * from './utils/terminal.js';
 
 // Export types from @google/genai
 export type { Content, Part, FunctionCall } from '@google/genai';
+
+export { GEMINI_DIR } from './config/constants.js';

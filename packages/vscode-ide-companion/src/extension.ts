@@ -13,9 +13,9 @@ import {
   detectIdeFromEnv,
   IDE_DEFINITIONS,
   type IdeInfo,
-} from '@google/gemini-cli-core/src/ide/detect-ide.js';
+} from '@bare-ai/core/src/ide/detect-ide.js';
 
-const CLI_IDE_COMPANION_IDENTIFIER = 'Google.gemini-cli-vscode-ide-companion';
+const CLI_IDE_COMPANION_IDENTIFIER = 'Google.bare-ai-cli-vscode-ide-companion';
 const INFO_MESSAGE_SHOWN_KEY = 'geminiCliInfoMessageShown';
 export const DIFF_SCHEME = 'gemini-diff';
 
@@ -182,7 +182,7 @@ export async function activate(context: vscode.ExtensionContext) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       ideServer.syncEnvVars();
     })),
-    vscode.commands.registerCommand('gemini-cli.runGeminiCLI', async () => {
+    vscode.commands.registerCommand('bare-ai-cli.runGeminiCLI', async () => {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || workspaceFolders.length === 0) {
         vscode.window.showInformationMessage(
@@ -210,7 +210,7 @@ export async function activate(context: vscode.ExtensionContext) {
         terminal.sendText(geminiCmd);
       }
     }),
-    vscode.commands.registerCommand('gemini-cli.showNotices', async () => {
+    vscode.commands.registerCommand('bare-ai-cli.showNotices', async () => {
       const noticePath = vscode.Uri.joinPath(
         context.extensionUri,
         'NOTICES.txt',

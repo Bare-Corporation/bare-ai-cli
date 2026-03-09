@@ -32,3 +32,5 @@ export const DEFAULT_FILE_FILTERING_OPTIONS: FileFilteringOptions = {
 
 // Generic exclusion file name
 export const GEMINI_IGNORE_FILE_NAME = '.geminiignore';
+
+export const GEMINI_DIR = '.gemini';

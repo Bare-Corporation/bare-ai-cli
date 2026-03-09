@@ -16,7 +16,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { GEMINI_DIR } from '@google/gemini-cli-core';
+import { BARE_AI_DIR } from '@bare-ai/core';
 import * as pty from '@lydell/node-pty';
 import { fileURLToPath } from 'node:url';
 
@@ -102,7 +102,7 @@ describe('extension symlink install spoofing protection', () => {
     // 2. Verify trustedFolders.json contains the REAL path, not the symlink path
     const trustedFoldersPath = join(
       rig.homeDir!,
-      GEMINI_DIR,
+      BARE_AI_DIR,
       'trustedFolders.json',
     );
     // Wait for file to be written

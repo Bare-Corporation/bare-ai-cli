@@ -17,11 +17,11 @@ import {
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
-import type { ConfigParameters } from '@google/gemini-cli-core';
+import type { ConfigParameters } from '@bare-ai/core';
 import {
   Config,
   DEFAULT_FILE_FILTERING_OPTIONS,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { createTestMergedSettings } from './settings.js';
 import { http, HttpResponse } from 'msw';
 
@@ -45,8 +45,8 @@ afterAll(() => {
 const CLEARCUT_URL = 'https://play.googleapis.com/log';
 
 // Mock file discovery service and tool registry
-vi.mock('@google/gemini-cli-core', async () => {
-  const actual = await vi.importActual('@google/gemini-cli-core');
+vi.mock('@bare-ai/core', async () => {
+  const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
     FileDiscoveryService: vi.fn().mockImplementation(() => ({
@@ -62,8 +62,8 @@ describe('Configuration Integration Tests', () => {
   beforeEach(() => {
     server.resetHandlers(http.post(CLEARCUT_URL, () => HttpResponse.text()));
 
-    tempDir = fs.mkdtempSync(path.join(tmpdir(), 'gemini-cli-test-'));
-    vi.stubEnv('GEMINI_API_KEY', 'test-api-key');
+    tempDir = fs.mkdtempSync(path.join(tmpdir(), 'bare-ai-cli-test-'));
+    vi.stubEnv('BARE_AI_API_KEY', 'test-api-key');
     vi.clearAllMocks();
   });
 

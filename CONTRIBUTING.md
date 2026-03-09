@@ -320,7 +320,7 @@ npm run lint
 
 - Please adhere to the coding style, patterns, and conventions used throughout
   the existing codebase.
-- Consult [GEMINI.md](../GEMINI.md) (typically found in the project root) for
+- Consult [BARE_AI.md](../BARE_AI.md) (typically found in the project root) for
   specific instructions related to AI-assisted development, including
   conventions for React, comments, and Git usage.
 - **Imports:** Pay special attention to import paths. The project uses ESLint to

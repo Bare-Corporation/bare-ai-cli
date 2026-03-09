@@ -34,7 +34,7 @@ import {
   isSubagentProgress,
   EDIT_TOOL_NAMES,
   processRestorableToolCalls,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   type ExecutionEventBus,
   type RequestContext,
@@ -155,7 +155,7 @@ export class Task {
 
   // Note: `getAllMCPServerStatuses` retrieves the status of all MCP servers for the entire
   // process. This is not scoped to the individual task but reflects the global connection
-  // state managed within the @gemini-cli/core module.
+  // state managed within the @bare-ai-cli/core module.
   async getMetadata(): Promise<TaskMetadata> {
     const toolRegistry = this.config.getToolRegistry();
     const mcpServers = this.config.getMcpClientManager()?.getMcpServers() || {};

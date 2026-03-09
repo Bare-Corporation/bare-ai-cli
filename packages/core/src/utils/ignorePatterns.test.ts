@@ -14,7 +14,7 @@ import type { Config } from '../config/config.js';
 
 // Mock the memoryTool module
 vi.mock('../tools/memoryTool.js', () => ({
-  getCurrentGeminiMdFilename: vi.fn(() => 'GEMINI.md'),
+  getCurrentGeminiMdFilename: vi.fn(() => 'BARE_AI.md'),
 }));
 
 describe('FileExclusions', () => {
@@ -55,7 +55,7 @@ describe('FileExclusions', () => {
       expect(patterns).toContain('**/.env');
 
       // Should include dynamic patterns
-      expect(patterns).toContain('**/GEMINI.md');
+      expect(patterns).toContain('**/BARE_AI.md');
     });
 
     it('should respect includeDefaults option', () => {
@@ -67,7 +67,7 @@ describe('FileExclusions', () => {
 
       expect(patterns).not.toContain('**/node_modules/**');
       expect(patterns).not.toContain('**/.git/**');
-      expect(patterns).not.toContain('**/GEMINI.md');
+      expect(patterns).not.toContain('**/BARE_AI.md');
       expect(patterns).toHaveLength(0);
     });
 
@@ -100,8 +100,8 @@ describe('FileExclusions', () => {
         includeDynamicPatterns: false,
       });
 
-      expect(patternsWithDynamic).toContain('**/GEMINI.md');
-      expect(patternsWithoutDynamic).not.toContain('**/GEMINI.md');
+      expect(patternsWithDynamic).toContain('**/BARE_AI.md');
+      expect(patternsWithoutDynamic).not.toContain('**/BARE_AI.md');
     });
   });
 
@@ -113,7 +113,7 @@ describe('FileExclusions', () => {
       // Should include all default patterns
       expect(patterns).toContain('**/node_modules/**');
       expect(patterns).toContain('**/.git/**');
-      expect(patterns).toContain('**/GEMINI.md');
+      expect(patterns).toContain('**/BARE_AI.md');
 
       // Should include additional excludes
       expect(patterns).toContain('**/*.log');

@@ -37,7 +37,7 @@ import {
   buildUserSteeringHintPrompt,
   GeminiCliOperation,
   getPlanModeExitMessage,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type {
   Config,
   EditorType,
@@ -51,7 +51,7 @@ import type {
   ToolCallResponseInfo,
   GeminiErrorEventValue,
   RetryAttemptPayload,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import type {
   HistoryItem,

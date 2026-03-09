@@ -11,8 +11,8 @@ import {
   resolvePathCompletions,
   scanPathExecutables,
 } from './useShellCompletion.js';
-import type { FileSystemStructure } from '@google/gemini-cli-test-utils';
-import { createTmpDir, cleanupTmpDir } from '@google/gemini-cli-test-utils';
+import type { FileSystemStructure } from '@google/bare-ai-cli-test-utils';
+import { createTmpDir, cleanupTmpDir } from '@google/bare-ai-cli-test-utils';
 
 describe('useShellCompletion utilities', () => {
   describe('getTokenAtCursor', () => {

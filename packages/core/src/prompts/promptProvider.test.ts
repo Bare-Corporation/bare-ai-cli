@@ -35,8 +35,8 @@ describe('PromptProvider', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.stubEnv('GEMINI_SYSTEM_MD', '');
-    vi.stubEnv('GEMINI_WRITE_SYSTEM_MD', '');
+    vi.stubEnv('BARE_AI_SYSTEM_MD', '');
+    vi.stubEnv('BARE_AI_WRITE_SYSTEM_MD', '');
 
     mockConfig = {
       getToolRegistry: vi.fn().mockReturnValue({

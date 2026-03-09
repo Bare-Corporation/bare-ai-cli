@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from '@google/gemini-cli-core';
+import { AuthType } from '@bare-ai/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateAuthMethod } from './auth.js';
 
@@ -17,10 +17,10 @@ vi.mock('./settings.js', () => ({
 
 describe('validateAuthMethod', () => {
   beforeEach(() => {
-    vi.stubEnv('GEMINI_API_KEY', undefined);
+    vi.stubEnv('BARE_AI_API_KEY', undefined);
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', undefined);
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', undefined);
-    vi.stubEnv('GOOGLE_API_KEY', undefined);
+    vi.stubEnv('BARE_AI_API_KEY', undefined);
   });
 
   afterEach(() => {
@@ -41,18 +41,18 @@ describe('validateAuthMethod', () => {
       expected: null,
     },
     {
-      description: 'should return null for USE_GEMINI if GEMINI_API_KEY is set',
+      description: 'should return null for USE_GEMINI if BARE_AI_API_KEY is set',
       authType: AuthType.USE_GEMINI,
-      envs: { GEMINI_API_KEY: 'test-key' },
+      envs: { BARE_AI_API_KEY: 'test-key' },
       expected: null,
     },
     {
       description:
-        'should return an error message for USE_GEMINI if GEMINI_API_KEY is not set',
+        'should return an error message for USE_GEMINI if BARE_AI_API_KEY is not set',
       authType: AuthType.USE_GEMINI,
       envs: {},
       expected:
-        'When using Gemini API, you must specify the GEMINI_API_KEY environment variable.\n' +
+        'When using Gemini API, you must specify the BARE_AI_API_KEY environment variable.\n' +
         'Update your environment and try again (no reload needed if using .env)!',
     },
     {
@@ -67,9 +67,9 @@ describe('validateAuthMethod', () => {
     },
     {
       description:
-        'should return null for USE_VERTEX_AI if GOOGLE_API_KEY is set',
+        'should return null for USE_VERTEX_AI if BARE_AI_API_KEY is set',
       authType: AuthType.USE_VERTEX_AI,
-      envs: { GOOGLE_API_KEY: 'test-api-key' },
+      envs: { BARE_AI_API_KEY: 'test-api-key' },
       expected: null,
     },
     {
@@ -80,7 +80,7 @@ describe('validateAuthMethod', () => {
       expected:
         'When using Vertex AI, you must specify either:\n' +
         '• GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION environment variables.\n' +
-        '• GOOGLE_API_KEY environment variable (if using express mode).\n' +
+        '• BARE_AI_API_KEY environment variable (if using express mode).\n' +
         'Update your environment and try again (no reload needed if using .env)!',
     },
     {

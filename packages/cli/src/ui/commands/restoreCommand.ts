@@ -14,7 +14,7 @@ import {
   getTruncatedCheckpointNames,
   performRestore,
   type ToolCallData,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   type CommandContext,
   type SlashCommand,
@@ -116,7 +116,7 @@ async function restoreAction(
       } else if (action.type === 'load_history' && loadHistory) {
         loadHistory(action.history);
         if (action.clientHistory) {
-          config?.getGeminiClient()?.setHistory(action.clientHistory);
+          config?.getGeminiClient()?.setHistory(action.clientHistory as unknown[]);
         }
       }
     }

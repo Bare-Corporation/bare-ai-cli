@@ -47,7 +47,7 @@ describe('AgentRegistry Acknowledgement', () => {
 
   beforeEach(async () => {
     // Create a unique temp directory for each test
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gemini-cli-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bare-ai-cli-test-'));
 
     // Override GEMINI_CLI_HOME to point to the temp directory
     originalGeminiCliHome = process.env['GEMINI_CLI_HOME'];

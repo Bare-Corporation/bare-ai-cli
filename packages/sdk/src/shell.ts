@@ -8,7 +8,7 @@ import {
   ShellExecutionService,
   ShellTool,
   type Config as CoreConfig,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import type {
   AgentShell,
   AgentShellResult,
