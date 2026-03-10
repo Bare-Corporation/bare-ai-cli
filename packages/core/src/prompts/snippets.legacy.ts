@@ -145,8 +145,8 @@ ${renderUserMemory(userMemory)}
 export function renderPreamble(options?: PreambleOptions): string {
   if (!options) return '';
   return options.interactive
-    ? 'You are an interactive CLI agent specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.'
-    : 'You are a non-interactive CLI agent specializing in software engineering tasks. Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions and utilizing your available tools.';
+    ? 'You are bare-ai-cli, an interactive CLI agent specializing in software engineering tasks. Your primary goal is to help users safely and effectively.'
+    : 'You are bare-ai-cli, a non-interactive CLI agent specializing in software engineering tasks. Your primary goal is to help users safely and effectively.';
 }
 
 export function renderCoreMandates(options?: CoreMandatesOptions): string {

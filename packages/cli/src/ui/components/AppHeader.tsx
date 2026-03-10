@@ -22,10 +22,9 @@ interface AppHeaderProps {
   showDetails?: boolean;
 }
 
-const ICON = `▝▜▄  
-  ▝▜▄
- ▗▟▀ 
-▝▀    `;
+const ICON = `bare
+ -ai
+  cli`;
 
 export const AppHeader = ({ version, showDetails = true }: AppHeaderProps) => {
   const settings = useSettings();
@@ -55,7 +54,7 @@ export const AppHeader = ({ version, showDetails = true }: AppHeaderProps) => {
             <Box marginLeft={2} flexDirection="column">
               <Box>
                 <Text bold color={theme.text.primary}>
-                  Gemini CLI
+                  Bare AI CLI
                 </Text>
                 <Text color={theme.text.secondary}> v{version}</Text>
               </Box>
@@ -74,10 +73,10 @@ export const AppHeader = ({ version, showDetails = true }: AppHeaderProps) => {
             <ThemedGradient>{ICON}</ThemedGradient>
           </Box>
           <Box marginLeft={2} flexDirection="column">
-            {/* Line 1: Gemini CLI vVersion [Updating] */}
+            {/* Line 1: Bare AI CLI vVersion [Updating] */}
             <Box>
               <Text bold color={theme.text.primary}>
-                Gemini CLI
+                Bare AI CLI
               </Text>
               <Text color={theme.text.secondary}> v{version}</Text>
               {updateInfo && (

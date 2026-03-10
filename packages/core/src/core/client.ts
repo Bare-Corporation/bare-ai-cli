@@ -1035,7 +1035,7 @@ export class GeminiClient {
         );
 
 
-      const apiCall = async () => { // Make it async
+      const apiCall = async () => {
         // Map contents to a single prompt string
         const newPrompt = contents.map(content => {
           const textParts = (content.parts ?? [])
@@ -1043,7 +1043,7 @@ export class GeminiClient {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
             .map(part => (part as { text: string }).text)
             .join('');
-          return textParts; // role prefix removed to avoid unused var
+          return textParts;
         }).join('\n');
 
         // Call BareAiClient.generateContent

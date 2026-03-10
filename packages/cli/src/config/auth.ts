@@ -17,9 +17,13 @@ export function validateAuthMethod(authMethod: string): string | null {
   }
 
   if (authMethod === AuthType.USE_GEMINI) {
+    // If a custom endpoint is set (local AI), no API key is required
+    if (process.env['BARE_AI_ENDPOINT']) {
+      return null;
+    }
     if (!process.env['BARE_AI_API_KEY']) {
       return (
-        'When using Gemini API, you must specify the BARE_AI_API_KEY environment variable.\n' +
+        'Please set BARE_AI_API_KEY (for cloud APIs) or BARE_AI_ENDPOINT (for local AI).\n' +
         'Update your environment and try again (no reload needed if using .env)!'
       );
     }

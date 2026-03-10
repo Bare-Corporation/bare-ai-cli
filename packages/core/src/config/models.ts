@@ -142,9 +142,9 @@ export function resolveClassifierModel(
 export function getDisplayString(model: string) {
   switch (model) {
     case PREVIEW_GEMINI_MODEL_AUTO:
-      return 'Auto (Gemini 3)';
+      return 'Auto (Bare AI)';
     case DEFAULT_GEMINI_MODEL_AUTO:
-      return 'Auto (Gemini 2.5)';
+      return 'Auto (Bare AI)';
     case GEMINI_MODEL_ALIAS_PRO:
       return PREVIEW_GEMINI_MODEL;
     case GEMINI_MODEL_ALIAS_FLASH:
