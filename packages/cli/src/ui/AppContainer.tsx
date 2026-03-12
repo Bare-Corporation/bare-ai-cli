@@ -996,7 +996,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     historyManager.addItem(
       {
         type: MessageType.INFO,
-        text: 'Refreshing hierarchical memory (GEMINI.md or other context files)...',
+        text: 'Refreshing hierarchical memory (BARE_AI.md or other context files)...',
       },
       Date.now(),
     );

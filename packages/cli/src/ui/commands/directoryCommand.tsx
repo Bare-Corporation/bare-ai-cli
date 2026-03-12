@@ -46,7 +46,7 @@ async function finishAddingDirectories(
       }
       addItem({
         type: MessageType.INFO,
-        text: `Successfully added GEMINI.md files from the following directories if there are:\n- ${added.join('\n- ')}`,
+        text: `Successfully added BARE_AI.md files from the following directories if there are:\n- ${added.join('\n- ')}`,
       });
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
