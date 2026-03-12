@@ -41,15 +41,21 @@ export async function initializeApp(
   settings: LoadedSettings,
 ): Promise<InitializationResult> {
   const authHandle = startupProfiler.start('authenticate');
+  // When BARE_AI_ENDPOINT is set, auto-select auth type — skip dialog
+  const effectiveAuthType = process.env['BARE_AI_ENDPOINT']
+    ? (getAuthTypeFromEnv() ?? AuthType.USE_GEMINI)
+    : settings.merged.security.auth.selectedType;
+
   const { authError, accountSuspensionInfo } = await performInitialAuth(
     config,
-    settings.merged.security.auth.selectedType,
+    effectiveAuthType,
   );
   authHandle?.end();
   const themeError = validateTheme(settings);
 
   const shouldOpenAuthDialog =
-    settings.merged.security.auth.selectedType === undefined || !!authError;
+    !process.env['BARE_AI_ENDPOINT'] &&
+    (settings.merged.security.auth.selectedType === undefined || !!authError);
 
   logCliConfiguration(
     config,
