@@ -73,6 +73,17 @@ export class ModelRouterService {
    * @returns A promise that resolves to a RoutingDecision.
    */
   async route(context: RoutingContext): Promise<RoutingDecision> {
+    // Short-circuit all Google routing when a custom endpoint is configured
+    if (process.env['BARE_AI_ENDPOINT']) {
+      return {
+        model: process.env['BARE_AI_MODEL'] ?? 'default',
+        metadata: {
+          source: 'bare-ai-override',
+          reasoning: 'BARE_AI_ENDPOINT is set — bypassing Google routing',
+          latencyMs: 0,
+        },
+      };
+    }
     const startTime = Date.now();
     let decision: RoutingDecision;
 

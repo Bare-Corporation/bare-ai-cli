@@ -717,6 +717,36 @@ export class GeminiClient {
     // Update tools with the final modelId to ensure model-dependent descriptions are used.
     await this.setTools(modelToUse);
 
+    // --- BareAiClient intercept: bypass Google SDK when BARE_AI_ENDPOINT is set ---
+    if (process.env['BARE_AI_ENDPOINT'] && this.aiClient) {
+      try {
+        const promptText = (Array.isArray(request) ? request : [request])
+          .map((p: unknown) => {
+            if (typeof p === 'string') return p;
+            if (p && typeof p === 'object' && 'text' in p) return (p as { text: string }).text;
+            return '';
+          })
+          .join('\n');
+
+        const responseText = await this.aiClient.generateContent(
+          promptText,
+          this.messageHistory,
+        );
+
+        this.getChat().addHistory(createUserContent(request));
+        this.getChat().addHistory({ role: 'model', parts: [{ text: responseText }] });
+        this.messageHistory.push({ role: 'user', content: promptText });
+        this.messageHistory.push({ role: 'assistant', content: responseText });
+
+        yield { type: GeminiEventType.Content, value: responseText, traceId: prompt_id };
+        yield { type: GeminiEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
+      } catch (err) {
+        yield { type: GeminiEventType.Error, value: { error: err } };
+      }
+      return turn;
+    }
+    // --- end BareAiClient intercept ---
+
     const resultStream = turn.run(
       modelConfigKey,
       request,
