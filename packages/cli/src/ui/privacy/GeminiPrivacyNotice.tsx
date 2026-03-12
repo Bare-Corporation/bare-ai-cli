@@ -27,17 +27,17 @@ export const GeminiPrivacyNotice = ({ onExit }: GeminiPrivacyNoticeProps) => {
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Text bold color={theme.text.accent}>
-        Gemini API Key Notice
+        Bare AI API Key Notice
       </Text>
       <Newline />
       <Text color={theme.text.primary}>
-        By using the Gemini API<Text color={theme.text.link}>[1]</Text>, Google
+        By using the Bare AI API<Text color={theme.text.link}>[1]</Text>, Google
         AI Studio
         <Text color={theme.status.error}>[2]</Text>, and the other Google
         developer services that reference these terms (collectively, the
         &quot;APIs&quot; or &quot;Services&quot;), you are agreeing to Google
         APIs Terms of Service (the &quot;API Terms&quot;)
-        <Text color={theme.status.success}>[3]</Text>, and the Gemini API
+        <Text color={theme.status.success}>[3]</Text>, and the Bare AI API
         Additional Terms of Service (the &quot;Additional Terms&quot;)
         <Text color={theme.text.accent}>[4]</Text>.
       </Text>

@@ -16,7 +16,7 @@ import {
 } from '@bare-ai/core';
 
 /**
- * Supported image file extensions based on Gemini API.
+ * Supported image file extensions based on Bare AI API.
  * See: https://ai.google.dev/gemini-api/docs/image-understanding
  */
 export const IMAGE_EXTENSIONS = [

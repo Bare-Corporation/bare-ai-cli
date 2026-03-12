@@ -85,7 +85,7 @@ export function isTerminalPasteTrusted(
 ): boolean {
   // Ideally we could trust all VSCode family terminals as well but it appears
   // we cannot as Cursor users on windows reported being impacted by this
-  // issue (https://github.com/google-gemini/gemini-cli/issues/3763).
+  // issue (https://github.com/google-gemini/bare-ai-cli/issues/3763).
   return kittyProtocolSupported;
 }
 

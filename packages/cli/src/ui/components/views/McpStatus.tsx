@@ -57,7 +57,7 @@ export const McpStatus: React.FC<McpStatusProps> = ({
         <Text>
           Please view MCP documentation in your browser:{' '}
           <Text color={theme.text.link}>
-            https://goo.gle/gemini-cli-docs-mcp
+            https://goo.gle/bare-ai-cli-docs-mcp
           </Text>{' '}
           or use the cli /docs command
         </Text>

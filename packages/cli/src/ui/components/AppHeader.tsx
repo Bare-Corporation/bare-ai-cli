@@ -22,9 +22,9 @@ interface AppHeaderProps {
   showDetails?: boolean;
 }
 
-const ICON = `bare
- -ai
-  cli`;
+const ICON = `bare-ai
+  -cli
+    ///`;
 
 export const AppHeader = ({ version, showDetails = true }: AppHeaderProps) => {
   const settings = useSettings();
