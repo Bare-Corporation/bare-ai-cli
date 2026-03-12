@@ -46,7 +46,7 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({ config }) => {
           {authType === AuthType.LOGIN_WITH_GOOGLE ? (
             <Text>{email ?? 'Logged in with Google'}</Text>
           ) : (
-            `Authenticated with ${authType}`
+            `Authenticated with ${authType === AuthType.USE_GEMINI ? 'bare-ai-key' : authType}`
           )}
         </Text>
         <Text color={theme.text.secondary}> /auth</Text>
