@@ -13,6 +13,8 @@ import {
   StartSessionEvent,
   logCliConfiguration,
   startupProfiler,
+  AuthType,
+  getAuthTypeFromEnv,
 } from '@bare-ai/core';
 import { type LoadedSettings } from '../config/settings.js';
 import { performInitialAuth } from './auth.js';
