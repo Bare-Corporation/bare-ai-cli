@@ -120,7 +120,7 @@ export class GeminiAgent {
       },
       {
         id: AuthType.USE_GEMINI,
-        name: 'Gemini API key',
+        name: 'Bare AI API key',
         description: 'Use an API key with Gemini Developer API',
         _meta: {
           'api-key': {
@@ -153,7 +153,7 @@ export class GeminiAgent {
       authMethods,
       agentInfo: {
         name: 'bare-ai-cli',
-        title: 'Gemini CLI',
+        title: 'Bare AI CLI',
         version,
       },
       agentCapabilities: {
@@ -261,14 +261,14 @@ export class GeminiAgent {
       );
       isAuthenticated = true;
 
-      // Extra validation for Gemini API key
+      // Extra validation for Bare AI API key
       const contentGeneratorConfig = config.getContentGeneratorConfig();
       if (
         authType === AuthType.USE_GEMINI &&
         (!contentGeneratorConfig || !contentGeneratorConfig.apiKey)
       ) {
         isAuthenticated = false;
-        authErrorMessage = 'Gemini API key is missing or not configured.';
+        authErrorMessage = 'Bare AI API key is missing or not configured.';
       }
     } catch (e) {
       isAuthenticated = false;
@@ -1590,7 +1590,7 @@ function buildAvailableModels(
       value: DEFAULT_GEMINI_MODEL_AUTO,
       title: getDisplayString(DEFAULT_GEMINI_MODEL_AUTO),
       description:
-        'Let Gemini CLI decide the best model for the task: gemini-2.5-pro, gemini-2.5-flash',
+        'Let Bare AI CLI decide the best model for the task: gemini-2.5-pro, gemini-2.5-flash',
     },
   ];
 
@@ -1599,8 +1599,8 @@ function buildAvailableModels(
       value: PREVIEW_GEMINI_MODEL_AUTO,
       title: getDisplayString(PREVIEW_GEMINI_MODEL_AUTO),
       description: useGemini31
-        ? 'Let Gemini CLI decide the best model for the task: gemini-3.1-pro, gemini-3-flash'
-        : 'Let Gemini CLI decide the best model for the task: gemini-3-pro, gemini-3-flash',
+        ? 'Let Bare AI CLI decide the best model for the task: gemini-3.1-pro, gemini-3-flash'
+        : 'Let Bare AI CLI decide the best model for the task: gemini-3-pro, gemini-3-flash',
     });
   }
 

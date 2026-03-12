@@ -36,7 +36,7 @@ export async function waitForUpdateCompletion(
   }
 
   debugLogger.log(
-    '\nGemini CLI is waiting for a background update to complete before restarting...',
+    '\nBare AI CLI is waiting for a background update to complete before restarting...',
   );
 
   return new Promise((resolve) => {

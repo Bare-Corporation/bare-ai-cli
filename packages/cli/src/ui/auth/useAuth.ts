@@ -29,7 +29,7 @@ export function validateAuthMethodWithSettings(
   if (settings.merged.security.auth.useExternal) {
     return null;
   }
-  // If using Gemini API key, we don't validate it here as we might need to prompt for it.
+  // If using Bare AI API key, we don't validate it here as we might need to prompt for it.
   if (authType === AuthType.USE_GEMINI) {
     return null;
   }
@@ -95,7 +95,7 @@ export const useAuthCommand = (
       if (!authType) {
         if (process.env['BARE_AI_API_KEY']) {
           onAuthError(
-            'Existing API key detected (BARE_AI_API_KEY). Select "Gemini API Key" option to use it.',
+            'Existing API key detected (BARE_AI_API_KEY). Select "Bare AI API Key" option to use it.',
           );
         } else {
           onAuthError('No authentication method selected.');

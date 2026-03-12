@@ -788,7 +788,7 @@ export const AppContainer = (props: AppContainerProps) => {
         ) {
           writeToStdout(`
 ----------------------------------------------------------------
-Logging in with Google... Restarting Gemini CLI to continue.
+Logging in with Google... Restarting Bare AI CLI to continue.
 ----------------------------------------------------------------
           `);
           await relaunchApp();
@@ -852,7 +852,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       settings.merged.security.auth.selectedType &&
       !settings.merged.security.auth.useExternal
     ) {
-      // We skip validation for Gemini API key here because it might be stored
+      // We skip validation for Bare AI API key here because it might be stored
       // in the keychain, which we can't check synchronously.
       // The useAuth hook handles validation for this case.
       if (settings.merged.security.auth.selectedType === AuthType.USE_GEMINI) {
@@ -1887,7 +1887,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       lastTitleRef.current = paddedTitle;
       stdout.write(`\x1b]0;${paddedTitle}\x07`);
     }
-    // Note: We don't need to reset the window title on exit because Gemini CLI is already doing that elsewhere
+    // Note: We don't need to reset the window title on exit because Bare AI CLI is already doing that elsewhere
   }, [
     streamingState,
     thought,
