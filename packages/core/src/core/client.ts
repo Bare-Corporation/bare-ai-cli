@@ -731,9 +731,9 @@ export class GeminiClient {
         // Convert Google FunctionDeclarations to OpenAI tool format
         const toolRegistry = this.config.getToolRegistry();
         const functionDeclarations = toolRegistry.getFunctionDeclarations();
-        const openAiTools = (functionDeclarations as unknown as { name: string; description?: string; parameters?: unknown }[]).map((fd) => ({
+        const openAiTools = (functionDeclarations as unknown as { name: string; description?: string; parametersJsonSchema?: unknown }[]).map((fd) => ({
           type: 'function' as const,
-          function: { name: fd.name, description: fd.description, parameters: fd.parameters },
+          function: { name: fd.name, description: fd.description, parameters: fd.parametersJsonSchema },
         }));
 
         // Debug: log raw FunctionDeclarations to find parameters property
