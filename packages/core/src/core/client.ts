@@ -794,8 +794,8 @@ export class GeminiClient {
             let displayResult = toolResult;
             try {
               const parsed = JSON.parse(toolResult) as Record<string, unknown>;
-              if (typeof parsed.returnDisplay === 'string') displayResult = parsed.returnDisplay;
-              else if (typeof parsed.llmContent === 'string') displayResult = parsed.llmContent;
+              if (typeof parsed['returnDisplay'] === 'string') displayResult = parsed['returnDisplay'] as string;
+              else if (typeof parsed['llmContent'] === 'string') displayResult = parsed['llmContent'] as string;
             } catch { /* not JSON, use as-is */ }
             yield { type: GeminiEventType.Content, value: displayResult + '\n', traceId: prompt_id };
           }
