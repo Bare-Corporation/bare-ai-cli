@@ -753,7 +753,7 @@ export class GeminiClient {
             let toolArgs: Record<string, unknown> = {};
             try { toolArgs = JSON.parse(toolCall.function.arguments) as Record<string, unknown>; } catch { toolArgs = {}; }
 
-            yield { type: GeminiEventType.Content, value: `\n[Tool: ${toolName}]\n`, traceId: prompt_id };
+            yield { type: GeminiEventType.Content, value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}\n`, traceId: prompt_id };
 
             let toolResult = '';
             try {
