@@ -37,15 +37,33 @@ export class BareAiClient {
   private endpoint: string;
   private apiKey: string;
   private model: string;
+  private systemPrompt: string | null;
 
   constructor() {
     this.endpoint = process.env['BARE_AI_ENDPOINT'] ?? 'http://localhost:11434/v1/chat/completions';
     this.apiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
     this.model = process.env['BARE_AI_MODEL'] ?? 'default';
+    this.systemPrompt = this.loadConstitution();
+  }
+
+  private loadConstitution(): string | null {
+    const constitutionPath = process.env['BARE_AI_CONSTITUTION']
+      ?? `${process.env['HOME'] ?? '~'}/.bare-ai/constitution.md`;
+    try {
+      const content = require('fs').readFileSync(constitutionPath, 'utf8');
+      process.stderr.write(`[bare-ai] Constitution loaded from ${constitutionPath}\n`);
+      return content;
+    } catch {
+      return null;
+    }
   }
 
   private async callApi(messages: Message[], tools?: OpenAITool[]): Promise<GenerateResult> {
-    const body: Record<string, unknown> = { model: this.model, messages };
+    // Prepend system prompt if constitution exists
+    const allMessages: Message[] = this.systemPrompt
+      ? [{ role: 'system', content: this.systemPrompt }, ...messages]
+      : messages;
+    const body: Record<string, unknown> = { model: this.model, messages: allMessages };
     if (tools && tools.length > 0) {
       body['tools'] = tools;
       body['tool_choice'] = 'auto';
