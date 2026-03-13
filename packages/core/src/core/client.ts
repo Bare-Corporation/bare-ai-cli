@@ -736,9 +736,8 @@ export class GeminiClient {
           function: { name: fd.name, description: fd.description, parameters: fd.parametersJsonSchema },
         }));
 
-        // Debug: log raw FunctionDeclarations to find parameters property
-        process.stderr.write('[bare-ai] raw declarations: ' + JSON.stringify(functionDeclarations.slice(0,2), null, 2) + '\n');
-        process.stderr.write('[bare-ai] tools being sent: ' + JSON.stringify(openAiTools.slice(0,2), null, 2) + '\n');
+        // Debug: log all tool names
+        process.stderr.write('[bare-ai] all tool names: ' + JSON.stringify(openAiTools.map((t) => t.function.name)) + '\n');
 
         // Agentic loop: keep calling until no more tool calls
         let loopHistory = [...this.messageHistory];
