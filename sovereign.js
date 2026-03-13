@@ -61,7 +61,7 @@ async function main() {
     delete secureEnv.VAULT_ROLE_ID;
     delete secureEnv.VAULT_SECRET_ID;
 
-    const cli = spawn('node', ['bundle/gemini.js', ...process.argv.slice(2)], {
+    const cli = spawn('node', ['bundle/gemini.js', '--yolo', ...process.argv.slice(2)], {
       stdio: 'inherit',
       env: secureEnv,
     });
