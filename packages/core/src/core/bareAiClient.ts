@@ -1,16 +1,36 @@
 /**
  * BareAiClient - drop-in replacement for GeminiClient backend.
  * Talks to any OpenAI-compatible chat completions endpoint.
- *
- * Env vars:
- *   BARE_AI_ENDPOINT  (default: http://localhost:11434/v1/chat/completions)
- *   BARE_AI_API_KEY   (default: none)
- *   BARE_AI_MODEL     (default: default)
  */
-
 export interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
+  role: 'user' | 'assistant' | 'system' | 'tool';
+  content: string | null;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+  name?: string;
+}
+
+export interface OpenAITool {
+  type: 'function';
+  function: {
+    name: string;
+    description?: string;
+    parameters?: unknown;
+  };
+}
+
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export interface GenerateResult {
+  text: string;
+  toolCalls?: ToolCall[];
 }
 
 export class BareAiClient {
@@ -19,54 +39,70 @@ export class BareAiClient {
   private model: string;
 
   constructor() {
-    this.endpoint =
-      process.env['BARE_AI_ENDPOINT'] ??
-      'http://localhost:11434/v1/chat/completions';
+    this.endpoint = process.env['BARE_AI_ENDPOINT'] ?? 'http://localhost:11434/v1/chat/completions';
     this.apiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
     this.model = process.env['BARE_AI_MODEL'] ?? 'default';
   }
 
-  async generateContent(
-    prompt: string,
-    history: Message[] = [],
-  ): Promise<string> {
-    const messages: Message[] = [
-      ...history,
-      { role: 'user', content: prompt },
-    ];
-
+  private async callApi(messages: Message[], tools?: OpenAITool[]): Promise<GenerateResult> {
+    const body: Record<string, unknown> = { model: this.model, messages };
+    if (tools && tools.length > 0) {
+      body['tools'] = tools;
+      body['tool_choice'] = 'auto';
+    }
     const response = await fetch(this.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`,
       },
-      body: JSON.stringify({
-        model: this.model,
-        messages,
-      }),
+      body: JSON.stringify(body),
     });
-
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(
-        `BareAiClient request failed (${response.status}): ${text}`,
-      );
+      throw new Error(`BareAiClient request failed (${response.status}): ${text}`);
     }
+    const data = await response.json() as {
+      choices?: Array<{ message?: { content?: string | null; tool_calls?: ToolCall[] } }>;
+    };
+    const message = data?.choices?.[0]?.message;
+    return {
+      text: message?.content ?? '',
+      toolCalls: message?.tool_calls?.length ? message.tool_calls : undefined,
+    };
+  }
 
-    const data: { choices?: Array<{ message?: { content?: string } }> } = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  async generateContent(
+    prompt: string,
+    history: Message[] = [],
+    tools?: OpenAITool[],
+  ): Promise<GenerateResult> {
+    const messages: Message[] = [...history, { role: 'user', content: prompt }];
+    return this.callApi(messages, tools);
+  }
 
-    return data?.choices?.[0]?.message?.content ?? '';
+  async sendToolResult(
+    history: Message[],
+    toolCallId: string,
+    toolName: string,
+    result: string,
+    tools?: OpenAITool[],
+  ): Promise<GenerateResult> {
+    const messages: Message[] = [
+      ...history,
+      { role: 'tool', content: result, tool_call_id: toolCallId, name: toolName },
+    ];
+    return this.callApi(messages, tools);
   }
 
   getChat() {
     const history: Message[] = [];
     return {
       sendMessage: async (prompt: string): Promise<string> => {
-        const text = await this.generateContent(prompt, history);
+        const result = await this.generateContent(prompt, history);
         history.push({ role: 'user', content: prompt });
-        history.push({ role: 'assistant', content: text });
-        return text;
+        history.push({ role: 'assistant', content: result.text });
+        return result.text;
       },
       getHistory: (): Message[] => [...history],
     };

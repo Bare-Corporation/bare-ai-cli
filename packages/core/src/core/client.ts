@@ -728,17 +728,72 @@ export class GeminiClient {
           })
           .join('\n');
 
-        const responseText = await this.aiClient.generateContent(
-          promptText,
-          this.messageHistory,
-        );
+        // Convert Google FunctionDeclarations to OpenAI tool format
+        const toolRegistry = this.config.getToolRegistry();
+        const functionDeclarations = toolRegistry.getFunctionDeclarations();
+        const openAiTools = (functionDeclarations as unknown as { name: string; description?: string; parameters?: unknown }[]).map((fd) => ({
+          type: 'function' as const,
+          function: { name: fd.name, description: fd.description, parameters: fd.parameters },
+        }));
 
-        this.getChat().addHistory(createUserContent(request));
-        this.getChat().addHistory({ role: 'model', parts: [{ text: responseText }] });
+        // Agentic loop: keep calling until no more tool calls
+        let loopHistory = [...this.messageHistory];
+        let currentResult = await this.aiClient.generateContent(promptText, loopHistory, openAiTools);
+        loopHistory.push({ role: 'user', content: promptText });
+
+        const MAX_ITERATIONS = 10;
+        let iteration = 0;
+
+        while (currentResult.toolCalls && currentResult.toolCalls.length > 0 && iteration < MAX_ITERATIONS) {
+          iteration++;
+          loopHistory.push({ role: 'assistant', content: currentResult.text || null, tool_calls: currentResult.toolCalls });
+
+          for (const toolCall of currentResult.toolCalls) {
+            const toolName = toolCall.function.name;
+            let toolArgs: Record<string, unknown> = {};
+            try { toolArgs = JSON.parse(toolCall.function.arguments) as Record<string, unknown>; } catch { toolArgs = {}; }
+
+            yield { type: GeminiEventType.Content, value: `\n[Tool: ${toolName}]\n`, traceId: prompt_id };
+
+            let toolResult = '';
+            try {
+              const tool = toolRegistry.getTool(toolName);
+              if (tool) {
+                const invocation = tool.build(toolArgs as object);
+                const result = await invocation.execute(linkedSignal);
+                toolResult = typeof result === 'string' ? result : JSON.stringify(result);
+              } else {
+                toolResult = `Tool ${toolName} not found`;
+              }
+            } catch (toolErr) {
+              toolResult = `Tool execution error: ${String(toolErr)}`;
+            }
+
+            loopHistory.push({ role: 'tool', content: toolResult, tool_call_id: toolCall.id, name: toolName });
+            yield { type: GeminiEventType.Content, value: toolResult + '\n', traceId: prompt_id };
+          }
+
+          // Send all tool results back - rebuild from full loopHistory
+          const lastToolCall = currentResult.toolCalls[currentResult.toolCalls.length - 1]!;
+          currentResult = await this.aiClient.sendToolResult(
+            loopHistory.slice(0, -1),
+            lastToolCall.id,
+            lastToolCall.function.name,
+            loopHistory[loopHistory.length - 1]!.content as string,
+            openAiTools,
+          );
+        }
+
+        const finalText = currentResult.text || '';
+        if (finalText) {
+          yield { type: GeminiEventType.Content, value: finalText, traceId: prompt_id };
+        }
+
         this.messageHistory.push({ role: 'user', content: promptText });
-        this.messageHistory.push({ role: 'assistant', content: responseText });
+        this.messageHistory.push({ role: 'assistant', content: finalText });
+        this.getChat().addHistory(createUserContent(request));
+        this.getChat().addHistory({ role: 'model', parts: [{ text: finalText }] });
 
-        yield { type: GeminiEventType.Content, value: responseText, traceId: prompt_id };
         yield { type: GeminiEventType.Finished, value: { reason: undefined, usageMetadata: undefined } };
       } catch (err) {
         yield { type: GeminiEventType.Error, value: { error: err } };
