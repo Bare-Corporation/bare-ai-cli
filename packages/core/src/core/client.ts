@@ -736,6 +736,9 @@ export class GeminiClient {
           function: { name: fd.name, description: fd.description, parameters: fd.parameters },
         }));
 
+        // Debug: log the tool schema being sent
+        process.stderr.write('[bare-ai] tools being sent: ' + JSON.stringify(openAiTools.slice(0,2), null, 2) + '\n');
+
         // Agentic loop: keep calling until no more tool calls
         let loopHistory = [...this.messageHistory];
         let currentResult = await this.aiClient.generateContent(promptText, loopHistory, openAiTools);
