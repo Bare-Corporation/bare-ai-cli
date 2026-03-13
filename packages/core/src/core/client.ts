@@ -736,8 +736,25 @@ export class GeminiClient {
           function: { name: fd.name, description: fd.description, parameters: fd.parametersJsonSchema },
         }));
 
-        // Debug: log all tool names
-        process.stderr.write('[bare-ai] all tool names: ' + JSON.stringify(openAiTools.map((t) => t.function.name)) + '\n');
+        // Ensure run_shell_command is always available regardless of registry/skills filtering
+        if (!openAiTools.some((t) => t.function.name === 'run_shell_command')) {
+          openAiTools.push({
+            type: 'function' as const,
+            function: {
+              name: 'run_shell_command',
+              description: 'Runs a shell command and returns stdout, stderr, and exit code.',
+              parameters: {
+                type: 'object' as const,
+                properties: {
+                  command: { type: 'string', description: 'The shell command to execute' },
+                  description: { type: 'string', description: 'Brief description of what the command does' },
+                  is_background: { type: 'boolean', description: 'Run in background, default false' },
+                },
+                required: ['command'],
+              },
+            },
+          });
+        }
 
         // Agentic loop: keep calling until no more tool calls
         let loopHistory = [...this.messageHistory];
