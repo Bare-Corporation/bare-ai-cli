@@ -790,7 +790,14 @@ export class GeminiClient {
             }
 
             loopHistory.push({ role: 'tool', content: toolResult, tool_call_id: toolCall.id, name: toolName });
-            yield { type: GeminiEventType.Content, value: toolResult + '\n', traceId: prompt_id };
+            // Extract human-readable display from tool result JSON if available
+            let displayResult = toolResult;
+            try {
+              const parsed = JSON.parse(toolResult) as Record<string, unknown>;
+              if (typeof parsed.returnDisplay === 'string') displayResult = parsed.returnDisplay;
+              else if (typeof parsed.llmContent === 'string') displayResult = parsed.llmContent;
+            } catch { /* not JSON, use as-is */ }
+            yield { type: GeminiEventType.Content, value: displayResult + '\n', traceId: prompt_id };
           }
 
           // Send all tool results back - rebuild from full loopHistory
