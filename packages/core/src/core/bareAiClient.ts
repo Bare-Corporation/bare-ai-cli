@@ -69,7 +69,7 @@ export class BareAiClient {
       body['tool_choice'] = 'auto';
     }
     const controller = new AbortController();
-    const timeout = 30000; // 30 seconds
+    const timeout = 120000; // 30 seconds
 
     const timeoutId = setTimeout(() => {
       controller.abort();
