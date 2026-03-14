@@ -772,6 +772,14 @@ export class GeminiClient {
             const toolName = toolCall.function.name;
             let toolArgs: Record<string, unknown> = {};
             try { toolArgs = JSON.parse(toolCall.function.arguments) as Record<string, unknown>; } catch { toolArgs = {}; }
+            // Coerce command array to string (some models send ["ping","-c","4"] instead of "ping -c 4")
+            if (Array.isArray(toolArgs['command'])) {
+              toolArgs['command'] = (toolArgs['command'] as string[]).join(' ');
+            }
+            // Coerce command array to string (some models send ["ping","-c","4"] instead of "ping -c 4")
+            if (Array.isArray(toolArgs['command'])) {
+              toolArgs['command'] = (toolArgs['command'] as string[]).join(' ');
+            }
 
             yield { type: GeminiEventType.Content, value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}\n`, traceId: prompt_id };
 
