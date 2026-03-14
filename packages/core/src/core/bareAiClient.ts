@@ -68,14 +68,33 @@ export class BareAiClient {
       body['tools'] = tools;
       body['tool_choice'] = 'auto';
     }
-    const response = await fetch(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timeout = 30000; // 30 seconds
+
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
+
+    try {
+      const response = await fetch(this.endpoint, {
+        signal: controller.signal,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      clearTimeout(timeoutId); // Clear the timeout if fetch completes successfully
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId); // Clear the timeout if fetch fails
+      if (error.name === 'AbortError') {
+        throw new Error(`BareAiClient request timed out after ${timeout / 1000} seconds.`);
+      }
+      throw error;
+    }
     if (!response.ok) {
       const text = await response.text();
       throw new Error(`BareAiClient request failed (${response.status}): ${text}`);
