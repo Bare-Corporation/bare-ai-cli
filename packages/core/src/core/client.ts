@@ -818,6 +818,7 @@ if (process.env['BARE_AI_ENDPOINT'] && this.aiClient) {
         // Execute the tool
         let toolResult = '';
         try {
+          const toolRegistry = this.config.getToolRegistry();
           const tool = toolRegistry.getTool(toolName);
           if (tool) {
             const invocation = tool.build(toolArgs as object);
