@@ -75,8 +75,9 @@ export class BareAiClient {
       controller.abort();
     }, timeout);
 
+    let response: Response;
     try {
-      const response = await fetch(this.endpoint, {
+      response = await fetch(this.endpoint, {
         signal: controller.signal,
         method: 'POST',
         headers: {
@@ -85,12 +86,10 @@ export class BareAiClient {
         },
         body: JSON.stringify(body),
       });
-
-      clearTimeout(timeoutId); // Clear the timeout if fetch completes successfully
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId); // Clear the timeout if fetch fails
-      if (error.name === 'AbortError') {
+      clearTimeout(timeoutId);
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new Error(`BareAiClient request timed out after ${timeout / 1000} seconds.`);
       }
       throw error;
