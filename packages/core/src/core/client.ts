@@ -129,6 +129,11 @@ export class GeminiClient {
     this.toolOutputMaskingService = new ToolOutputMaskingService();
     this.lastPromptId = this.config.getSessionId();
 
+    // ADD THIS: Initialize the intercept client immediately
+    if (process.env['BARE_AI_ENDPOINT']) {
+      this.aiClient = new BareAiClient();
+    }
+
     coreEvents.on(CoreEvent.ModelChanged, this.handleModelChanged);
   }
 
@@ -665,8 +670,10 @@ export class GeminiClient {
 
     if (this.config.getIdeMode() && !hasPendingToolCall) {
       const { contextParts, newIdeContext } = this.getIdeContextParts(
-        this.forceFullIdeContext || history.length === 0,
+        // CHANGE history.length to this.messageHistory.length
+        this.forceFullIdeContext || this.messageHistory.length === 0,
       );
+
       if (contextParts.length > 0) {
         this.getChat().addHistory({
           role: 'user',
