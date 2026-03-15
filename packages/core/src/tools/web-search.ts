@@ -1,7 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
- * Copyright 2-26 Cloud Integration Corporation 
+ * Copyright 2026 Cloud Integration Corporation 
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -118,6 +118,10 @@ class WebSearchToolInvocation extends BaseToolInvocation<
   // -------------------------------------------------------------------------
   // SearXNG backend — used when BARE_AI_SEARCH_URL is set
   // -------------------------------------------------------------------------
+  // Modified by Cloud Integration Corporation 2026
+  // Original Google Search backend replaced with sovereign SearXNG integration.
+  // Google fallback retained for non-sovereign deployments.
+  
   private async executeViaSearXNG(signal: AbortSignal): Promise<WebSearchToolResult> {
     const searxngUrl = process.env['BARE_AI_SEARCH_URL']!;
     const encoded = encodeURIComponent(this.params.query);
