@@ -160,12 +160,13 @@ export class BareAiClient {
       model: this.model,
       messages: allMessages,
       stream: false,
-      temperature: 0.0,
+      temperature: 0.1,
     };
 
     if (tools && tools.length > 0) {
       body['tools'] = tools;
-      body['tool_choice'] = 'auto';
+      //Remove tool_choice entirely for Granite by commenting out auto
+      // body['tool_choice'] = 'auto';
     }
 
     logDebug('Sending Request Body:', body);
