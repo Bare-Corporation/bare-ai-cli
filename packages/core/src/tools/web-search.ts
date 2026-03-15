@@ -1,7 +1,33 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2-26 Cloud Integration Corporation 
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+############################################################
+#    ____ _                 _ _       _        ____        #
+#   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
+#  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
+#  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
+#   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
+#                                                          #
+#  client.ts customized                                    #
+#  by Cloud Integration Corporation                        #
+############################################################
+*/
+
+/**
+ * Web Search Tool
+ *
+ * Search backend is selected at runtime via the BARE_AI_SEARCH_URL env var:
+ *   - If set, uses a local SearXNG instance (sovereign, no data leaves network)
+ *   - If unset, falls back to Google Search via the Gemini API (original behaviour)
+ *
+ * Set in your environment:
+ *   export BARE_AI_SEARCH_URL="http://localhost:8080"   # local SearXNG
+ *   export BARE_AI_SEARCH_URL="http://100.64.0.4:8080"  # remote SearXNG via Tailscale
  */
 
 import type { MessageBus } from '../confirmation-bus/message-bus.js';
@@ -15,7 +41,6 @@ import {
   type ToolResult,
 } from './tools.js';
 import { ToolErrorType } from './tool-error.js';
-
 import { getErrorMessage } from '../utils/errors.js';
 import { type Config } from '../config/config.js';
 import { getResponseText } from '../utils/partUtils.js';
@@ -31,29 +56,34 @@ interface GroundingChunkWeb {
 
 interface GroundingChunkItem {
   web?: GroundingChunkWeb;
-  // Other properties might exist if needed in the future
 }
 
 interface GroundingSupportSegment {
   startIndex: number;
   endIndex: number;
-  text?: string; // text is optional as per the example
+  text?: string;
 }
 
 interface GroundingSupportItem {
   segment?: GroundingSupportSegment;
   groundingChunkIndices?: number[];
-  confidenceScores?: number[]; // Optional as per example
+  confidenceScores?: number[];
+}
+
+interface SearXNGResult {
+  title: string;
+  url: string;
+  content: string;
+}
+
+interface SearXNGResponse {
+  results: SearXNGResult[];
 }
 
 /**
  * Parameters for the WebSearchTool.
  */
 export interface WebSearchToolParams {
-  /**
-   * The search query.
-   */
-
   query: string;
 }
 
@@ -81,99 +111,163 @@ class WebSearchToolInvocation extends BaseToolInvocation<
   }
 
   override getDescription(): string {
-    return `Searching the web for: "${this.params.query}"`;
+    const backend = process.env['BARE_AI_SEARCH_URL'] ? 'SearXNG' : 'Google';
+    return `Searching the web for: "${this.params.query}" (via ${backend})`;
   }
 
-  async execute(signal: AbortSignal): Promise<WebSearchToolResult> {
+  // -------------------------------------------------------------------------
+  // SearXNG backend — used when BARE_AI_SEARCH_URL is set
+  // -------------------------------------------------------------------------
+  private async executeViaSearXNG(signal: AbortSignal): Promise<WebSearchToolResult> {
+    const searxngUrl = process.env['BARE_AI_SEARCH_URL']!;
+    const encoded = encodeURIComponent(this.params.query);
+
+    const response = await fetch(
+      `${searxngUrl}/search?q=${encoded}&format=json`,
+      { signal },
+    );
+
+    if (!response.ok) {
+      throw new Error(`SearXNG returned HTTP ${response.status}`);
+    }
+
+    const rawData: unknown = await response.json();
+    if (
+      typeof rawData !== 'object' ||
+      rawData === null ||
+      !('results' in rawData) ||
+      !Array.isArray((rawData as { results: unknown }).results)
+    ) {
+      throw new Error('Unexpected response format from SearXNG');
+    }
+    const results = (rawData as SearXNGResponse).results;
+
+    if (!results || results.length === 0) {
+      return {
+        llmContent: `No search results found for query: "${this.params.query}"`,
+        returnDisplay: 'No results found.',
+      };
+    }
+
+    // Lean pruning: top 5 results, title + url + snippet only
+    const MAX_RESULTS = 5;
+    const trimmed = results.slice(0, MAX_RESULTS);
+
+    const formatted = trimmed
+      .map((r, i) => `[${i + 1}] ${r.title}\n    URL: ${r.url}\n    ${r.content}`)
+      .join('\n\n');
+
+    const sources: GroundingChunkItem[] = trimmed.map(r => ({
+      web: { uri: r.url, title: r.title },
+    }));
+
+    return {
+      llmContent: `Web search results for "${this.params.query}":\n\n${formatted}`,
+      returnDisplay: `Search results for "${this.params.query}" returned.`,
+      sources,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Google / Gemini backend — original behaviour, used as fallback
+  // -------------------------------------------------------------------------
+  private async executeViaGoogle(signal: AbortSignal): Promise<WebSearchToolResult> {
     const geminiClient = this.config.getGeminiClient();
 
-    try {
-      const response = await geminiClient.generateContent(
-        { model: 'web-search' },
-        [{ role: 'user', parts: [{ text: this.params.query }] }],
-        signal,
-        LlmRole.UTILITY_TOOL,
-      );
+    const response = await geminiClient.generateContent(
+      { model: 'web-search' },
+      [{ role: 'user', parts: [{ text: this.params.query }] }],
+      signal,
+      LlmRole.UTILITY_TOOL,
+    );
 
-      const responseText = getResponseText(response);
-      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-      const sources = groundingMetadata?.groundingChunks as
-        | GroundingChunkItem[]
-        | undefined;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const groundingSupports = groundingMetadata?.groundingSupports as
-        | GroundingSupportItem[]
-        | undefined;
+    const responseText = getResponseText(response);
+    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+    const sources = groundingMetadata?.groundingChunks as GroundingChunkItem[] | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    const groundingSupports = groundingMetadata?.groundingSupports as GroundingSupportItem[] | undefined;
 
-      if (!responseText || !responseText.trim()) {
-        return {
-          llmContent: `No search results or information found for query: "${this.params.query}"`,
-          returnDisplay: 'No information found.',
-        };
-      }
+    if (!responseText || !responseText.trim()) {
+      return {
+        llmContent: `No search results or information found for query: "${this.params.query}"`,
+        returnDisplay: 'No information found.',
+      };
+    }
 
-      let modifiedResponseText = responseText;
-      const sourceListFormatted: string[] = [];
+    let modifiedResponseText = responseText;
+    const sourceListFormatted: string[] = [];
 
-      if (sources && sources.length > 0) {
-        sources.forEach((source: GroundingChunkItem, index: number) => {
-          const title = source.web?.title || 'Untitled';
-          const uri = source.web?.uri || 'No URI';
-          sourceListFormatted.push(`[${index + 1}] ${title} (${uri})`);
+    if (sources && sources.length > 0) {
+      sources.forEach((source: GroundingChunkItem, index: number) => {
+        const title = source.web?.title || 'Untitled';
+        const uri = source.web?.uri || 'No URI';
+        sourceListFormatted.push(`[${index + 1}] ${title} (${uri})`);
+      });
+
+      if (groundingSupports && groundingSupports.length > 0) {
+        const insertions: Array<{ index: number; marker: string }> = [];
+        groundingSupports.forEach((support: GroundingSupportItem) => {
+          if (support.segment && support.groundingChunkIndices) {
+            const citationMarker = support.groundingChunkIndices
+              .map((chunkIndex: number) => `[${chunkIndex + 1}]`)
+              .join('');
+            insertions.push({
+              index: support.segment.endIndex,
+              marker: citationMarker,
+            });
+          }
         });
 
-        if (groundingSupports && groundingSupports.length > 0) {
-          const insertions: Array<{ index: number; marker: string }> = [];
-          groundingSupports.forEach((support: GroundingSupportItem) => {
-            if (support.segment && support.groundingChunkIndices) {
-              const citationMarker = support.groundingChunkIndices
-                .map((chunkIndex: number) => `[${chunkIndex + 1}]`)
-                .join('');
-              insertions.push({
-                index: support.segment.endIndex,
-                marker: citationMarker,
-              });
-            }
-          });
+        insertions.sort((a, b) => b.index - a.index);
 
-          // Sort insertions by index in descending order to avoid shifting subsequent indices
-          insertions.sort((a, b) => b.index - a.index);
-
-          // Use TextEncoder/TextDecoder since segment indices are UTF-8 byte positions
-          const encoder = new TextEncoder();
-          const responseBytes = encoder.encode(modifiedResponseText);
-          const parts: Uint8Array[] = [];
-          let lastIndex = responseBytes.length;
-          for (const ins of insertions) {
-            const pos = Math.min(ins.index, lastIndex);
-            parts.unshift(responseBytes.subarray(pos, lastIndex));
-            parts.unshift(encoder.encode(ins.marker));
-            lastIndex = pos;
-          }
-          parts.unshift(responseBytes.subarray(0, lastIndex));
-
-          // Concatenate all parts into a single buffer
-          const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
-          const finalBytes = new Uint8Array(totalLength);
-          let offset = 0;
-          for (const part of parts) {
-            finalBytes.set(part, offset);
-            offset += part.length;
-          }
-          modifiedResponseText = new TextDecoder().decode(finalBytes);
+        const encoder = new TextEncoder();
+        const responseBytes = encoder.encode(modifiedResponseText);
+        const parts: Uint8Array[] = [];
+        let lastIndex = responseBytes.length;
+        for (const ins of insertions) {
+          const pos = Math.min(ins.index, lastIndex);
+          parts.unshift(responseBytes.subarray(pos, lastIndex));
+          parts.unshift(encoder.encode(ins.marker));
+          lastIndex = pos;
         }
+        parts.unshift(responseBytes.subarray(0, lastIndex));
 
-        if (sourceListFormatted.length > 0) {
-          modifiedResponseText +=
-            '\n\nSources:\n' + sourceListFormatted.join('\n');
+        const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+        const finalBytes = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const part of parts) {
+          finalBytes.set(part, offset);
+          offset += part.length;
         }
+        modifiedResponseText = new TextDecoder().decode(finalBytes);
       }
 
-      return {
-        llmContent: `Web search results for "${this.params.query}":\n\n${modifiedResponseText}`,
-        returnDisplay: `Search results for "${this.params.query}" returned.`,
-        sources,
-      };
+      if (sourceListFormatted.length > 0) {
+        modifiedResponseText += '\n\nSources:\n' + sourceListFormatted.join('\n');
+      }
+    }
+
+    return {
+      llmContent: `Web search results for "${this.params.query}":\n\n${modifiedResponseText}`,
+      returnDisplay: `Search results for "${this.params.query}" returned.`,
+      sources,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Main entry point — routes to the appropriate backend
+  // -------------------------------------------------------------------------
+  async execute(signal: AbortSignal): Promise<WebSearchToolResult> {
+    const useSearXNG = !!process.env['BARE_AI_SEARCH_URL'];
+
+    debugLogger.log(
+      `[WebSearchTool] Backend: ${useSearXNG ? `SearXNG (${process.env['BARE_AI_SEARCH_URL']})` : 'Google/Gemini'}`
+    );
+
+    try {
+      return useSearXNG
+        ? await this.executeViaSearXNG(signal)
+        : await this.executeViaGoogle(signal);
     } catch (error: unknown) {
       const errorMessage = `Error during web search for query "${
         this.params.query
@@ -192,7 +286,9 @@ class WebSearchToolInvocation extends BaseToolInvocation<
 }
 
 /**
- * A tool to perform web searches using Google Search via the Gemini API.
+ * A tool to perform web searches.
+ * Uses SearXNG when BARE_AI_SEARCH_URL is set, otherwise falls back to
+ * Google Search via the Gemini API.
  */
 export class WebSearchTool extends BaseDeclarativeTool<
   WebSearchToolParams,
@@ -206,21 +302,16 @@ export class WebSearchTool extends BaseDeclarativeTool<
   ) {
     super(
       WebSearchTool.Name,
-      'GoogleSearch',
+      'WebSearch',
       WEB_SEARCH_DEFINITION.base.description!,
       Kind.Search,
       WEB_SEARCH_DEFINITION.base.parametersJsonSchema,
       messageBus,
-      true, // isOutputMarkdown
+      true,  // isOutputMarkdown
       false, // canUpdateOutput
     );
   }
 
-  /**
-   * Validates the parameters for the WebSearchTool.
-   * @param params The parameters to validate
-   * @returns An error message string if validation fails, null if valid
-   */
   protected override validateToolParamValues(
     params: WebSearchToolParams,
   ): string | null {
