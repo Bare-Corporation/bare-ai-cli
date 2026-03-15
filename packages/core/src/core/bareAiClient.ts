@@ -160,6 +160,10 @@ export class BareAiClient {
     }
   }
 
+  private isNoToolModel(): boolean {
+    return process.env['BARE_AI_NO_TOOLS'] === 'true';
+  }
+
   private isLeanModel(): boolean {
     if (process.env['BARE_AI_LEAN_TOOLS'] === 'true') return true;
     if (process.env['BARE_AI_LEAN_TOOLS'] === 'false') return false;
@@ -238,9 +242,11 @@ export class BareAiClient {
 
     const resolvedTools =
       tools && tools.length > 0
-        ? this.isLeanModel()
-          ? this.stripTools(tools)
-          : tools
+        ? this.isNoToolModel()
+          ? undefined
+          : this.isLeanModel()
+            ? this.stripTools(tools)
+            : tools
         : undefined;
 
     const body: Record<string, unknown> = {
