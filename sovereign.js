@@ -51,7 +51,7 @@ async function main() {
     const secureEnv = {
       ...process.env,
       BARE_AI_ENDPOINT: `${config.base_url.trim()}/v1/chat/completions`,
-      BARE_AI_API_KEY:  config.api_key.trim(),
+      BARE_AI_API_KEY:  (config.api_key || 'none').trim(),
       BARE_AI_MODEL:    config.model_name.trim(),
       // Satisfies Google SDK constructor — actual routing bypassed
       GEMINI_API_KEY:   'bare-ai-local',
