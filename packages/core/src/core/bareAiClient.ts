@@ -171,6 +171,8 @@ export class BareAiClient {
       'read_file',
       'write_file',
       'list_directory',
+      'google_web_search',
+      'web_fetch',
     ];
 
     return tools
