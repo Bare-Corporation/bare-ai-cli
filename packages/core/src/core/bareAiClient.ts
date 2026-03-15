@@ -114,11 +114,7 @@ export class BareAiClient {
   // 8b removed: models 8b and higher get full capabilities
   private readonly LEAN_TOOL_MODELS = ['tiny', 'small', 'mini', '1b', '3b'];
 
-  private isNoToolModel(): boolean {
-    return process.env['BARE_AI_NO_TOOLS'] === 'true';
-  }
-
-  constructor() {
+constructor() {
     try {
       fs.writeFileSync(TRACE_LOG, '--- STARTING BARE-AI SESSION ---\n');
     } catch (_e) {
