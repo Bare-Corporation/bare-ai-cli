@@ -38,6 +38,7 @@ real-time.
 - **🐛 Persistent Diagnostic Tracing:** Bypasses TUI screen-clearing by writing
   raw JSON payloads, context token usage, and system states to a persistent
   `bare-ai-trace.log` file.
+- **🔍 Sovereign Web Search:** Built-in web search via a self-hosted [SearXNG](https://searxng.github.io/searxng/) instance. Set `BARE_AI_SEARCH_URL` to route all searches through your own infrastructure with zero data leaving your network. Falls back to Google Search via Gemini API when unset.
 
 ---
 
