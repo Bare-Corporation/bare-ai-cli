@@ -72,28 +72,34 @@ interface OllamaResponse {
 
 const isOllamaResponse = (obj: unknown): obj is OllamaResponse => typeof obj === 'object' && obj !== null;
 
-const logDebug = (...args: unknown[]) => {
-  if (process.env['DEBUG_BARE_AI']) {
-    const output = args
-      .map((arg) =>
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg),
-      )
-      .join(' ');
-    process.stderr.write('[bare-ai-debug] ' + output + '\n');
+// --- FILE TRACER LOGGING (Bypasses the TUI) ---
+const TRACE_LOG = path.join(process.cwd(), 'bare-ai-trace.log');
+
+const writeTrace = (prefix: string, ...args: unknown[]) => {
+  const output = args
+    .map((arg) =>
+      typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg),
+    )
+    .join(' ');
+  const timestamp = new Date().toISOString();
+
+  try {
+    fs.appendFileSync(TRACE_LOG, `[${timestamp}] ${prefix} ${output}\n`);
+  } catch (_e) {
+    // Silence is intentional to prevent TUI interference
   }
 };
 
-const logError = (...args: unknown[]) => {
-  process.stderr.write('[bare-ai] ❌ ' + args.map(String).join(' ') + '\n');
+const logDebug = (...args: unknown[]) => {
+  if (process.env['DEBUG_BARE_AI']) {
+    writeTrace('[DEBUG]', ...args);
+  }
 };
 
-const logSuccess = (...args: unknown[]) => {
-  process.stderr.write('[bare-ai] ✅ ' + args.map(String).join(' ') + '\n');
-};
-
-const logWarn = (...args: unknown[]) => {
-  process.stderr.write('[bare-ai] ⚠️ ' + args.map(String).join(' ') + '\n');
-};
+const logError = (...args: unknown[]) => writeTrace('[ERROR] ❌', ...args);
+const logSuccess = (...args: unknown[]) => writeTrace('[SUCCESS] ✅', ...args);
+const logWarn = (...args: unknown[]) => writeTrace('[WARN] ⚠️', ...args);
+// ----------------------------------------------
 
 export class BareAiClient {
   private endpoint: string;
@@ -102,16 +108,24 @@ export class BareAiClient {
   private systemPrompt: string | null;
 
   constructor() {
+    // Reset the trace log on startup
+    try {
+      fs.writeFileSync(TRACE_LOG, '--- STARTING BARE-AI SESSION ---\n');
+    } catch (_e) {
+      /* ignore */
+    }
+
     this.endpoint =
       process.env['BARE_AI_ENDPOINT'] ??
       'http://localhost:11434/v1/chat/completions';
     this.apiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
     this.model = process.env['BARE_AI_MODEL'] ?? 'default';
     this.systemPrompt = this.loadConstitution();
+
+    logDebug('BareAiClient Initialized with endpoint:', this.endpoint);
   }
 
   private loadConstitution(): string | null {
-    // Robust path resolution - handles ~ properly
     const rawPath =
       process.env['BARE_AI_CONSTITUTION'] ?? '~/.bare-ai/constitution.md';
     const resolvedPath = rawPath.startsWith('~')
@@ -138,17 +152,15 @@ export class BareAiClient {
     messages: Message[],
     tools?: OpenAITool[],
   ): Promise<GenerateResult> {
-    // Prepend system prompt if constitution exists
     const allMessages: Message[] = this.systemPrompt
       ? [{ role: 'system', content: this.systemPrompt }, ...messages]
       : messages;
 
-    // Build request body with stream: false to prevent streaming issues
     const body: Record<string, unknown> = {
       model: this.model,
       messages: allMessages,
-      stream: false, // CRITICAL: Disable streaming for reliable JSON parsing
-      temperature: 0.0, // More deterministic responses
+      stream: false,
+      temperature: 0.0,
     };
 
     if (tools && tools.length > 0) {
@@ -156,21 +168,14 @@ export class BareAiClient {
       body['tool_choice'] = 'auto';
     }
 
-    // Debug logging
-    logDebug('Sending request to:', this.endpoint);
-    logDebug('Request model:', this.model);
-    logDebug('Messages count:', allMessages.length);
-    logDebug('Tools count:', tools?.length ?? 0);
-
-    logDebug('Full request body:', JSON.stringify(body, null, 2));
+    logDebug('Sending Request Body:', body);
 
     const controller = new AbortController();
-    const timeout = 180000; // Increased to 3 minutes for CPU-bound models
+    const timeout = 180000;
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    let response: Response;
     try {
-      response = await fetch(this.endpoint, {
+      const response = await fetch(this.endpoint, {
         signal: controller.signal,
         method: 'POST',
         headers: {
@@ -180,59 +185,39 @@ export class BareAiClient {
         body: JSON.stringify(body),
       });
       clearTimeout(timeoutId);
-    } catch (error: unknown) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
+
+      logDebug('Response received. Status:', response.status);
+
+      const responseText = await response.text();
+      logDebug('Raw Response Data:', responseText);
+
+      if (!response.ok) {
+        logError(`API Failed (${response.status}):`, responseText);
         throw new Error(
-          `BareAiClient request timed out after ${timeout / 1000} seconds.`,
+          `BareAiClient request failed (${response.status}): ${responseText.substring(0, 200)}`,
         );
       }
-      logError('Fetch error:', error);
+
+      const parsedData: unknown = JSON.parse(responseText);
+
+      if (!isOllamaResponse(parsedData)) {
+        logError('Ollama response failed type guard');
+        throw new Error('Invalid response format from Ollama');
+      }
+
+      const message = parsedData?.choices?.[0]?.message;
+      const result = {
+        text: message?.content ?? '',
+        toolCalls: message?.tool_calls?.length ? message.tool_calls : undefined,
+      };
+
+      logSuccess('Response parsed successfully');
+      return result;
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
+      logError('Critical API Failure:', error);
       throw error;
     }
-
-    logDebug('Response status:', response.status);
-
-    // Get response as text first for debugging
-    const responseText = await response.text();
-
-    logDebug('Raw response (first 500 chars):', responseText.substring(0, 500));
-
-    if (!response.ok) {
-      throw new Error(
-        `BareAiClient request failed (${response.status}): ${responseText.substring(0, 200)}`,
-      );
-    }
-
-    // Parse JSON response with type safety
-    let parsedData: unknown;
-    try {
-      parsedData = JSON.parse(responseText);
-    } catch (parseError) {
-      logError('Failed to parse JSON response:');
-      logError(responseText.substring(0, 500));
-      throw new Error(`Failed to parse Ollama response as JSON: ${parseError}`);
-    }
-
-    // Use type guard to safely access data
-    if (!isOllamaResponse(parsedData)) {
-      throw new Error('Invalid response format from Ollama');
-    }
-
-    const message = parsedData?.choices?.[0]?.message;
-    const result = {
-      text: message?.content ?? '',
-      toolCalls: message?.tool_calls?.length ? message.tool_calls : undefined,
-    };
-
-    logDebug('Response parsed successfully');
-    if (result.toolCalls) {
-      logDebug(`Tool calls: ${result.toolCalls.length}`);
-    } else {
-      logDebug('Text response length:', result.text.length);
-    }
-
-    return result;
   }
 
   async generateContent(
