@@ -1,4 +1,4 @@
-![Bare AI Interface](assets/demo.png)
+[Bare AI Interface](assets/demo.png)
 
 # 🛡️ Bare AI CLI
 
@@ -77,9 +77,6 @@ npm run build && npm run bundle
 # Link the package globally
 # Note: As a fork, this safely overwrites legacy 'gemini' binaries
 sudo npm link --force
-
----
-
 ⚙️ Configuration
 Bare AI CLI is highly configurable via Environment Variables. These can be set manually, loaded via a .env file, or injected via the included sovereign.js Vault wrapper.
 
@@ -126,8 +123,6 @@ You can run the CLI in non-interactive mode using the --prompt (-p) flag, making
 
 Bash
 node sovereign.js -p "Check disk space and CPU temperatures, then write a summary to ~/daily_report.md"
-
-
 📝 License
 This project is licensed under the Apache License 2.0. Originally forked from the Google Gemini CLI, modified and rewritten for local sovereignty by Cloud Integration Corporation.
 ```
