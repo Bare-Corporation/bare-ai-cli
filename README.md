@@ -65,7 +65,7 @@ routing layer.
 
 ## 🚀 Installation & Build
 
-0. Prerequisites
+1. Prerequisites
 
 - **Node.js**: v20.0 or higher
 - **npm**: v10.0 or higher _(If you are on an older OS, you may need to upgrade
@@ -77,20 +77,20 @@ routing layer.
 git clone https://github.com/Cian-CloudIntCorp/bare-ai-cli.git
 ```
 
-2. Navigate and install dependencies
+3. Navigate and install dependencies
 
 ```bash
 cd bare-ai-cli
 npm install
 ```
 
-3. Build the monorepo packages
+4. Build the monorepo packages
 
 ```bash
 npm run build && npm run bundle
 ```
 
-4. Link the package globally (Note: As a fork, this safely overwrites legacy
+5. Link the package globally (Note: As a fork, this safely overwrites legacy
    'gemini' binaries)
 
 ```bash
