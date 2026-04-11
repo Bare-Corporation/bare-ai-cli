@@ -38,7 +38,11 @@ real-time.
 - **🐛 Persistent Diagnostic Tracing:** Bypasses TUI screen-clearing by writing
   raw JSON payloads, context token usage, and system states to a persistent
   `bare-ai-trace.log` file.
-- **🔍 Sovereign Web Search:** Built-in web search via a self-hosted [SearXNG](https://searxng.github.io/searxng/) instance. Set `BARE_AI_SEARCH_URL` to route all searches through your own infrastructure with zero data leaving your network. Falls back to Google Search via Gemini API when unset.
+- **🔍 Sovereign Web Search:** Built-in web search via a self-hosted
+  [SearXNG](https://searxng.github.io/searxng/) instance. Set
+  `BARE_AI_SEARCH_URL` to route all searches through your own infrastructure
+  with zero data leaving your network. Falls back to Google Search via Gemini
+  API when unset.
 
 ---
 
@@ -63,12 +67,18 @@ routing layer.
 
 ```bash
 # Clone the repository
-git clone [https://github.com/Cian-CloudIntCorp//bare-ai-cli.git](https://github.com/Cian-CloudIntCorp/bare-ai-cli.git)
+git clone [https://github.com/Cian-CloudIntCorp/bare-ai-cli.git](https://github.com/Cian-CloudIntCorp/bare-ai-cli.git)
 cd bare-ai-cli
 
 # Install dependencies and build the monorepo packages
 npm install
 npm run build && npm run bundle
+
+# Link the package globally
+# Note: As a fork, this safely overwrites legacy 'gemini' binaries
+sudo npm link --force
+
+---
 
 ⚙️ Configuration
 Bare AI CLI is highly configurable via Environment Variables. These can be set manually, loaded via a .env file, or injected via the included sovereign.js Vault wrapper.
@@ -116,6 +126,8 @@ You can run the CLI in non-interactive mode using the --prompt (-p) flag, making
 
 Bash
 node sovereign.js -p "Check disk space and CPU temperatures, then write a summary to ~/daily_report.md"
+
+
 📝 License
 This project is licensed under the Apache License 2.0. Originally forked from the Google Gemini CLI, modified and rewritten for local sovereignty by Cloud Integration Corporation.
 ```
