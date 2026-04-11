@@ -65,7 +65,13 @@ routing layer.
 
 ## 🚀 Installation & Build
 
-1. Clone the repository\*\*
+0. Prerequisites
+
+- **Node.js**: v20.0 or higher
+- **npm**: v10.0 or higher _(If you are on an older OS, you may need to upgrade
+  Node using `nvm` or the `n` package manager before installing)._
+
+2. Clone the repository\*\*
 
 ```bash
 git clone https://github.com/Cian-CloudIntCorp/bare-ai-cli.git
