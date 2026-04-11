@@ -71,6 +71,16 @@ routing layer.
 - **npm**: v10.0 or higher _(If you are on an older OS, you may need to upgrade
   Node using `nvm` or the `n` package manager before installing)._
 
+## IMPORTANT NOTE:
+
+> 💡 **Highly Recommended: Use the Bare AI Agent Installer** Instead of
+> installing the CLI manually, we recommend installing the
+> [Bare AI Agent](https://github.com/Cian-CloudIntCorp/bare-ai-agent) first. Its
+> automated worker script will verify your environment, seamlessly upgrade older
+> NPM versions, and automatically build this CLI for you. `bare-ai-cli` and
+> `bare-ai-agent` are designed to be used together for the full autonomous
+> experience.
+
 2. Clone the repository\*\*
 
 ```bash
