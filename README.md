@@ -65,27 +65,27 @@ routing layer.
 
 ## 🚀 Installation & Build
 
-**1. Clone the repository**
+1. Clone the repository\*\*
 
 ```bash
 git clone https://github.com/Cian-CloudIntCorp/bare-ai-cli.git
 ```
 
-\*\*2. Navigate and install dependencies
+2. Navigate and install dependencies
 
 ```bash
 cd bare-ai-cli
 npm install
 ```
 
-\*\*3. Build the monorepo packages
+3. Build the monorepo packages
 
 ```bash
 npm run build && npm run bundle
 ```
 
-\*\*4. Link the package globally (Note: As a fork, this safely overwrites legacy
-'gemini' binaries)
+4. Link the package globally (Note: As a fork, this safely overwrites legacy
+   'gemini' binaries)
 
 ```bash
 sudo npm link --force
@@ -126,13 +126,13 @@ Agentic Mode (Recommended) Best used with capable local models like IBM Granite
 4 (tiny-h) or Llama 3 (8B). The agent will execute shell commands and read files
 autonomously.
 
-\*\*1. Export your constitution path
+1. Export your constitution path
 
 ```bash
 export BARE_AI_CONSTITUTION="/home/user/.bare-ai/constitution.md"
 ```
 
-\*\*2. Launch the agent
+2. Launch the agent
 
 ```bash
 node sovereign.js
