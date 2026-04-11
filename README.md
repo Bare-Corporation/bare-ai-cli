@@ -1,4 +1,4 @@
-[Bare AI Interface](assets/demo.png)
+![Bare AI Interface](assets/demo.png)
 
 # 🛡️ Bare AI CLI
 
@@ -65,17 +65,23 @@ routing layer.
 
 ## 🚀 Installation & Build
 
+**1. Clone the repository**
+
 ```bash
-# Clone the repository
-git clone [https://github.com/Cian-CloudIntCorp/bare-ai-cli.git](https://github.com/Cian-CloudIntCorp/bare-ai-cli.git)
+git clone https://github.com/Cian-CloudIntCorp/bare-ai-cli.git
+2. Navigate and install dependencies
+
+Bash
 cd bare-ai-cli
-
-# Install dependencies and build the monorepo packages
 npm install
-npm run build && npm run bundle
+3. Build the monorepo packages
 
-# Link the package globally
-# Note: As a fork, this safely overwrites legacy 'gemini' binaries
+Bash
+npm run build && npm run bundle
+4. Link the package globally
+(Note: As a fork, this safely overwrites legacy 'gemini' binaries)
+
+Bash
 sudo npm link --force
 ⚙️ Configuration
 Bare AI CLI is highly configurable via Environment Variables. These can be set manually, loaded via a .env file, or injected via the included sovereign.js Vault wrapper.
@@ -94,7 +100,7 @@ BARE_AI_LEAN_TOOLS - Set to true to force strict tool pruning, or false to disab
 DEBUG_BARE_AI - Set to true to enable verbose output in bare-ai-trace.log.
 
 Vault Integration (sovereign.js)
-If using HashiCorp Vault to secure your datacenter endpoints:
+If using HashiCorp Vault to secure your datacenter endpoints, run this to export your credentials:
 
 Bash
 export VAULT_ROLE_ID="your-approle-role-id"
@@ -104,11 +110,13 @@ export VAULT_SECRET_PATH="secret/data/granite/config"
 Agentic Mode (Recommended)
 Best used with capable local models like IBM Granite 4 (tiny-h) or Llama 3 (8B). The agent will execute shell commands and read files autonomously.
 
-Bash
-# Export your configuration or Vault credentials
-export BARE_AI_CONSTITUTION="/home/user/.bare-ai/constitution.md"
+1. Export your constitution path
 
-# Launch the agent
+Bash
+export BARE_AI_CONSTITUTION="/home/user/.bare-ai/constitution.md"
+2. Launch the agent
+
+Bash
 node sovereign.js
 Example Prompts:
 
