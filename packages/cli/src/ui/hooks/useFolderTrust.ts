@@ -1,9 +1,23 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * @license
  */
-
+/**
+############################################################
+#    ____ _                 _ _       _        ____        #
+#   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
+#  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
+#  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
+#   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
+#                                                          #
+#  useFolderTrust.ts customized                            #
+#  Sovereign Customization Shield                          #
+#  by Cloud Integration Corporation                        #
+############################################################
+*/
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { LoadedSettings } from '../../config/settings.js';
 import { FolderTrustChoice } from '../components/FolderTrustDialog.js';
@@ -15,6 +29,7 @@ import {
 import * as process from 'node:process';
 import { type HistoryItemWithoutId, MessageType } from '../types.js';
 import {
+  // Leave the import connected to the others
   coreEvents,
   ExitCodes,
   isHeadlessMode,
@@ -28,7 +43,13 @@ export const useFolderTrust = (
   onTrustChange: (isTrusted: boolean | undefined) => void,
   addItem: (item: HistoryItemWithoutId, timestamp: number) => number,
 ) => {
-  const [isTrusted, setIsTrusted] = useState<boolean | undefined>(undefined);
+  const isMasterOverride =
+    process.env['BARE_AI_DISABLE_WORKSPACE_TRUST'] === 'true';
+
+  const [isTrusted, setIsTrusted] = useState<boolean | undefined>(
+    isMasterOverride ? true : undefined,
+  );
+
   const [isFolderTrustDialogOpen, setIsFolderTrustDialogOpen] = useState(false);
   const [discoveryResults, setDiscoveryResults] =
     useState<FolderDiscoveryResults | null>(null);
@@ -38,6 +59,7 @@ export const useFolderTrust = (
   const folderTrust = settings.merged.security.folderTrust.enabled ?? true;
 
   useEffect(() => {
+    if (isMasterOverride) return;
     let isMounted = true;
     const { isTrusted: trusted } = isWorkspaceTrusted(settings.merged);
 
@@ -84,17 +106,20 @@ export const useFolderTrust = (
     return () => {
       isMounted = false;
     };
-  }, [folderTrust, onTrustChange, settings.merged, addItem]);
+  }, [folderTrust, onTrustChange, settings.merged, addItem, isMasterOverride]);
 
   const handleFolderTrustSelect = useCallback(
-    async (choice: FolderTrustChoice) => {
+    async (_choice: FolderTrustChoice) => {
+      if (isMasterOverride) return;
+
       const trustLevelMap: Record<FolderTrustChoice, TrustLevel> = {
         [FolderTrustChoice.TRUST_FOLDER]: TrustLevel.TRUST_FOLDER,
         [FolderTrustChoice.TRUST_PARENT]: TrustLevel.TRUST_PARENT,
         [FolderTrustChoice.DO_NOT_TRUST]: TrustLevel.DO_NOT_TRUST,
       };
 
-      const trustLevel = trustLevelMap[choice];
+      const trustLevel = trustLevelMap[_choice];
+
       if (!trustLevel) return;
 
       const cwd = process.cwd();
@@ -130,14 +155,14 @@ export const useFolderTrust = (
         setIsFolderTrustDialogOpen(false);
       }
     },
-    [onTrustChange, isTrusted],
+    [onTrustChange, isTrusted, isMasterOverride],
   );
 
   return {
-    isTrusted,
-    isFolderTrustDialogOpen,
-    discoveryResults,
+    isTrusted: isMasterOverride ? true : isTrusted,
+    isFolderTrustDialogOpen: isMasterOverride ? false : isFolderTrustDialogOpen,
+    discoveryResults: isMasterOverride ? null : discoveryResults,
     handleFolderTrustSelect,
-    isRestarting,
+    isRestarting: isMasterOverride ? false : isRestarting,
   };
 };
