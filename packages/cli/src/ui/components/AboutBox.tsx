@@ -116,7 +116,7 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
             <Text color={theme.text.primary}>
               {selectedAuthType.startsWith('oauth')
                 ? userEmail
-                  ? `Authenticated via HashiCorp Vault (${userEmail})`
+                  ? `Authenticated via HashiCorp Vault`
                   : 'Authenticated via HashiCorp Vault'
                 : selectedAuthType}
             </Text>
@@ -131,7 +131,7 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
             </Text>
           </Box>
           <Box>
-            <Text color={theme.text.primary}>{tier}</Text>
+            <Text color={theme.text.primary}>Bare-AI Apex Node</Text>
           </Box>
         </Box>
       )}
