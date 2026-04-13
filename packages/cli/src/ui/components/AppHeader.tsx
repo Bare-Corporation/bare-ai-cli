@@ -91,7 +91,7 @@ export const AppHeader = ({ version, showDetails = true }: AppHeaderProps) => {
             {/* Line 2: Blank */}
             <Box height={1} />
 
-            {/* Lines 3 & 4: User Identity info (Email /auth and Plan /upgrade) */}
+            {/* Lines 3 & 4: User Identity info (Email /auth and Plan /secure-mesh) */}
             {settings.merged.ui.showUserIdentity !== false && (
               <UserIdentity config={config} />
             )}

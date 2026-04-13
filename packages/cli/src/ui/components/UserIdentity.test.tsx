@@ -16,8 +16,7 @@ import {
 
 // Mock UserAccountManager to control cached account
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
     UserAccountManager: vi.fn().mockImplementation(() => ({
@@ -47,7 +46,7 @@ describe('<UserIdentity />', () => {
     const output = lastFrame();
     expect(output).toContain('test@example.com');
     expect(output).toContain('/auth');
-    expect(output).not.toContain('/upgrade');
+    expect(output).not.toContain('/secure-mesh');
     unmount();
   });
 
@@ -73,9 +72,9 @@ describe('<UserIdentity />', () => {
     await waitUntilReady();
 
     const output = lastFrame();
-    expect(output).toContain('Logged in with Google');
+    expect(output).toContain('Authenticated via HashiCorp Vault');
     expect(output).toContain('/auth');
-    expect(output).not.toContain('/upgrade');
+    expect(output).not.toContain('/secure-mesh');
     unmount();
   });
 
@@ -96,7 +95,7 @@ describe('<UserIdentity />', () => {
     expect(output).toContain('test@example.com');
     expect(output).toContain('/auth');
     expect(output).toContain('Premium Plan');
-    expect(output).toContain('/upgrade');
+    expect(output).toContain('/secure-mesh');
 
     unmount();
   });
@@ -132,7 +131,7 @@ describe('<UserIdentity />', () => {
     const output = lastFrame();
     expect(output).toContain(`Authenticated with ${AuthType.USE_GEMINI}`);
     expect(output).toContain('/auth');
-    expect(output).not.toContain('/upgrade');
+    expect(output).not.toContain('/secure-mesh');
     unmount();
   });
 
@@ -151,7 +150,7 @@ describe('<UserIdentity />', () => {
 
     const output = lastFrame();
     expect(output).toContain('Enterprise Tier');
-    expect(output).toContain('/upgrade');
+    expect(output).toContain('/secure-mesh');
     unmount();
   });
 });

@@ -8,11 +8,7 @@ import type React from 'react';
 import { useMemo, useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
-import {
-  type Config,
-  UserAccountManager,
-  AuthType,
-} from '@bare-ai/core';
+import { type Config, UserAccountManager, AuthType } from '@bare-ai/core';
 
 interface UserIdentityProps {
   config: Config;
@@ -44,7 +40,7 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({ config }) => {
       <Box>
         <Text color={theme.text.primary} wrap="truncate-end">
           {authType === AuthType.LOGIN_WITH_GOOGLE ? (
-            <Text>{email ?? 'Logged in with Google'}</Text>
+            <Text>{email ?? 'Authenticated via HashiCorp Vault'}</Text>
           ) : (
             `Authenticated with ${authType === AuthType.USE_GEMINI ? 'bare-ai-key' : authType}`
           )}
@@ -52,13 +48,13 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({ config }) => {
         <Text color={theme.text.secondary}> /auth</Text>
       </Box>
 
-      {/* Tier Name /upgrade */}
+      {/* Tier Name /secure-mesh */}
       {tierName && (
         <Box>
           <Text color={theme.text.primary} wrap="truncate-end">
             {tierName}
           </Text>
-          <Text color={theme.text.secondary}> /upgrade</Text>
+          <Text color={theme.text.secondary}> /secure-mesh</Text>
         </Box>
       )}
     </Box>

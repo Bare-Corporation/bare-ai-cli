@@ -19,11 +19,7 @@ import {
 } from '../contexts/SessionContext.js';
 import { Table, type Column } from './Table.js';
 import { useSettings } from '../contexts/SettingsContext.js';
-import {
-  getDisplayString,
-  isAutoModel,
-  LlmRole,
-} from '@bare-ai/core';
+import { getDisplayString, isAutoModel, LlmRole } from '@bare-ai/core';
 import type { QuotaStats } from '../types.js';
 import { QuotaStatsInfo } from './QuotaStatsInfo.js';
 
@@ -340,8 +336,8 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
           <Text color={theme.text.primary}>
             {selectedAuthType.startsWith('oauth')
               ? userEmail
-                ? `Logged in with Google (${userEmail})`
-                : 'Logged in with Google'
+                ? `Authenticated via HashiCorp Vault (${userEmail})`
+                : 'Authenticated via HashiCorp Vault'
               : selectedAuthType}
           </Text>
         </Box>

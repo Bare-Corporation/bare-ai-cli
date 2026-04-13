@@ -173,4 +173,13 @@ node sovereign.js -p "Check disk space and CPU temperatures, then write a summar
 
 📝 License This project is licensed under the Apache License 2.0. Originally
 forked from the Google Gemini CLI, modified and rewritten for local sovereignty
-by Cloud Integration Corporation.
+
+## by the Cloud Integration Corporation
+
+```text
+    ____ _                  _ _       _         ____
+   / ___| | ___  _   _  ___| (_)_ __ | |_      / ___|___
+  | |   | |/ _ \| | | |/ __| | | '_ \| __|     | |   / _ \
+  | |___| | (_) | |_| | (__| | | | | | |_      | |__| (_) |
+   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|      \____\___/
+```
