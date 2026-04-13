@@ -1,8 +1,23 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * @license
  */
+/**
+############################################################
+#    ____ _                 _ _       _        ____        #
+#   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
+#  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
+#  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
+#   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
+#                                                          #
+#  ide-connection-utils.ts customized                      #
+#   Sovereign Customization Shield                         #
+#  by Cloud Integration Corporation                        #
+############################################################
+*/
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -290,8 +305,37 @@ export async function createProxyAwareFetch(ideServerHost: string) {
   // Suppress unhandled rejection if the promise is not awaited immediately.
   // If the import fails, the error will be thrown when awaiting undiciPromise below.
   undiciPromise.catch(() => {});
+
+  // Start: Cloud Integration Corporation Sovereign Customization Shield
   return async (url: string | URL, init?: RequestInit): Promise<Response> => {
+    const urlString = typeof url === 'string' ? url : url.href;
+
+    // --- CIC PRIVATE NETWORK ALLOWLIST (Regex) ---
+    // Permits: 127.* (Local), 10.*, 172.16-31.*, 192.168.* (Private), 100.64-127.* (Mesh/Tailscale)
+    const privateIPRegex =
+      /^(https?:\/\/)?(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\.\d+\.\d+)(:\d+)?(\/.*)?$/;
+
+    if (!privateIPRegex.test(urlString)) {
+      // Log the interception for security audits
+      logger.debug(
+        `[SOVEREIGNTY GUARD] Blocked unauthorized outbound request: ${urlString}`,
+      );
+
+      // Return empty JSON to satisfy any calling components (like the banner fetcher)
+      return new Response(
+        JSON.stringify({ alerts: [], motd: '', status: 'blocked' }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+    // --- END GUARD ---
+    // End : Cloud Integration Corporation Sovereign Customization Shield
+
     const { fetch: fetchFn } = await undiciPromise;
+    // ... existing logic ...
+
     const fetchOptions: RequestInit & { dispatcher?: unknown } = {
       ...init,
       dispatcher: agent,

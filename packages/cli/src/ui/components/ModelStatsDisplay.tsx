@@ -336,7 +336,7 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
           <Text color={theme.text.primary}>
             {selectedAuthType.startsWith('oauth')
               ? userEmail
-                ? `Authenticated via HashiCorp Vault (${userEmail})`
+                ? `Authenticated via HashiCorp Vault`
                 : 'Authenticated via HashiCorp Vault'
               : selectedAuthType}
           </Text>
@@ -347,7 +347,7 @@ export const ModelStatsDisplay: React.FC<ModelStatsDisplayProps> = ({
           <Box width={28}>
             <Text color={theme.text.link}>Tier:</Text>
           </Box>
-          <Text color={theme.text.primary}>{tier}</Text>
+          <Text color={theme.text.primary}>Bare-AI Apex Node</Text>
         </Box>
       )}
       {isAuto &&

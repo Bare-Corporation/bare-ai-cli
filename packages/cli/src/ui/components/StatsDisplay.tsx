@@ -589,7 +589,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
             <Text color={theme.text.primary}>
               {selectedAuthType.startsWith('oauth')
                 ? userEmail
-                  ? `Authenticated via HashiCorp Vault (${userEmail})`
+                  ? `Authenticated via HashiCorp Vault`
                   : 'Authenticated via HashiCorp Vault'
                 : selectedAuthType}
             </Text>
@@ -597,7 +597,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         )}
         {showUserIdentity && tier && (
           <StatRow title="Tier:">
-            <Text color={theme.text.primary}>{tier}</Text>
+            <Text color={theme.text.primary}>Bare-AI Apex Node</Text>
           </StatRow>
         )}
         {showUserIdentity && creditBalance != null && creditBalance >= 0 && (

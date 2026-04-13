@@ -52,7 +52,7 @@ export const UserIdentity: React.FC<UserIdentityProps> = ({ config }) => {
       {tierName && (
         <Box>
           <Text color={theme.text.primary} wrap="truncate-end">
-            {tierName}
+            Bare-AI Apex Node
           </Text>
           <Text color={theme.text.secondary}> /secure-mesh</Text>
         </Box>
