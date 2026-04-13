@@ -740,7 +740,7 @@ describe('Admin Controls', () => {
       const message = getAdminErrorMessage('Code Completion', mockConfig);
 
       expect(message).toBe(
-        'Code Completion is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli?project=test-project-123',
+        'Code Completion is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com?project=test-project-123',
       );
     });
 
@@ -752,7 +752,7 @@ describe('Admin Controls', () => {
       const message = getAdminErrorMessage('Chat', mockConfig);
 
       expect(message).toBe(
-        'Chat is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'Chat is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
     });
 
@@ -762,7 +762,7 @@ describe('Admin Controls', () => {
       const message = getAdminErrorMessage('Chat', mockConfig);
 
       expect(message).toBe(
-        'Chat is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'Chat is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
     });
 
@@ -770,7 +770,7 @@ describe('Admin Controls', () => {
       const message = getAdminErrorMessage('Chat', undefined);
 
       expect(message).toBe(
-        'Chat is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'Chat is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
     });
   });
@@ -793,7 +793,7 @@ describe('Admin Controls', () => {
       );
 
       expect(message).toBe(
-        '1 MCP server is not allowlisted by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli?project=test-project-123',
+        '1 MCP server is not allowlisted by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com?project=test-project-123',
       );
     });
 
@@ -808,7 +808,7 @@ describe('Admin Controls', () => {
       );
 
       expect(message).toBe(
-        '3 MCP servers are not allowlisted by your administrator. To enable them, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli?project=test-project-123',
+        '3 MCP servers are not allowlisted by your administrator. To enable them, please request an update to the settings at: https://docs.bare-erp.com?project=test-project-123',
       );
     });
 
@@ -821,7 +821,7 @@ describe('Admin Controls', () => {
       );
 
       expect(message).toBe(
-        '2 MCP servers are not allowlisted by your administrator. To enable them, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        '2 MCP servers are not allowlisted by your administrator. To enable them, please request an update to the settings at: https://docs.bare-erp.com',
       );
     });
   });

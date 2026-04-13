@@ -56,10 +56,8 @@ export const McpStatus: React.FC<McpStatusProps> = ({
         <Text>No MCP servers configured.</Text>
         <Text>
           Please view MCP documentation in your browser:{' '}
-          <Text color={theme.text.link}>
-            https://goo.gle/bare-ai-cli-docs-mcp
-          </Text>{' '}
-          or use the cli /docs command
+          <Text color={theme.text.link}>https://docs.bare-erp.com</Text> or use
+          the cli /docs command
         </Text>
       </Box>
     );

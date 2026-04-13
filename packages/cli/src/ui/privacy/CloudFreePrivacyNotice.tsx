@@ -57,7 +57,7 @@ export const CloudFreePrivacyNotice = ({
     return (
       <Box flexDirection="column" marginY={1}>
         <Text bold color={theme.text.accent}>
-          Gemini Code Assist Privacy Notice
+          Bare-AI Privacy Notice
         </Text>
         <Newline />
         <Text>
@@ -77,13 +77,13 @@ export const CloudFreePrivacyNotice = ({
   return (
     <Box flexDirection="column" marginY={1}>
       <Text bold color={theme.text.accent}>
-        Gemini Code Assist for Individuals Privacy Notice
+        Bare-AI for Individuals Privacy Notice
       </Text>
       <Newline />
       <Text color={theme.text.primary}>
         This notice and our Privacy Policy
-        <Text color={theme.text.link}>[1]</Text> describe how Gemini Code Assist
-        handles your data. Please read them carefully.
+        <Text color={theme.text.link}>[1]</Text> describe how Bare-AI handles
+        your data. Please read them carefully.
       </Text>
       <Newline />
       <Text color={theme.text.primary}>

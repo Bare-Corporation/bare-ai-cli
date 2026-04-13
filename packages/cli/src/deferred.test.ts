@@ -84,7 +84,7 @@ describe('deferred', () => {
 
       expect(mockCoreEvents.emitFeedback).toHaveBeenCalledWith(
         'error',
-        'MCP is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'MCP is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
       expect(mockRunExitCleanup).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(ExitCodes.FATAL_CONFIG_ERROR);
@@ -104,7 +104,7 @@ describe('deferred', () => {
 
       expect(mockCoreEvents.emitFeedback).toHaveBeenCalledWith(
         'error',
-        'Extensions is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'Extensions is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
       expect(mockRunExitCleanup).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(ExitCodes.FATAL_CONFIG_ERROR);
@@ -124,7 +124,7 @@ describe('deferred', () => {
 
       expect(mockCoreEvents.emitFeedback).toHaveBeenCalledWith(
         'error',
-        'Agent skills is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'Agent skills is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
       expect(mockRunExitCleanup).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(ExitCodes.FATAL_CONFIG_ERROR);
@@ -199,7 +199,7 @@ describe('deferred', () => {
 
       expect(mockCoreEvents.emitFeedback).toHaveBeenCalledWith(
         'error',
-        'MCP is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+        'MCP is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
       );
     });
 

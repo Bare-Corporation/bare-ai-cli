@@ -18,7 +18,7 @@ import {
   applyAvailabilityTransition,
 } from '../availability/policyHelpers.js';
 
-const UPGRADE_URL_PAGE = 'https://goo.gle/set-up-gemini-code-assist';
+const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
 
 export async function handleFallback(
   config: Config,

@@ -99,9 +99,8 @@ vi.mock('read-package-up', () => ({
 }));
 
 vi.mock('@bare-ai/core', async () => {
-  const actualServer = await vi.importActual<typeof ServerConfig>(
-    '@bare-ai/core',
-  );
+  const actualServer =
+    await vi.importActual<typeof ServerConfig>('@bare-ai/core');
   return {
     ...actualServer,
     IdeClient: {
@@ -151,7 +150,7 @@ vi.mock('@bare-ai/core', async () => {
     })),
     getAdminErrorMessage: vi.fn(
       (_feature) =>
-        `YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli`,
+        `YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com`,
     ),
     isHeadlessMode: vi.fn((opts) => {
       if (process.env['VITEST'] === 'true') {
@@ -1322,7 +1321,7 @@ describe('Approval mode tool exclusion logic', () => {
     });
 
     await expect(loadCliConfig(settings, 'test-session', argv)).rejects.toThrow(
-      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
     );
   });
 
@@ -3384,7 +3383,7 @@ describe('loadCliConfig disableYoloMode', () => {
       security: { disableYoloMode: true },
     });
     await expect(loadCliConfig(settings, 'test-session', argv)).rejects.toThrow(
-      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
     );
   });
 });
@@ -3416,7 +3415,7 @@ describe('loadCliConfig secureModeEnabled', () => {
     });
 
     await expect(loadCliConfig(settings, 'test-session', argv)).rejects.toThrow(
-      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
     );
   });
 
@@ -3430,7 +3429,7 @@ describe('loadCliConfig secureModeEnabled', () => {
     });
 
     await expect(loadCliConfig(settings, 'test-session', argv)).rejects.toThrow(
-      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli',
+      'YOLO mode is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com',
     );
   });
 
