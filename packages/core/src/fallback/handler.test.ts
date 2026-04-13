@@ -269,7 +269,7 @@ describe('handleFallback', () => {
 
       expect(result).toBe(false);
       expect(openBrowserSecurely).toHaveBeenCalledWith(
-        'https://goo.gle/set-up-gemini-code-assist',
+        'https://docs.bare-erp.com',
       );
       expect(policyConfig.activateFallbackMode).not.toHaveBeenCalled();
     });

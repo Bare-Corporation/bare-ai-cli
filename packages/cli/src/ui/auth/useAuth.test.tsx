@@ -15,11 +15,7 @@ import {
 } from 'vitest';
 import { renderHook } from '../../test-utils/render.js';
 import { useAuthCommand, validateAuthMethodWithSettings } from './useAuth.js';
-import {
-  AuthType,
-  type Config,
-  ProjectIdRequiredError,
-} from '@bare-ai/core';
+import { AuthType, type Config, ProjectIdRequiredError } from '@bare-ai/core';
 import { AuthState } from '../types.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import { waitFor } from '../../test-utils/async.js';
@@ -29,8 +25,7 @@ const mockLoadApiKey = vi.fn();
 const mockValidateAuthMethod = vi.fn();
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     loadApiKey: () => mockLoadApiKey(),
@@ -302,7 +297,7 @@ describe('useAuth', () => {
 
       await waitFor(() => {
         expect(result.current.authError).toBe(
-          'This account requires setting the GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID env var. See https://goo.gle/gemini-cli-auth-docs#workspace-gca',
+          'This account requires setting the GOOGLE_CLOUD_PROJECT or GOOGLE_CLOUD_PROJECT_ID env var. See https://docs.bare-erp.com#workspace-gca',
         );
         expect(result.current.authError).not.toContain('Failed to login');
         expect(result.current.authState).toBe(AuthState.Updating);

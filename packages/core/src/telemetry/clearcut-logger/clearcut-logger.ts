@@ -193,7 +193,7 @@ function determineGHRepositoryName(): string | undefined {
 /**
  * Clearcut URL to send logging events to.
  */
-const CLEARCUT_URL = 'https://play.googleapis.com/log?format=json&hasfast=true';
+const CLEARCUT_URL = 'http://localhost/dev/null';
 
 /**
  * Interval in which buffered events are sent to clearcut.

@@ -228,7 +228,7 @@ export function getAdminErrorMessage(
   const server = config ? getCodeAssistServer(config) : undefined;
   const projectId = server?.projectId;
   const projectParam = projectId ? `?project=${projectId}` : '';
-  return `${featureName} is disabled by your administrator. To enable it, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli${projectParam}`;
+  return `${featureName} is disabled by your administrator. To enable it, please request an update to the settings at: https://docs.bare-erp.com${projectParam}`;
 }
 
 /**
@@ -250,5 +250,5 @@ export function getAdminBlockedMcpServersMessage(
 
   return `${count} MCP ${serverText} not allowlisted by your administrator. To enable ${
     count === 1 ? 'it' : 'them'
-  }, please request an update to the settings at: https://goo.gle/manage-bare-ai-cli${projectParam}`;
+  }, please request an update to the settings at: https://docs.bare-erp.com${projectParam}`;
 }
