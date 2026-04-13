@@ -589,8 +589,8 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
             <Text color={theme.text.primary}>
               {selectedAuthType.startsWith('oauth')
                 ? userEmail
-                  ? `Logged in with Google (${userEmail})`
-                  : 'Logged in with Google'
+                  ? `Authenticated via HashiCorp Vault (${userEmail})`
+                  : 'Authenticated via HashiCorp Vault'
                 : selectedAuthType}
             </Text>
           </StatRow>
