@@ -1,25 +1,21 @@
 /**
 ############################################################
-#    ____ _                 _ _       ____        #
+#    ____ _                 _ _       ___      ____        #
 #   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
 #  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
 #  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
 #   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
 #                                                          #
 #                                                          #
-#   by Cloud Integration Corporation                        #
+#   by Cloud Integration Corporation                       #
 ############################################################
  * modelCommand.ts — bare-ai-cli Vault credential injector
  * implements a Sovereign Switchboard for hot-swapping ai models.
  * @license
  * Copyright 2026 Cloud Integration Corporation
- * Copyright 2025 Google LLC
+ * Copyright 2025 Google LLC (The orignal creator of this file but heavily Customised by CIC)
  * SPDX-License-Identifier: Apache-2.0
- */
-/**
- * modelCommand.ts — bare-ai-cli Vault credential injector
- * implements a Sovereign Switchboard for hot-swapping ai models.
- */
+*/
 import {
   ModelSlashCommandEvent,
   logModelSlashCommand,
@@ -89,29 +85,30 @@ export const modelCommand: SlashCommand = {
   subCommands: [manageModelCommand, setModelCommand],
   action: async (context: CommandContext, args: string) => {
     const id = args.trim();
-    
-    // Pattern Match: 3-digit Sovereign ID
-    if (/^\d{3}$/.test(id)) {
-      context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Translating ID ${id}...` });
-      
-      let targetModel = "";
-      let disableTools = true;
+
+
+    // Pattern Match: 3-digit Sovereign ID OR exact model name
+      if (/^\d{3}$/.test(id) || id.includes(':') || id.includes('-')) {
+        context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Translating ID ${id}...` });
+        
+        let targetModel = "";
+        let disableTools = true; // default  
 
       switch (id) {
         // Thinkers (No Tools)
         case '001': targetModel = "deepseek-r1:8b"; break;
         case '002': targetModel = "tir-na-ai:latest"; break;
-        case '009': targetModel = "tir-na-ai:iGPU"; break;
-        case '101': targetModel = "gemini-2.5-flash-lite"; break;
+        case '003': targetModel = "gemma4:e4b"; break;
+        case '004': targetModel = "gemma4:26b"; break;
+        case '005': targetModel = "gemma4:31b"; break;
+        case '008': targetModel = "deepseek-coder-v2:latest"; break;
+        case '009': targetModel = "tir-na-ai:iGPU"; break;     
         case '203': targetModel = "o1-preview"; break;
-        
+
         // Doers (Tools Enabled)
-        case '003': targetModel = "gemma4:e4b"; disableTools = false; break;
-        case '004': targetModel = "gemma4:26b"; disableTools = false; break;
-        case '005': targetModel = "gemma4:31b"; disableTools = false; break;
         case '006': targetModel = "granite4:tiny-h"; disableTools = false; break;
         case '007': targetModel = "qwen2.5-coder:32b"; disableTools = false; break;
-        case '008': targetModel = "deepseek-coder-v2:latest"; disableTools = false; break;
+        case '101': targetModel = "gemini-2.5-flash-lite"; disableTools = false; break;
         case '102': targetModel = "gemini-2.5-flash"; disableTools = false; break;
         case '103': targetModel = "gemini-2.5-pro"; disableTools = false; break;
         case '104': targetModel = "gemini-3-flash-preview"; disableTools = false; break;
