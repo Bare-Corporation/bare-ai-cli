@@ -9,7 +9,7 @@
 
 /**
 ############################################################
-#    ____ _                 _ _       _        ____        #
+#    ____ _                 _ _       ____        #
 #   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
 #  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
 #  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
@@ -107,31 +107,20 @@ const logWarn = (...args: unknown[]) => writeTrace('[WARN] ⚠️', ...args);
 // ----------------------------------------------
 
 export class BareAiClient {
-  private endpoint: string;
-  private apiKey: string;
-  private model: string;
   private systemPrompt: string | null;
-
   // 8b removed: models 8b and higher get full capabilities
   private readonly LEAN_TOOL_MODELS = ['tiny', 'small', 'mini', '1b', '3b'];
 
-constructor() {
+  constructor() {
     try {
       fs.writeFileSync(TRACE_LOG, '--- STARTING BARE-AI SESSION ---\n');
     } catch (_e) {
       /* ignore */
     }
 
-    this.endpoint =
-      process.env['BARE_AI_ENDPOINT'] ??
-      'http://localhost:11434/v1/chat/completions';
-    this.apiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
-    this.model = process.env['BARE_AI_MODEL'] ?? 'default';
     this.systemPrompt = this.loadConstitution();
 
-    logDebug('BareAiClient Initialized with endpoint:', this.endpoint);
-    logDebug('Model configured as:', this.model);
-    logDebug('Is Lean Mode active?', this.isLeanModel());
+    logDebug('BareAiClient Initialized (Dynamic Switchboard Routing Enabled)');
   }
 
   private loadConstitution(): string | null {
@@ -165,8 +154,11 @@ constructor() {
     if (process.env['BARE_AI_LEAN_TOOLS'] === 'true') return true;
     if (process.env['BARE_AI_LEAN_TOOLS'] === 'false') return false;
 
+    // DYNAMIC READ: Always fetch the current model at execution time
+    const currentModel = process.env['BARE_AI_MODEL'] ?? 'default';
+
     return this.LEAN_TOOL_MODELS.some((tag) =>
-      this.model.toLowerCase().includes(tag),
+      currentModel.toLowerCase().includes(tag),
     );
   }
 
@@ -233,6 +225,14 @@ constructor() {
     messages: Message[],
     tools?: OpenAITool[],
   ): Promise<GenerateResult> {
+    
+    // --- DYNAMIC SWITCHBOARD INJECTION ---
+    // These variables are pulled fresh on EVERY message sent.
+    const activeEndpoint = process.env['BARE_AI_ENDPOINT'] ?? 'http://localhost:11434/v1/chat/completions';
+    const activeApiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
+    const activeModel = process.env['BARE_AI_MODEL'] ?? 'default';
+    // -------------------------------------
+
     const allMessages: Message[] = this.systemPrompt
       ? [{ role: 'system', content: this.systemPrompt }, ...messages]
       : messages;
@@ -247,17 +247,18 @@ constructor() {
         : undefined;
 
     const body: Record<string, unknown> = {
-      model: this.model,
+      model: activeModel,
       messages: allMessages,
       stream: false,
       temperature: 0.1,
-      ...(this.isLeanModel() && !(process.env['BARE_AI_ENDPOINT'] || '').match(/googleapis|openai/i) && { options: { num_ctx: 8192 } }),
+      ...(this.isLeanModel() && !(activeEndpoint || '').match(/googleapis|openai/i) && { options: { num_ctx: 8192 } }),
     };
 
     if (resolvedTools) {
       body['tools'] = resolvedTools;
     }
 
+    logDebug(`Routing Request to [${activeModel}] at endpoint:`, activeEndpoint);
     logDebug('Sending Request Body:', body);
 
     const controller = new AbortController();
@@ -265,12 +266,12 @@ constructor() {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const response = await fetch(this.endpoint, {
+      const response = await fetch(activeEndpoint, {
         signal: controller.signal,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${activeApiKey}`,
         },
         body: JSON.stringify(body),
       });
@@ -292,7 +293,7 @@ constructor() {
 
       if (!isOllamaResponse(parsedData)) {
         logError('Ollama response failed type guard');
-        throw new Error('Invalid response format from Ollama');
+        throw new Error('Invalid response format from API');
       }
 
       const message = parsedData?.choices?.[0]?.message;
