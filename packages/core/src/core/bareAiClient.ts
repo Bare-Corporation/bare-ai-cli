@@ -1,5 +1,6 @@
 /**
  * @license
+ * Copyright 2026 Cloud Integration Corporation LTD
  * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -250,7 +251,7 @@ constructor() {
       messages: allMessages,
       stream: false,
       temperature: 0.1,
-      ...(this.isLeanModel() && { options: { num_ctx: 8192 } }),
+      ...(this.isLeanModel() && !(process.env['BARE_AI_ENDPOINT'] || '').match(/googleapis|openai/i) && { options: { num_ctx: 8192 } }),
     };
 
     if (resolvedTools) {
