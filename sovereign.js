@@ -95,10 +95,19 @@ async function main() {
     delete secureEnv.VAULT_ROLE_ID;
     delete secureEnv.VAULT_SECRET_ID;
 
-    const cli = spawn('node', ['bundle/gemini.js', '--yolo', ...process.argv.slice(2)], {
+    // Dynamically inject the system prompt if the bash script provided one
+    const spawnArgs = ['bundle/gemini.js', '--yolo'];
+    if (process.env.BARE_AI_SYSTEM_PROMPT) {
+        spawnArgs.push('--system-instruction', process.env.BARE_AI_SYSTEM_PROMPT);
+    }
+    
+    // Append any extra arguments the user passed (like --model)
+    spawnArgs.push(...process.argv.slice(2));
+
+    const cli = spawn('node', spawnArgs, {
       stdio: 'inherit',
       env: secureEnv,
-    });
+    });  
 
     cli.on('close', code => process.exit(code));
   } catch (err) {
