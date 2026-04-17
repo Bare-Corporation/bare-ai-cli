@@ -98,7 +98,7 @@ async function main() {
     // Dynamically inject the system prompt if the bash script provided one
     const spawnArgs = ['bundle/gemini.js', '--yolo'];
     if (process.env.BARE_AI_SYSTEM_PROMPT) {
-        spawnArgs.push('--system-instruction', process.env.BARE_AI_SYSTEM_PROMPT);
+        spawnArgs.push('-i', process.env.BARE_AI_SYSTEM_PROMPT);
     }
     
     // Append any extra arguments the user passed (like --model)
