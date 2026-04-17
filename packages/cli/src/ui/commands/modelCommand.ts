@@ -32,15 +32,34 @@ async function fetchVaultUpdate(modelName: string) {
   const vaultToken = process.env['VAULT_TOKEN'];
   if (!addr || !vaultToken) throw new Error('Sovereign environment not initialized.');
 
-  // Aligned with the vault paths set in setup_bare-ai-worker.sh
-  const path = `secret/data/${modelName}/config`;
-  const res = await fetch(`${addr}/v1/${path}`, {
+  
+  // Path 1: Try the standard KV v2 path (Matches your bashrc)
+  let path = `secret/data/${modelName}/config`;
+  let res = await fetch(`${addr}/v1/${path}`, {
     headers: { 'X-Vault-Token': vaultToken },
   });
-  const json: any = await res.json();
-  if (!json?.data?.data) throw new Error(`Model configuration not found at Vault path: ${path}`);
-  return json.data.data;
-}
+  let json: any = await res.json();
+
+  // Path 2: If Path 1 returns 404 or 403, fall back to the KV v1 literal path
+  if (res.status === 404 || res.status === 403) {
+    path = `secret/${modelName}/config`;
+    res = await fetch(`${addr}/v1/${path}`, {
+      headers: { 'X-Vault-Token': vaultToken },
+    });
+    json = await res.json();
+  }
+
+  // Support both KV v1 (json.data) and KV v2 (json.data.data) payloads safely
+  const configData = json?.data?.data || json?.data;
+
+  // If it STILL fails, log the exact Vault error to the terminal so we can see it
+  if (!configData) {
+     console.error(`\n[Vault Debug] Failed Response from Vault:`, JSON.stringify(json));
+     throw new Error(`Model configuration not found at Vault path: ${path}`);
+  }
+  
+  return configData;
+ }   
 
 const setModelCommand: SlashCommand = {
   name: 'set',
