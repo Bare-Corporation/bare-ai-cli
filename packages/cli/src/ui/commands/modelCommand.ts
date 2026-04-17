@@ -95,30 +95,42 @@ export const modelCommand: SlashCommand = {
         let disableTools = true; // default  
 
       switch (id) {
-        // Thinkers (No Tools)
-        case '001': targetModel = "deepseek-r1:8b"; break;
-        case '002': targetModel = "tir-na-ai:latest"; break;
-        case '003': targetModel = "gemma4:e4b"; break;
-        case '004': targetModel = "gemma4:26b"; break;
-        case '005': targetModel = "gemma4:31b"; break;
-        case '008': targetModel = "deepseek-coder-v2:latest"; break;
-        case '009': targetModel = "tir-na-ai:iGPU"; break;     
-        case '203': targetModel = "o1-preview"; break;
+        // ---------------------------------------------------------
+        // THINKERS (No Tools) 
+        // ---------------------------------------------------------
+        case '000': case 'tir-na-ai:iGPU': targetModel = "tir-na-ai:iGPU"; break; 
+        case '001': case 'tir-na-ai:latest': targetModel = "tir-na-ai:latest"; break;
+        case '011': case 'deepseek-r1:8b': targetModel = "deepseek-r1:8b"; break;
+        case '012': case 'deepseek-coder-v2:latest': targetModel = "deepseek-coder-v2:latest"; break; 
+        case '041': case 'gemma4:e4b': targetModel = "gemma4:e4b"; break;
+        case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; break;
+        case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; break;        
+        case '203': case 'o1-preview': targetModel = "o1-preview"; break;
 
-        // Doers (Tools Enabled)
-        case '006': targetModel = "granite4:tiny-h"; disableTools = false; break;
-        case '007': targetModel = "qwen2.5-coder:32b"; disableTools = false; break;
-        case '101': targetModel = "gemini-2.5-flash-lite"; disableTools = false; break;
-        case '102': targetModel = "gemini-2.5-flash"; disableTools = false; break;
-        case '103': targetModel = "gemini-2.5-pro"; disableTools = false; break;
-        case '104': targetModel = "gemini-3-flash-preview"; disableTools = false; break;
-        case '105': targetModel = "gemini-3.1-pro-preview"; disableTools = false; break;
-        case '201': targetModel = "gpt-4o"; disableTools = false; break;
-        case '202': targetModel = "gpt-4-turbo"; disableTools = false; break;
+        // ---------------------------------------------------------
+        // DOERS (Tools Enabled)
+        // ---------------------------------------------------------
+        case '021': case 'qwen2.5-coder:7b': targetModel = "qwen2.5-coder:7b"; disableTools = false; break;
+        case '022': case 'qwen2.5-coder:14b': targetModel = "qwen2.5-coder:14b"; disableTools = false; break;
+        case '023': case 'qwen2.5-coder:32b': targetModel = "qwen2.5-coder:32b"; disableTools = false; break;
+        case '031': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
+        case '051': case 'mistral-nemo:latest': targetModel = "mistral-nemo:latest"; disableTools = false; break;
+        case '061': case 'granite4:tiny-h': targetModel = "granite4:tiny-h"; disableTools = false; break;
+        
+        // PREMIUM CLOUD DOERS
+        case '101': case 'gemini-2.5-flash-lite': targetModel = "gemini-2.5-flash-lite"; disableTools = false; break;
+        case '102': case 'gemini-2.5-flash': targetModel = "gemini-2.5-flash"; disableTools = false; break;
+        case '103': case 'gemini-2.5-pro': targetModel = "gemini-2.5-pro"; disableTools = false; break;
+        case '104': case 'gemini-3-flash-preview': targetModel = "gemini-3-flash-preview"; disableTools = false; break;
+        case '105': case 'gemini-3.1-pro-preview': targetModel = "gemini-3.1-pro-preview"; disableTools = false; break;
+        case '201': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
+        case '202': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
         
         default:
-          context.ui.addItem({ type: MessageType.ERROR, text: `[sovereign] Invalid ID: ${id}` });
-          return;
+          // Fallback: If they typed a raw name not in the switch, assume it's a Doer and try Vault
+          targetModel = id; 
+          disableTools = false; 
+          break;
       }
 
       context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Swapping to model ${targetModel}...` });
