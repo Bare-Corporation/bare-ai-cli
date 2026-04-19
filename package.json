@@ -75,7 +75,12 @@
     "node-domexception": "npm:empty@^0.10.1",
     "prebuild-install": "npm:nop@1.0.0",
     "cross-spawn": "^7.0.6",
-    "minimatch": "^10.2.2"
+    "minimatch": "^10.2.2",
+    "protobufjs": "7.5.5",
+    "tar": "7.5.13",
+    "@tootallnate/once": "3.0.1",
+    "lodash": "4.17.21",
+    "fast-xml-parser": "4.6.4"
   },
   "bin": {
     "gemini": "bundle/gemini.js"
@@ -134,15 +139,15 @@
     "yargs": "^17.7.2"
   },
   "dependencies": {
-    "@tootallnate/once": "2.0.0",
+    "@tootallnate/once": "3.0.1",
     "ink": "npm:@jrichman/ink@6.4.11",
     "latest-version": "^9.0.0",
     "node-fetch-native": "^1.6.7",
     "proper-lockfile": "^4.1.2",
-    "protobufjs": "7.2.4",
+    "protobufjs": "7.5.5",
     "punycode": "^2.3.1",
     "simple-git": "^3.28.0",
-    "tar": "6.1.15"
+    "tar": "7.5.13"
   },
   "optionalDependencies": {
     "@lydell/node-pty": "1.1.0",
