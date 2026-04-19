@@ -6,8 +6,11 @@
 
 import { debugLogger } from '@bare-ai/core';
 import { copyToClipboard } from '../utils/commandUtils.js';
-import type { SlashCommand, SlashCommandActionReturn } from './types.js';
-import { CommandKind } from './types.js';
+import {
+  CommandKind,
+  type SlashCommand,
+  type SlashCommandActionReturn,
+} from './types.js';
 
 export const copyCommand: SlashCommand = {
   name: 'copy',

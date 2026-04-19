@@ -74,6 +74,7 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
         input: 0,
         duration_ms: 0,
         tool_calls: 0,
+        models: {},
       }),
     })),
     uiTelemetryService: {
