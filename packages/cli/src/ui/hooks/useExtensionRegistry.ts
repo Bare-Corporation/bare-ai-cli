@@ -26,7 +26,7 @@ export function useExtensionRegistry(
   const [error, setError] = useState<string | null>(null);
 
   const client = useMemo(
-    () => new ExtensionRegistryClient(registryURI),
+    () => new ExtensionRegistryClient(),
     [registryURI],
   );
 

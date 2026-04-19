@@ -1,0 +1,60 @@
+
+> @bare-ai/cli@0.1.0-bare-ai build
+> node scripts/build.js
+
+
+> @bare-ai/cli@0.1.0-bare-ai generate
+> node scripts/generate-git-commit-info.js
+
+
+> @bare-ai/cli-a2a-server@0.1.0-bare-ai build
+> node ../../scripts/build_package.js
+
+Successfully copied files.
+
+> @bare-ai/cli@0.1.0-bare-ai build
+> node ../../scripts/build_package.js
+
+Successfully copied files.
+
+> @bare-ai/core@0.1.0-bare-ai build
+> node ../../scripts/build_package.js
+
+Successfully copied files.
+Copied documentation to dist/docs
+
+> @bare-ai/cli-devtools@0.1.0-bare-ai build
+> npm run build:client && tsc -p tsconfig.build.json
+
+
+> @bare-ai/cli-devtools@0.1.0-bare-ai build:client
+> node esbuild.client.js
+
+
+> @bare-ai/cli-sdk@0.1.0-bare-ai build
+> node ../../scripts/build_package.js
+
+Successfully copied files.
+
+> @bare-ai/cli-test-utils@0.1.0-bare-ai build
+> node ../../scripts/build_package.js
+
+Successfully copied files.
+
+> bare-ai-cli-vscode-ide-companion@0.1.0-bare-ai build
+> npm run build:dev
+
+
+> bare-ai-cli-vscode-ide-companion@0.1.0-bare-ai build:dev
+> npm run check-types && npm run lint && node esbuild.js
+
+
+> bare-ai-cli-vscode-ide-companion@0.1.0-bare-ai check-types
+> tsc --noEmit
+
+
+> bare-ai-cli-vscode-ide-companion@0.1.0-bare-ai lint
+> eslint src
+
+[watch] build started
+[watch] build finished
