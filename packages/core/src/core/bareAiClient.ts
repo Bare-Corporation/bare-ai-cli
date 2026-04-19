@@ -263,6 +263,7 @@ export class BareAiClient {
       model: activeModel,
       messages: allMessages,
       stream: true,
+      stream_options: { include_usage: true }, // important: stream_options tells Ollama to send usage on final chunk. both claude & gemini missed this line.
       temperature: 0.1,
       ...(this.isLeanModel() &&
         !(activeEndpoint || '').match(/googleapis|openai/i) && {
