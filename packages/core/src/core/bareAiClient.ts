@@ -61,6 +61,14 @@ export interface GenerateResult {
   toolCalls?: ToolCall[];
 }
 
+interface UsageMetrics {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}
+
+// usage field added here so both streaming and static paths
+// can read token counts without any unsafe casts
 interface OllamaResponse {
   choices?: Array<{
     message?: {
@@ -68,12 +76,7 @@ interface OllamaResponse {
       tool_calls?: ToolCall[];
     };
   }>;
-}
-
-interface UsageMetrics {
-  prompt_tokens?: number;
-  completion_tokens?: number;
-  total_tokens?: number;
+  usage?: UsageMetrics;
 }
 
 // Typed shape for SSE stream chunks — eliminates the `any` chain from JSON.parse
@@ -301,11 +304,27 @@ export class BareAiClient {
         );
       }
 
-      // --- NON-STREAMING (tool calls active) ---
+      // --- NON-STREAMING: tool calls active (Doer models e.g. Granite) ---
       if (!body['stream']) {
         const parsedData: unknown = await response.json();
+
         if (!isOllamaResponse(parsedData))
           throw new Error('Invalid response format from API');
+
+        // Telemetry for static responses — usage is typed directly on
+        // OllamaResponse so no cast or `any` is needed here
+        if (parsedData.usage) {
+          const {
+            prompt_tokens = 0,
+            completion_tokens = 0,
+            total_tokens,
+          } = parsedData.usage;
+          const total = total_tokens ?? prompt_tokens + completion_tokens;
+          process.stdout.write(
+            `\n\x1b[90m[Telemetry | Engine: ${activeModel} | Mode: Static] Tokens: ${total} (Prompt: ${prompt_tokens}, Completion: ${completion_tokens})\x1b[0m\n`,
+          );
+        }
+
         const message = parsedData.choices?.[0]?.message;
         return {
           text: message?.content ?? '',
@@ -315,7 +334,7 @@ export class BareAiClient {
         };
       }
 
-      // --- REAL-TIME STREAMING ---
+      // --- REAL-TIME STREAMING: no tools active (Thinker models) ---
       if (!response.body)
         throw new Error('ReadableStream not supported in this environment.');
 
@@ -357,14 +376,16 @@ export class BareAiClient {
         }
       }
 
-      // Telemetry readout — process.stdout.write used intentionally (no-console compliance)
+      // Telemetry for streaming responses
       if (finalMetrics) {
-        const promptTokens = finalMetrics.prompt_tokens ?? 0;
-        const completionTokens = finalMetrics.completion_tokens ?? 0;
-        const totalTokens =
-          finalMetrics.total_tokens ?? promptTokens + completionTokens;
+        const {
+          prompt_tokens = 0,
+          completion_tokens = 0,
+          total_tokens,
+        } = finalMetrics;
+        const total = total_tokens ?? prompt_tokens + completion_tokens;
         process.stdout.write(
-          `\n\n\x1b[90m[Telemetry | Engine: ${activeModel}] Tokens: ${totalTokens} (Prompt: ${promptTokens}, Completion: ${completionTokens})\x1b[0m\n`,
+          `\n\n\x1b[90m[Telemetry | Engine: ${activeModel} | Mode: Stream] Tokens: ${total} (Prompt: ${prompt_tokens}, Completion: ${completion_tokens})\x1b[0m\n`,
         );
       } else {
         process.stdout.write('\n');
