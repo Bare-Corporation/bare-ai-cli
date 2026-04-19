@@ -80,7 +80,8 @@
     "tar": "7.5.13",
     "@tootallnate/once": "3.0.1",
     "lodash": "4.17.21",
-    "fast-xml-parser": "4.6.4"
+    "fast-xml-parser": "latest",
+    "zod": "3.25.76"
   },
   "bin": {
     "gemini": "bundle/gemini.js"
@@ -141,6 +142,7 @@
   "dependencies": {
     "@tootallnate/once": "3.0.1",
     "ink": "npm:@jrichman/ink@6.4.11",
+    "is-network-error": "^1.3.1",
     "latest-version": "^9.0.0",
     "node-fetch-native": "^1.6.7",
     "proper-lockfile": "^4.1.2",
