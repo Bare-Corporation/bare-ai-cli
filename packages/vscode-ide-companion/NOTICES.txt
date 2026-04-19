@@ -28,7 +28,7 @@ SOFTWARE.
 
 
 ============================================================
-@hono/node-server@1.19.11
+@hono/node-server@1.19.14
 (https://github.com/honojs/node-server.git)
 
 MIT License
@@ -2316,7 +2316,7 @@ THE SOFTWARE.
 
 
 ============================================================
-hono@4.12.8
+hono@4.12.14
 (git+https://github.com/honojs/hono.git)
 
 MIT License

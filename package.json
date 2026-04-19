@@ -134,12 +134,15 @@
     "yargs": "^17.7.2"
   },
   "dependencies": {
+    "@tootallnate/once": "2.0.0",
     "ink": "npm:@jrichman/ink@6.4.11",
     "latest-version": "^9.0.0",
     "node-fetch-native": "^1.6.7",
     "proper-lockfile": "^4.1.2",
+    "protobufjs": "7.2.4",
     "punycode": "^2.3.1",
-    "simple-git": "^3.28.0"
+    "simple-git": "^3.28.0",
+    "tar": "6.1.15"
   },
   "optionalDependencies": {
     "@lydell/node-pty": "1.1.0",
