@@ -302,7 +302,7 @@ export class BareAiClient {
       }
 
       // --- NON-STREAMING (tool calls active) ---
-      if (!body.stream) {
+      if (!body['stream']) {
         const parsedData: unknown = await response.json();
         if (!isOllamaResponse(parsedData))
           throw new Error('Invalid response format from API');
