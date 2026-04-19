@@ -9,7 +9,7 @@ import type { Key } from './useKeypress.js';
 import type { TextBuffer } from '../components/shared/text-buffer.js';
 import { useVimMode } from '../contexts/VimModeContext.js';
 import { debugLogger } from '@bare-ai/core';
-import { keyMatchers, Command } from '../keyMatchers.js';
+import { keyMatchers, Command } from '../key/keyMatchers.js';
 
 export type VimMode = 'NORMAL' | 'INSERT';
 

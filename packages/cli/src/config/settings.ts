@@ -1176,3 +1176,4 @@ function migrateExperimentalSettings(
   }
   return false;
 }
+export function resetSettingsCacheForTesting(): void {}

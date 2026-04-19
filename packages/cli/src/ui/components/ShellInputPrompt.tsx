@@ -8,9 +8,9 @@ import { useCallback } from 'react';
 import type React from 'react';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { ShellExecutionService } from '@bare-ai/core';
-import { keyToAnsi, type Key } from '../hooks/keyToAnsi.js';
+import { keyToAnsi, type Key } from '../key/keyToAnsi.js';
 import { ACTIVE_SHELL_MAX_LINES } from '../constants.js';
-import { Command, keyMatchers } from '../keyMatchers.js';
+import { Command, keyMatchers } from '../key/keyMatchers.js';
 
 export interface ShellInputPromptProps {
   activeShellPtyId: number | null;
