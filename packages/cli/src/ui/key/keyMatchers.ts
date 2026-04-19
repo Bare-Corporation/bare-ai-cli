@@ -40,3 +40,6 @@ export { Command };
 
 // Compatibility shim for shielded files
 export const keyMatchers = defaultKeyMatchers;
+export async function loadKeyMatchers(): Promise<{ matchers: KeyMatchers; errors: string[] }> {
+  return { matchers: defaultKeyMatchers, errors: [] };
+}

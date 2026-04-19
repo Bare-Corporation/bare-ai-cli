@@ -1158,4 +1158,7 @@ export class Task {
       this._createStatusUpdateEvent(this.taskState, citationEvent, message),
     );
   }
+  dispose(): void {
+    (this.scheduler as unknown as { dispose?: () => void })?.dispose?.();
+  }
 }
