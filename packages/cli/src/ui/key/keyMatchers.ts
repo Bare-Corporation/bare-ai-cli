@@ -55,3 +55,4 @@ export const defaultKeyMatchers: KeyMatchers =
 
 // Re-export Command for convenience
 export { Command };
+export const keyMatchers = defaultKeyMatchers;

@@ -6,7 +6,7 @@
 
 import { useReducer, useRef, useEffect, useCallback } from 'react';
 import { useKeypress, type Key } from './useKeypress.js';
-import { keyMatchers, Command } from '../keyMatchers.js';
+import { keyMatchers, Command } from '../key/keyMatchers.js';
 import { debugLogger } from '@bare-ai/core';
 
 export interface SelectionListItem<T> {

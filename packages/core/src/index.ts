@@ -223,3 +223,6 @@ export * from './utils/terminal.js';
 export type { Content, Part, FunctionCall } from '@google/genai';
 
 export { GEMINI_DIR } from './config/constants.js';
+
+// ==========================================
+export const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
