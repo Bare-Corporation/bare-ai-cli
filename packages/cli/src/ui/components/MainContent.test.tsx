@@ -22,6 +22,10 @@ import { CoreToolCallStatus } from '@bare-ai/core';
 import { type IndividualToolCallDisplay } from '../types.js';
 
 // Mock dependencies
+vi.mock('ink-spinner', () => ({
+  default: () => <Text>⠋</Text>,
+}));
+
 const mockUseSettings = vi.fn().mockReturnValue({
   merged: {
     ui: {
