@@ -187,6 +187,15 @@ const SETTINGS_SCHEMA = {
     description: 'General application settings.',
     showInDialog: false,
     properties: {
+      notificationMethod: {
+        type: 'string',
+        label: 'Notification Method',
+        category: 'General',
+        requiresRestart: false,
+        default: 'terminal',
+        description: 'Method for run notifications.',
+        showInDialog: false,
+      },
       preferredEditor: {
         type: 'string',
         label: 'Preferred Editor',
