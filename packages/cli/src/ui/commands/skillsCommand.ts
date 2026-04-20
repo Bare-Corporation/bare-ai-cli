@@ -358,6 +358,8 @@ function enableCompletion(
     .map((s) => s.name);
 }
 
+import { parseSlashCommand } from '../../utils/commands.js';
+
 export const skillsCommand: SlashCommand = {
   name: 'skills',
   description:
@@ -403,5 +405,13 @@ export const skillsCommand: SlashCommand = {
       action: reloadAction,
     },
   ],
-  action: listAction,
+  action: async (context, args) => {
+    if (args) {
+      const parsed = parseSlashCommand(`/${args}`, skillsCommand.subCommands!);
+      if (parsed.commandToExecute?.action) {
+        return parsed.commandToExecute.action(context, parsed.args);
+      }
+    }
+    return listAction(context, args);
+  },
 };

@@ -59,6 +59,7 @@ index 0000000..e69de29
             maxWidth: 80,
             theme: undefined,
             settings: expect.anything(),
+            disableColor: false,
           }),
         );
       });
@@ -93,6 +94,7 @@ index 0000000..e69de29
             maxWidth: 80,
             theme: undefined,
             settings: expect.anything(),
+            disableColor: false,
           }),
         );
       });
@@ -123,6 +125,7 @@ index 0000000..e69de29
             maxWidth: 80,
             theme: undefined,
             settings: expect.anything(),
+            disableColor: false,
           }),
         );
       });
