@@ -105,9 +105,9 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
     uiState.shortcutsHelpVisible &&
     uiState.streamingState === StreamingState.Idle &&
     !hasPendingActionRequired;
-  const hasToast = shouldShowToast(uiState);
+  const hasToast = shouldShowToast(uiState, { showEscapePrompt: false, buffer: { text: "", cursor: 0 } } as any);
   const showLoadingIndicator =
-    (!uiState.embeddedShellFocused || uiState.isBackgroundShellVisible) &&
+    (!uiState.embeddedShellFocused || uiState.isBackgroundTaskVisible) &&
     uiState.streamingState === StreamingState.Responding &&
     !hasPendingActionRequired;
   const hideUiDetailsForSuggestions =
@@ -140,7 +140,7 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
   const minimalModeBleedThrough = hideMinimalModeHintWhileBusy
     ? null
     : modeBleedThrough;
-  const hasMinimalStatusBleedThrough = shouldShowToast(uiState);
+  const hasMinimalStatusBleedThrough = shouldShowToast(uiState, { showEscapePrompt: false, buffer: { text: "", cursor: 0 } } as any);
 
   const showMinimalContextBleedThrough =
     !settings.merged.ui.footer.hideContextPercentage &&
@@ -152,7 +152,7 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
     );
   const hideShortcutsHintForSuggestions = hideUiDetailsForSuggestions;
   const isModelIdle = uiState.streamingState === StreamingState.Idle;
-  const isBufferEmpty = uiState.buffer.text.length === 0;
+  const isBufferEmpty = (uiState.buffer as any)?.text ?? "".length === 0;
   const canShowShortcutsHint =
     isModelIdle && isBufferEmpty && !hasPendingActionRequired;
   const [showShortcutsHintDebounced, setShowShortcutsHintDebounced] =
@@ -441,7 +441,7 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
 
       {uiState.isInputActive && (
         <InputPrompt
-          buffer={uiState.buffer}
+          buffer={uiState.buffer as any}
           inputWidth={uiState.inputWidth}
           suggestionsWidth={uiState.suggestionsWidth}
           onSubmit={uiActions.handleFinalSubmit}

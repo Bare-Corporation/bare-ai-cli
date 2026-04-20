@@ -205,10 +205,9 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
           borderTop={itemForDisplay.borderTop}
           borderBottom={itemForDisplay.borderBottom}
           isExpandable={isExpandable}
-          isToolGroupBoundary={isToolGroupBoundary}
         />
       )}
-      {itemForDisplay.type === 'subagent' && (
+      {(itemForDisplay.type as string) === 'subagent' && (
         <SubagentHistoryMessage
           item={itemForDisplay}
           terminalWidth={terminalWidth}

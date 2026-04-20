@@ -59,7 +59,7 @@ interface RunNonInteractiveParams {
 export async function runNonInteractive(
   params: RunNonInteractiveParams,
 ): Promise<void> {
-  const useAgentSession = params.config.getAgentSessionNoninteractiveEnabled();
+  const useAgentSession = false /* getAgentSessionNoninteractiveEnabled stub */;
   if (useAgentSession) {
     return runNonInteractiveAgentSession(params);
   }

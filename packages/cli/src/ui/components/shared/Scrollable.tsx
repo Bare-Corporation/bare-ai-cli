@@ -261,9 +261,6 @@ export const Scrollable: React.FC<ScrollableProps> = ({
       scrollTop={scrollTop}
       flexGrow={flexGrow}
       scrollbarThumbColor={scrollbarColor}
-      overflowToBackbuffer={overflowToBackbuffer}
-      scrollbar={scrollbar}
-      stableScrollback={stableScrollback}
     >
       {/*
         This inner box is necessary to prevent the parent from shrinking

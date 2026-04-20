@@ -2307,6 +2307,12 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       hintMode:
         config.isModelSteeringEnabled() && isToolExecuting(pendingHistoryItems),
       hintBuffer: '',
+      backgroundTasks: backgroundShells ?? new Map(),
+      backgroundTaskCount: backgroundShells?.size ?? 0,
+      isBackgroundTaskVisible: isBackgroundShellVisible ?? false,
+      activeBackgroundTaskPid: activeBackgroundShellPid ?? null,
+      isBackgroundTaskListOpen: isBackgroundShellListOpen ?? false,
+      backgroundTaskHeight: backgroundShellHeight ?? 0,
     }),
     [
       isThemeDialogOpen,

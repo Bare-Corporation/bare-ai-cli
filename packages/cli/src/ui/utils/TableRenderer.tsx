@@ -1,3 +1,10 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const StyledLine = { empty: (_n: number): any[] => [] };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type StyledLine = any[];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const styledLineToString = (s: any): string => String(s);
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -8,13 +15,11 @@ import React, { useMemo } from 'react';
 import {
   Text,
   Box,
-  StyledLine,
   toStyledCharacters,
   wordBreakStyledChars,
   wrapStyledChars,
   widestLineFromStyledChars,
   styledCharsWidth,
-  styledLineToString,
 } from 'ink';
 import { theme } from '../semantic-colors.js';
 import { parseMarkdownToANSI } from './markdownParsingUtils.js';

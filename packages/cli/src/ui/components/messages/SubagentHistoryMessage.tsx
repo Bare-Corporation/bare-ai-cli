@@ -6,12 +6,9 @@
 
 import type React from 'react';
 import { Box, Text } from 'ink';
-import type { HistoryItemSubagent } from '../../types.js';
 
-interface SubagentHistoryMessageProps {
-  item: HistoryItemSubagent;
-  terminalWidth: number;
-}
+
+interface SubagentHistoryMessageProps { item: any; [key: string]: any; }
 
 export const SubagentHistoryMessage: React.FC<SubagentHistoryMessageProps> = ({
   item,
