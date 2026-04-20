@@ -8,7 +8,6 @@ import { act } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '../../test-utils/render.js';
 import { useLogger } from './useLogger.js';
-<<<<<<< HEAD
 import {
   sessionId as globalSessionId,
   Logger,
@@ -17,9 +16,6 @@ import {
 } from '@bare-ai/core';
 import { ConfigContext } from '../contexts/ConfigContext.js';
 import type React from 'react';
-=======
-import { Logger, type Storage, type Config } from '@bare-ai/core';
->>>>>>> 1d36309f5
 
 let deferredInit: { resolve: (val?: unknown) => void };
 

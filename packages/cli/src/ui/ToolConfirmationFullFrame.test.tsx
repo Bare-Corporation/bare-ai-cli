@@ -11,15 +11,9 @@ import {
   CoreToolCallStatus,
   ApprovalMode,
   makeFakeConfig,
-<<<<<<< HEAD
 } from '@bare-ai/core';
 import { type UIState } from './contexts/UIStateContext.js';
 import type { SerializableConfirmationDetails } from '@bare-ai/core';
-=======
-  type SerializableConfirmationDetails,
-} from '@bare-ai/core';
-import { type UIState } from './contexts/UIStateContext.js';
->>>>>>> 5333e5ab2
 import { act } from 'react';
 import { StreamingState } from './types.js';
 

@@ -7,10 +7,7 @@
 import { OverflowProvider } from '../../contexts/OverflowContext.js';
 import { renderWithProviders } from '../../../test-utils/render.js';
 import { createMockSettings } from '../../../test-utils/settings.js';
-<<<<<<< HEAD
 import { makeFakeConfig } from '@bare-ai/core';
-=======
->>>>>>> 6c78eb7a3
 import { waitFor } from '../../../test-utils/async.js';
 import { DiffRenderer } from './DiffRenderer.js';
 import * as CodeColorizer from '../../utils/CodeColorizer.js';

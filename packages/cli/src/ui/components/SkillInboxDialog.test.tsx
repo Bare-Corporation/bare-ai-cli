@@ -5,26 +5,14 @@
  */
 
 import { act } from 'react';
-<<<<<<< HEAD
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Config, InboxSkill } from '@bare-ai/core';
-=======
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Config, InboxSkill, InboxPatch } from '@bare-ai/core';
->>>>>>> 5333e5ab2
 import {
   dismissInboxSkill,
   listInboxSkills,
   listInboxPatches,
   moveInboxSkill,
-<<<<<<< HEAD
 } from '@bare-ai/core';
-=======
-  applyInboxPatch,
-  dismissInboxPatch,
-  isProjectSkillPatchTarget,
-} from '@bare-ai/core';
->>>>>>> 5333e5ab2
 import { waitFor } from '../../test-utils/async.js';
 import { renderWithProviders } from '../../test-utils/render.js';
 import { SkillInboxDialog } from './SkillInboxDialog.js';
