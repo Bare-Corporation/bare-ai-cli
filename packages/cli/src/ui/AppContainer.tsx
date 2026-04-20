@@ -14,7 +14,7 @@ import {
 } from 'react';
 import {
   type DOMElement,
-  measureElement,
+  ResizeObserver,
   useApp,
   useStdout,
   useStdin,
@@ -396,7 +396,6 @@ export const AppContainer = (props: AppContainerProps) => {
   const branchName = useGitBranchName(config.getTargetDir());
 
   // Layout measurements
-  const mainControlsRef = useRef<DOMElement>(null);
   // For performance profiling only
   const rootUiRef = useRef<DOMElement>(null);
   const lastTitleRef = useRef<string | null>(null);
@@ -726,7 +725,7 @@ export const AppContainer = (props: AppContainerProps) => {
   // Wrap handleDeleteSession to return a Promise for UIActions interface
   const handleDeleteSession = useCallback(
     async (session: SessionInfo): Promise<void> => {
-      handleDeleteSessionSync(session);
+      await handleDeleteSessionSync(session);
     },
     [handleDeleteSessionSync],
   );
@@ -1392,6 +1391,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     !proQuotaRequest &&
     !copyModeEnabled;
 
+  const observerRef = useRef<ResizeObserver | null>(null);
   const [controlsHeight, setControlsHeight] = useState(0);
   const [lastNonCopyControlsHeight, setLastNonCopyControlsHeight] = useState(0);
 
@@ -1406,15 +1406,26 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       ? lastNonCopyControlsHeight
       : controlsHeight;
 
-  useLayoutEffect(() => {
-    if (mainControlsRef.current) {
-      const fullFooterMeasurement = measureElement(mainControlsRef.current);
-      const roundedHeight = Math.round(fullFooterMeasurement.height);
-      if (roundedHeight > 0 && roundedHeight !== controlsHeight) {
-        setControlsHeight(roundedHeight);
-      }
+  const mainControlsRef = useCallback((node: DOMElement | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
     }
-  }, [buffer, terminalWidth, terminalHeight, controlsHeight, isInputActive]);
+
+    if (node) {
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry) {
+          const roundedHeight = Math.round(entry.contentRect.height);
+          setControlsHeight((prev) =>
+            roundedHeight !== prev ? roundedHeight : prev,
+          );
+        }
+      });
+      observer.observe(node);
+      observerRef.current = observer;
+    }
+  }, []);
 
   // Compute available terminal height based on stable controls measurement
   const availableTerminalHeight = Math.max(
