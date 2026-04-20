@@ -30,8 +30,6 @@ import {
 import { ConfigContext } from './contexts/ConfigContext.js';
 import {
   type HistoryItem,
-  type HistoryItemWithoutId,
-  type HistoryItemToolGroup,
   AuthState,
   type ConfirmationRequest,
   type PermissionConfirmationRequest,
@@ -81,7 +79,6 @@ import {
   type AgentsDiscoveredPayload,
   ChangeAuthRequestedError,
   ProjectIdRequiredError,
-  CoreToolCallStatus,
   buildUserSteeringHintPrompt,
   logBillingEvent,
   ApiKeyUpdatedEvent,
@@ -169,29 +166,11 @@ import { useIsHelpDismissKey } from './utils/shortcutsHelp.js';
 import { useSuspend } from './hooks/useSuspend.js';
 import { useRunEventNotifications } from './hooks/useRunEventNotifications.js';
 import { isNotificationsEnabled } from '../utils/terminalNotifications.js';
-
-function isToolExecuting(pendingHistoryItems: HistoryItemWithoutId[]) {
-  return pendingHistoryItems.some((item) => {
-    if (item && item.type === 'tool_group') {
-      return item.tools.some(
-        (tool) => CoreToolCallStatus.Executing === tool.status,
-      );
-    }
-    return false;
-  });
-}
-
-function isToolAwaitingConfirmation(
-  pendingHistoryItems: HistoryItemWithoutId[],
-) {
-  return pendingHistoryItems
-    .filter((item): item is HistoryItemToolGroup => item.type === 'tool_group')
-    .some((item) =>
-      item.tools.some(
-        (tool) => CoreToolCallStatus.AwaitingApproval === tool.status,
-      ),
-    );
-}
+import {
+  isToolExecuting,
+  isToolAwaitingConfirmation,
+  getAllToolCalls,
+} from './utils/historyUtils.js';
 
 interface AppContainerProps {
   config: Config;
@@ -720,7 +699,10 @@ export const AppContainer = (props: AppContainerProps) => {
 
   // Derive auth state variables for backward compatibility with UIStateContext
   const isAuthDialogOpen = authState === AuthState.Updating;
-  const isAuthenticating = authState === AuthState.Unauthenticated;
+  // TODO: Consider handling other auth types that should also skip the blocking screen
+  const isAuthenticating =
+    authState === AuthState.Unauthenticated &&
+    settings.merged.security.auth.selectedType !== AuthType.USE_GEMINI;
 
   // Session browser and resume functionality
   const isGeminiClientInitialized = config.getGeminiClient()?.isInitialized();
@@ -1147,6 +1129,16 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     consumePendingHints,
   );
 
+  const pendingHistoryItems = useMemo(
+    () => [...pendingSlashCommandHistoryItems, ...pendingGeminiHistoryItems],
+    [pendingSlashCommandHistoryItems, pendingGeminiHistoryItems],
+  );
+
+  const hasPendingToolConfirmation = useMemo(
+    () => isToolAwaitingConfirmation(pendingHistoryItems),
+    [pendingHistoryItems],
+  );
+
   toggleBackgroundShellRef.current = toggleBackgroundShell;
   isBackgroundShellVisibleRef.current = isBackgroundShellVisible;
   backgroundShellsRef.current = backgroundShells;
@@ -1218,10 +1210,6 @@ Logging in with Google... Restarting Bare AI CLI to continue.
 
   cancelHandlerRef.current = useCallback(
     (shouldRestorePrompt: boolean = true) => {
-      const pendingHistoryItems = [
-        ...pendingSlashCommandHistoryItems,
-        ...pendingGeminiHistoryItems,
-      ];
       if (isToolAwaitingConfirmation(pendingHistoryItems)) {
         return; // Don't clear - user may be composing a follow-up message
       }
@@ -1255,8 +1243,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       inputHistory,
       getQueuedMessagesText,
       clearQueue,
-      pendingSlashCommandHistoryItems,
-      pendingGeminiHistoryItems,
+      pendingHistoryItems,
     ],
   );
 
@@ -1292,10 +1279,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       const isIdle = streamingState === StreamingState.Idle;
       const isAgentRunning =
         streamingState === StreamingState.Responding ||
-        isToolExecuting([
-          ...pendingSlashCommandHistoryItems,
-          ...pendingGeminiHistoryItems,
-        ]);
+        isToolExecuting(pendingHistoryItems);
 
       if (isSlash && isAgentRunning) {
         const { commandToExecute } = parseSlashCommand(
@@ -1315,7 +1299,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
         return;
       }
 
-      if (isSlash || (isIdle && isMcpReady)) {
+      const isMcpOrConfigReady = isConfigInitialized && isMcpReady;
+      if ((isSlash && isConfigInitialized) || (isIdle && isMcpOrConfigReady)) {
         if (!isSlash) {
           const permissions = await checkPermissions(submittedValue, config);
           if (permissions.length > 0) {
@@ -1338,10 +1323,12 @@ Logging in with Google... Restarting Bare AI CLI to continue.
         void submitQuery(submittedValue);
       } else {
         // Check messageQueue.length === 0 to only notify on the first queued item
-        if (isIdle && !isMcpReady && messageQueue.length === 0) {
+        if (isIdle && !isMcpOrConfigReady && messageQueue.length === 0) {
           coreEvents.emitFeedback(
             'info',
-            'Waiting for MCP servers to initialize... Slash commands are still available and prompts will be queued.',
+            !isConfigInitialized
+              ? 'Initializing... Prompts will be queued.'
+              : 'Waiting for MCP servers to initialize... Slash commands are still available and prompts will be queued.',
           );
         }
         addMessage(submittedValue);
@@ -1357,8 +1344,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       isMcpReady,
       streamingState,
       messageQueue.length,
-      pendingSlashCommandHistoryItems,
-      pendingGeminiHistoryItems,
+      pendingHistoryItems,
       config,
       constrainHeight,
       setConstrainHeight,
@@ -1366,6 +1352,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       refreshStatic,
       reset,
       handleHintSubmit,
+      isConfigInitialized,
       triggerExpandHint,
     ],
   );
@@ -1396,16 +1383,28 @@ Logging in with Google... Restarting Bare AI CLI to continue.
    * - Any future streaming states not explicitly allowed
    */
   const isInputActive =
-    isConfigInitialized &&
     !initError &&
     !isProcessing &&
     !isResuming &&
-    !!slashCommands &&
     (streamingState === StreamingState.Idle ||
-      streamingState === StreamingState.Responding) &&
-    !proQuotaRequest;
+      streamingState === StreamingState.Responding ||
+      streamingState === StreamingState.WaitingForConfirmation) &&
+    !proQuotaRequest &&
+    !copyModeEnabled;
 
   const [controlsHeight, setControlsHeight] = useState(0);
+  const [lastNonCopyControlsHeight, setLastNonCopyControlsHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!copyModeEnabled && controlsHeight > 0) {
+      setLastNonCopyControlsHeight(controlsHeight);
+    }
+  }, [copyModeEnabled, controlsHeight]);
+
+  const stableControlsHeight =
+    copyModeEnabled && lastNonCopyControlsHeight > 0
+      ? lastNonCopyControlsHeight
+      : controlsHeight;
 
   useLayoutEffect(() => {
     if (mainControlsRef.current) {
@@ -1417,10 +1416,10 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     }
   }, [buffer, terminalWidth, terminalHeight, controlsHeight, isInputActive]);
 
-  // Compute available terminal height based on controls measurement
+  // Compute available terminal height based on stable controls measurement
   const availableTerminalHeight = Math.max(
     0,
-    terminalHeight - controlsHeight - backgroundShellHeight - 1,
+    terminalHeight - stableControlsHeight - backgroundShellHeight - 1,
   );
 
   config.setShellExecutionConfig({
@@ -1669,15 +1668,6 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     [handleSlashCommand, settings],
   );
 
-  const { elapsedTime, currentLoadingPhrase } = useLoadingIndicator({
-    streamingState,
-    shouldShowFocusHint,
-    retryStatus,
-    loadingPhrasesMode: settings.merged.ui.loadingPhrases,
-    customWittyPhrases: settings.merged.ui.customWittyPhrases,
-    errorVerbosity: settings.merged.ui.errorVerbosity,
-  });
-
   const handleGlobalKeypress = useCallback(
     (key: Key): boolean => {
       // Debug log keystrokes if enabled
@@ -1703,6 +1693,10 @@ Logging in with Google... Restarting Bare AI CLI to continue.
         handleCtrlCPress();
         return true;
       } else if (keyMatchers[Command.EXIT](key)) {
+        // If the input field is non-empty, do not exit.
+        if (bufferRef.current.text.length > 0) {
+          return false;
+        }
         handleCtrlDPress();
         return true;
       } else if (keyMatchers[Command.SUSPEND_APP](key)) {
@@ -2024,16 +2018,6 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     authState === AuthState.AwaitingApiKeyInput ||
     !!newAgents;
 
-  const pendingHistoryItems = useMemo(
-    () => [...pendingSlashCommandHistoryItems, ...pendingGeminiHistoryItems],
-    [pendingSlashCommandHistoryItems, pendingGeminiHistoryItems],
-  );
-
-  const hasPendingToolConfirmation = useMemo(
-    () => isToolAwaitingConfirmation(pendingHistoryItems),
-    [pendingHistoryItems],
-  );
-
   const hasConfirmUpdateExtensionRequests =
     confirmUpdateExtensionRequests.length > 0;
   const hasLoopDetectionConfirmationRequest =
@@ -2050,6 +2034,48 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     !!overageMenuRequest ||
     !!emptyWalletRequest ||
     !!customDialog;
+
+  const loadingPhrases = settings.merged.ui.loadingPhrases;
+  const showStatusTips = loadingPhrases === 'tips' || loadingPhrases === 'all';
+  const showStatusWit = loadingPhrases === 'witty' || loadingPhrases === 'all';
+
+  const showLoadingIndicator =
+    (!embeddedShellFocused || isBackgroundShellVisible) &&
+    streamingState === StreamingState.Responding &&
+    !hasPendingActionRequired;
+
+  let estimatedStatusLength = 0;
+  if (activeHooks.length > 0 && settings.merged.hooksConfig.notifications) {
+    const hookLabel =
+      activeHooks.length > 1 ? 'Executing Hooks' : 'Executing Hook';
+    const hookNames = activeHooks
+      .map(
+        (h) =>
+          h.name +
+          (h.index && h.total && h.total > 1 ? ` (${h.index}/${h.total})` : ''),
+      )
+      .join(', ');
+    estimatedStatusLength = hookLabel.length + hookNames.length + 10;
+  } else if (showLoadingIndicator) {
+    const thoughtText = thought?.subject || 'Waiting for model...';
+    estimatedStatusLength = thoughtText.length + 25;
+  } else if (hasPendingActionRequired) {
+    estimatedStatusLength = 35;
+  }
+
+  const maxLength = terminalWidth - estimatedStatusLength - 5;
+
+  const { elapsedTime, currentLoadingPhrase, currentTip, currentWittyPhrase } =
+    useLoadingIndicator({
+      streamingState,
+      shouldShowFocusHint,
+      retryStatus,
+      showTips: showStatusTips,
+      showWit: showStatusWit,
+      customWittyPhrases: settings.merged.ui.customWittyPhrases,
+      errorVerbosity: settings.merged.ui.errorVerbosity,
+      maxLength,
+    });
 
   const allowPlanMode =
     config.isPlanEnabled() &&
@@ -2123,12 +2149,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
   ]);
 
   const allToolCalls = useMemo(
-    () =>
-      pendingHistoryItems
-        .filter(
-          (item): item is HistoryItemToolGroup => item.type === 'tool_group',
-        )
-        .flatMap((item) => item.tools),
+    () => getAllToolCalls(pendingHistoryItems),
     [pendingHistoryItems],
   );
 
@@ -2236,6 +2257,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       isFocused,
       elapsedTime,
       currentLoadingPhrase,
+      currentTip,
+      currentWittyPhrase,
       historyRemountKey,
       activeHooks,
       messageQueue,
@@ -2255,6 +2278,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       contextFileNames,
       errorCount,
       availableTerminalHeight,
+      stableControlsHeight,
       mainAreaWidth,
       staticAreaMaxItemHeight,
       staticExtraHeight,
@@ -2293,11 +2317,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       newAgents,
       showIsExpandableHint,
       hintMode:
-        config.isModelSteeringEnabled() &&
-        isToolExecuting([
-          ...pendingSlashCommandHistoryItems,
-          ...pendingGeminiHistoryItems,
-        ]),
+        config.isModelSteeringEnabled() && isToolExecuting(pendingHistoryItems),
       hintBuffer: '',
     }),
     [
@@ -2363,6 +2383,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       isFocused,
       elapsedTime,
       currentLoadingPhrase,
+      currentTip,
+      currentWittyPhrase,
       historyRemountKey,
       activeHooks,
       messageQueue,
@@ -2378,6 +2400,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       contextFileNames,
       errorCount,
       availableTerminalHeight,
+      stableControlsHeight,
       mainAreaWidth,
       staticAreaMaxItemHeight,
       staticExtraHeight,
