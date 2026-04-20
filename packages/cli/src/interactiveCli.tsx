@@ -153,12 +153,10 @@ export async function startInteractiveUI(
         profiler.reportFrameRendered();
       },
       standardReactLayoutTiming:
-        useAlternateBuffer || config.getUseTerminalBuffer(),
+        useAlternateBuffer || config.getUseAlternateBuffer(),
       patchConsole: false,
       alternateBuffer: useAlternateBuffer,
-      terminalBuffer: config.getUseTerminalBuffer(),
-      renderProcess:
-        config.getUseRenderProcess() && config.getUseTerminalBuffer(),
+      // terminalBuffer: config.getUseAlternateBuffer(),
       incrementalRendering:
         settings.merged.ui.incrementalRendering !== false &&
         useAlternateBuffer &&

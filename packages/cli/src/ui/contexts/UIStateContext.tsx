@@ -103,8 +103,6 @@ export interface AccountSuspensionInfo {
 }
 
 export interface UIState {
-  [key: string]: any;
-  [key: string]: any;
   history: HistoryItem[];
   historyManager: UseHistoryManagerReturn;
   isThemeDialogOpen: boolean;
@@ -199,6 +197,11 @@ export interface UIState {
   extensionsUpdateState: Map<string, ExtensionUpdateState>;
   activePtyId: number | undefined;
   backgroundTaskCount: number;
+  shellModeActive: boolean;
+  buffer: string;
+  inputWidth: number;
+  suggestionsWidth: number;
+  userMessages: string[];
   isBackgroundTaskVisible: boolean;
   embeddedShellFocused: boolean;
   showDebugProfiler: boolean;

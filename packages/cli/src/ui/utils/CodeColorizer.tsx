@@ -130,6 +130,8 @@ export interface ColorizeCodeOptions {
   theme?: Theme | null;
   settings: LoadedSettings;
   hideLineNumbers?: boolean;
+  disableColor?: boolean;
+  paddingX?: number;
 }
 
 /**

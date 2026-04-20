@@ -124,7 +124,6 @@ export const ToolConfirmationQueue: React.FC<ToolConfirmationQueueProps> = ({
             getPreferredEditor={getPreferredEditor}
             terminalWidth={mainAreaWidth - 4} // Adjust for parent border/padding
             availableTerminalHeight={availableContentHeight}
-            toolName={tool.name}
             isFocused={true}
           />
         </Box>
@@ -199,7 +198,6 @@ export const ToolConfirmationQueue: React.FC<ToolConfirmationQueueProps> = ({
           getPreferredEditor={getPreferredEditor}
           terminalWidth={mainAreaWidth - 4} // Adjust for parent border/padding
           availableTerminalHeight={availableContentHeight}
-          toolName={tool.name}
           isFocused={true}
         />
       </Box>

@@ -53,7 +53,7 @@ export interface MaskingResult {
  *
  * It implements a "Hybrid Backward Scanned FIFO" algorithm to balance context relevance with
  * token savings:
- * 1. **Protection Window**: Protects the newest `protectionThresholdTokens` (default 50k) tool tokens
+ * 1. **Protection Window**: Protects the newest `toolProtectionThreshold` (default 50k) tool tokens
  *    from pruning. Optionally skips the entire latest conversation turn to ensure full context for
  *    the model's next response.
  * 2. **Global Aggregation**: Scans backwards past the protection window to identify all remaining
@@ -124,7 +124,7 @@ export class ToolOutputMaskingService {
 
         if (!protectionBoundaryReached) {
           cumulativeToolTokens += partTokens;
-          if (cumulativeToolTokens > maskingConfig.protectionThresholdTokens) {
+          if (cumulativeToolTokens > maskingConfig.toolProtectionThreshold) {
             protectionBoundaryReached = true;
             // The part that crossed the boundary is prunable.
             totalPrunableTokens += partTokens;
@@ -151,12 +151,12 @@ export class ToolOutputMaskingService {
 
     // Trigger pruning only if we have accumulated enough savings to justify the
     // overhead of masking and file I/O (batch pruning threshold).
-    if (totalPrunableTokens < maskingConfig.minPrunableThresholdTokens) {
+    if (totalPrunableTokens < ((maskingConfig as any).minPrunableThresholdTokens ?? 50000)) {
       return { newHistory: history, maskedCount: 0, tokensSaved: 0 };
     }
 
     debugLogger.debug(
-      `[ToolOutputMasking] Triggering masking. Prunable tool tokens: ${totalPrunableTokens.toLocaleString()} (> ${maskingConfig.minPrunableThresholdTokens.toLocaleString()})`,
+      `[ToolOutputMasking] Triggering masking. Prunable tool tokens: ${totalPrunableTokens.toLocaleString()} (> ${((maskingConfig as any).minPrunableThresholdTokens ?? 50000).toLocaleString()})`,
     );
 
     // Perform masking and offloading

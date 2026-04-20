@@ -111,7 +111,7 @@ import {
   type ModelConfigServiceConfig,
 } from '../services/modelConfigService.js';
 import { DEFAULT_MODEL_CONFIGS } from './defaultModelConfigs.js';
-import { ContextManager } from '../services/contextManager.js';
+import { MemoryContextManager as ContextManager } from '../context/memoryContextManager.js';
 import { TrackerService } from '../services/trackerService.js';
 import type { GenerateContentParameters } from '@google/genai';
 
@@ -406,7 +406,7 @@ import {
   DEFAULT_TOOL_PROTECTION_THRESHOLD,
   DEFAULT_MIN_PRUNABLE_TOKENS_THRESHOLD,
   DEFAULT_PROTECT_LATEST_TURN,
-} from '../services/toolOutputMaskingService.js';
+} from '../context/toolOutputMaskingService.js';
 
 import {
   type ExtensionLoader,
@@ -1593,6 +1593,13 @@ export class Config implements McpContext, AgentLoopContext {
   getShellBackgroundCompletionBehavior(): 'notify' | 'silent' | 'inject' | undefined {
     return 'notify';
   }
+  isContextManagementEnabled(): boolean {
+    return true;
+  }
+
+  getUseTerminalBuffer(): boolean { return false; }
+  getUseRenderProcess(): boolean { return false; }
+  getAgentSessionNoninteractiveEnabled(): boolean { return false; }
   isPlanMode(): boolean {
     return false;
   }
@@ -2241,6 +2248,10 @@ export class Config implements McpContext, AgentLoopContext {
 
   getEnvironmentMemory(): string {
     return this.contextManager?.getEnvironmentMemory() ?? '';
+  }
+
+  getMemoryContextManager(): any {
+    return this.getContextManager();
   }
 
   getContextManager(): ContextManager | undefined {

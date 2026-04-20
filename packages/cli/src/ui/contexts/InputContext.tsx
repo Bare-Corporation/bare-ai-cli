@@ -26,3 +26,17 @@ export const useInputState = () => {
   }
   return context;
 };
+
+import React, { useState } from 'react';
+export const InputProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state] = useState<InputState>({
+    buffer: { text: '', cursor: 0 } as any,
+    userMessages: [],
+    shellModeActive: false,
+    showEscapePrompt: false,
+    copyModeEnabled: false,
+    inputWidth: 0,
+    suggestionsWidth: 0,
+  });
+  return <InputContext.Provider value={state}>{children}</InputContext.Provider>;
+};

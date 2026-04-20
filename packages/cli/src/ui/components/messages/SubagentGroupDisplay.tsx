@@ -191,7 +191,7 @@ export const SubagentGroupDisplay: React.FC<SubagentGroupDisplayProps> = ({
           }
         }
 
-        const history = toolCall.subagentHistory ?? progress.recentActivity;
+        const history = toolCall?.["subagentHistory"] ?? progress.recentActivity;
         const lastActivity: SubagentActivityItem | undefined =
           history[history.length - 1];
 
@@ -261,7 +261,7 @@ export const SubagentGroupDisplay: React.FC<SubagentGroupDisplayProps> = ({
             <SubagentProgressDisplay
               progress={progress}
               terminalWidth={terminalWidth}
-              historyOverrides={toolCall.subagentHistory}
+              historyOverrides={toolCall?.["subagentHistory"]}
             />
           </Box>
         );
