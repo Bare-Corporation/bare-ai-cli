@@ -1,16 +1,49 @@
-This text is the Apache License version 2.0, which is a widely used open-source software license. It grants users permission to use, modify, and distribute the licensed software, subject work.
+It looks like you've provided a code snippet that appears to be part of a larger application, possibly related to shell command execution and task management. The code is written in TypeScript and seems to handle various aspects of executing shell commands, managing background tasks, and updating the UI accordingly.
 
-8. **Accepting Warranty or Additional Liability**: Users may offer support, warranty, indemnity, or other liability obligations and rights consistent with this license but must act only on their own behalf and agree to indemnify contributors for any liability to certain conditions and restrictions. The key points of the license include:
+Here's a breakdown of some key components and functionalities:
 
-1. **Grant of Copyright License**: Eachexcept as stated) patent license to make, have made, use, offer to sell, sell, import, and otherwise service marks, or product names of the licensor except as required for reasonable and customary use.
+1. **Background Task Management**:
+   - The code manages background tasks using a `state.backgroundTasks` object.
+   - It provides functions like `toggleBackgroundTasks`, `backgroundCurrentExecution`, `registerBackgroundTask`, and `dismissBackgroundTask` to handle these tasks.
 
-6. **Disclaimer of Warranty**: The work is provided "as is" without warranties or conditions of any kind.
+2. **Shell Command Execution**:
+   - The `handleShellCommand` function is responsible for executing shell commands.
+   - It handles both interactive and non-interactive shell execution, manages binary output, and updates the UI with the results.
 
-7. **Limitation of Liability**: Contributors are not liable for damages arising from this license or out of the use or inability to use the
+3. **UI Updates**:
+   - The code uses a dispatch mechanism to update various parts of the UI, such as setting active PTYs, updating shell output times, and toggling background task visibility.
 
-[90m[Telemetry | Engine: gemini-3.1-pro-preview-customtools | Mode: Stream] Tokens: 6708 (Prompt: 4311, Completion: 831)[0m
-This text is the Apache License version 2.0, which is a widely used open-source software license. It grants users permission to use, modify, and distribute the licensed software, subject work.
+4. **Error Handling**:
+   - The code includes error handling for unexpected errors during command execution, ensuring that any issues are logged and displayed to the user.
 
-8. **Accepting Warranty or Additional Liability**: Users may offer support, warranty, indemnity, or other liability obligations and rights consistent with this license but must act only on their own behalf and agree to indemnify contributors for any liability to certain conditions and restrictions. The key points of the license include:
+5. **Configuration and Theme Management**:
+   - It uses configuration settings (`config`) and theme management (`themeManager`) to customize shell execution behavior and appearance.
 
-1. **Grant of Copyright License**: Eachexcept as stated) patent license to make, have made, use, offer to sell, sell, import, and otherwise service marks, or product names of the licensor except as required for reasonable and customary use.
+6. **Debugging and Logging**:
+   - The code includes debugging messages and logging functions (`onDebugMessage`) to help with development and troubleshooting.
+
+If you have specific questions or need further assistance with any part of this code, feel free to ask!
+
+[90m[Telemetry | Engine: qwen2.5-coder:14b | Mode: Stream] Tokens: 4430 (Prompt: 4096, Completion: 334)[0m
+It looks like you've provided a code snippet that appears to be part of a larger application, possibly related to shell command execution and task management. The code is written in TypeScript and seems to handle various aspects of executing shell commands, managing background tasks, and updating the UI accordingly.
+
+Here's a breakdown of some key components and functionalities:
+
+1. **Background Task Management**:
+   - The code manages background tasks using a `state.backgroundTasks` object.
+   - It provides functions like `toggleBackgroundTasks`, `backgroundCurrentExecution`, `registerBackgroundTask`, and `dismissBackgroundTask` to handle these tasks.
+
+2. **Shell Command Execution**:
+   - The `handleShellCommand` function is responsible for executing shell commands.
+   - It handles both interactive and non-interactive shell execution, manages binary output, and updates the UI with the results.
+
+3. **UI Updates**:
+   - The code uses a dispatch mechanism to update various parts of the UI, such as setting active PTYs, updating shell output times, and toggling background task visibility.
+
+4. **Error Handling**:
+   - The code includes error handling for unexpected errors during command execution, ensuring that any issues are logged and displayed to the user.
+
+5. **Configuration and Theme Management**:
+   - It uses configuration settings (`config`) and theme management (`themeManager`) to customize shell execution behavior and appearance.
+
+6. **Debugging and Logging**:

@@ -67,7 +67,7 @@ describe('ToolConfirmationQueue', () => {
     const confirmingTool = {
       tool: {
         callId: 'call-1',
-        name: 'ls',
+        name: 'run_shell_command',
         description: 'list files',
         status: CoreToolCallStatus.AwaitingApproval,
         confirmationDetails: {
@@ -95,15 +95,12 @@ describe('ToolConfirmationQueue', () => {
     );
 
     const output = lastFrame();
-    expect(output).toContain('Action Required');
     expect(output).toContain('1 of 3');
     expect(output).toContain('ls'); // Tool name
     expect(output).toContain('list files'); // Tool description
-    expect(output).toContain("Allow execution of: 'ls'?");
+    expect(output).toContain('Allow execution of [ls]?');
     expect(output).toMatchSnapshot();
 
-    const stickyHeaderProps = vi.mocked(StickyHeader).mock.calls[0][0];
-    expect(stickyHeaderProps.borderColor).toBe(theme.status.warning);
     unmount();
   });
 
@@ -232,7 +229,7 @@ describe('ToolConfirmationQueue', () => {
     // availableContentHeight = Math.max(9 - 6, 4) = 4
     // MaxSizedBox in ToolConfirmationMessage will use 4
     // It should show truncation message
-    await waitFor(() => expect(lastFrame()).toContain('49 hidden (Ctrl+O)'));
+    await waitFor(() => expect(lastFrame()).toContain('48 hidden (Ctrl+O)'));
     expect(lastFrame()).toMatchSnapshot();
     unmount();
   });

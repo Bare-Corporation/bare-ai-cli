@@ -1,15 +1,15 @@
-This text is the Apache License version 2.0, which is a widely used open-source software license. It grants users permission to use, modify, and distribute the licensed software, subject to certain conditions and restrictions. The key-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare derivative works of, publicly display.
+This is a TypeScript implementation of a virtualized list component in React. The component is designed to efficiently render large lists by a breakdown of the key features and components:
 
-4. **Submission of Contributions**: Contributions submitted for inclusion in the work are under the terms and conditions of this license.
+1. **Props**:
+   - `data`: An array of React element representing the item.
+   - `keyExtractor`: A function that extracts a unique key for each item. to overflow content to the backbuffer.
+   - `isStaticItem`: An optional function that determines if an item
+   - The component uses a `ResizeObserver` to track changes in the container's size.
+   -
 
-5. **Trademarks**: The license does not grant permission to use trade names, trademarks, serviceThis text is the Apache License version 2.0, which is a widely used open-source software license. Itistribution Conditions**: To redistribute copies of the work or derivative works, you must:
-   - Give any other recipients
+[90m[Telemetry | Engine: gemini-3.1-pro-preview-customtools | Mode: Stream] Tokens: 7620 (Prompt: 1321, Completion: 480)[0m
+This is a TypeScript implementation of a virtualized list component in React. The component is designed to efficiently render large lists by a breakdown of the key features and components:
 
-4. **Submission of Contributions**: Contributions submitted for inclusion in the work are under the terms and conditions of this license
-
-[90m[Telemetry | Engine: gemini-3.1-pro-preview-customtools | Mode: Stream] Tokens: 7261 (Prompt: 4293, Completion: 719)[0m
-This text is the Apache License version 2.0, which is a widely used open-source software license. It grants users permission to use, modify, and distribute the licensed software, subject to certain conditions and restrictions. The key-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare derivative works of, publicly display.
-
-4. **Submission of Contributions**: Contributions submitted for inclusion in the work are under the terms and conditions of this license.
-
-5. **Trademarks**: The license does not grant permission to use trade names, trademarks, serviceThis text is the Apache License version 2.0, which is a widely used open-source software license. Itistribution Conditions**: To redistribute copies of the work or derivative works, you must:
+1. **Props**:
+   - `data`: An array of React element representing the item.
+   - `keyExtractor`: A function that extracts a unique key for each item. to overflow content to the backbuffer.
