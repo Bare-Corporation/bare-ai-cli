@@ -919,7 +919,7 @@ export class Config implements McpContext, AgentLoopContext {
           networkAccess: false,
         };
 
-    this._sandboxManager = createSandboxManager(this.sandbox, params.targetDir);
+    this._sandboxManager = createSandboxManager(this.sandbox, { targetDir: params.targetDir } as any);
 
     if (
       !(this._sandboxManager instanceof NoopSandboxManager) &&
@@ -1570,6 +1570,28 @@ export class Config implements McpContext, AgentLoopContext {
   }
   getGemini31FlashLiteLaunchedSync(): boolean {
     return this.getGemini31LaunchedSync();
+  }
+  get topicState() {
+    return {
+      getTopic: (): string | undefined => undefined,
+      setTopic: (_title: string | undefined, _intent: string | undefined) => {},
+      getIntent: (): string | undefined => undefined,
+    };
+  }
+  getMemoryBoundaryMarkers(): string[] {
+    return [];
+  }
+  isAutoDistillationEnabled(): boolean {
+    return false;
+  }
+  getToolMaxOutputTokens(): number {
+    return 100000;
+  }
+  getToolSummarizationThresholdTokens(): number {
+    return 50000;
+  }
+  getShellBackgroundCompletionBehavior(): 'notify' | 'silent' | 'inject' | undefined {
+    return 'notify';
   }
   isPlanMode(): boolean {
     return false;
