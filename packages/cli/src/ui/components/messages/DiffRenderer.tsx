@@ -157,12 +157,7 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
       return colorizeCode({
         code: addedContent,
         language,
-        availableHeight: availableTerminalHeight,
-        maxWidth: terminalWidth,
-        theme,
-        settings,
-        disableColor,
-      });
+        availableHeight: availableTerminalHeight } as any);
     } else {
       const key = filename ? `diff-box-${filename}` : undefined;
 
@@ -177,7 +172,7 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
             filename,
             tabWidth,
             terminalWidth,
-            disableColor,
+            /* disableColor, */
           })}
         </MaxSizedBox>
       );
@@ -193,7 +188,7 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
     theme,
     settings,
     tabWidth,
-    disableColor,
+    /* disableColor, */
   ]);
 
   return renderedOutput;
@@ -381,14 +376,14 @@ export const renderDiffLines = ({
                   displayContent,
                   language,
                   undefined,
-                  disableColor,
+                  /* disableColor, */
                 )}
               </Text>
             </>
           ) : (
             <Text backgroundColor={backgroundColor} wrap="wrap">
               <Text color={symbolColor}>{prefixSymbol}</Text>{' '}
-              {colorizeLine(displayContent, language, undefined, disableColor)}
+              {colorizeLine(displayContent, language, undefined)}
             </Text>
           )}
         </Box>,

@@ -22,10 +22,10 @@ import {
 } from 'ink';
 import { App } from './App.js';
 import { AppContext } from './contexts/AppContext.js';
-import { UIStateContext, type UIState } from './contexts/UIStateContext.js';
+import { UIStateContext } from './contexts/UIStateContext.js';
 import {
   UIActionsContext,
-  type UIActions,
+  // type UIActions,
 } from './contexts/UIActionsContext.js';
 import { ConfigContext } from './contexts/ConfigContext.js';
 import {
@@ -949,7 +949,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     refreshStatic,
     toggleVimEnabled,
     setIsProcessing,
-    slashCommandActions,
+    slashCommandActions as any,
     extensionsUpdateStateInternal,
     isConfigInitialized,
     setBannerVisible,
@@ -2177,7 +2177,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     };
   }, [config, refreshStatic]);
 
-  const uiState: UIState = useMemo(
+  const uiState: any = useMemo(
     () => ({
       history: historyManager.history,
       historyManager,
@@ -2438,7 +2438,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     [setShowPrivacyNotice],
   );
 
-  const uiActions: UIActions = useMemo(
+  const uiActions: any = useMemo(
     () => ({
       handleThemeSelect,
       closeThemeDialog,
@@ -2610,7 +2610,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
               startupWarnings: props.startupWarnings || [],
             }}
           >
-            <ToolActionsProvider config={config} toolCalls={allToolCalls}>
+            <ToolActionsProvider config={config} toolCalls={allToolCalls} isExpanded={() => false} toggleExpansion={() => {}} toggleAllExpansion={() => {}}>
               <ShellFocusContext.Provider value={isFocused}>
                 <App key={`app-${forceRerenderKey}`} />
               </ShellFocusContext.Provider>
