@@ -22,6 +22,7 @@ import type { OverageMenuIntent, EmptyWalletIntent } from './UIStateContext.js';
 
 export interface UIActions {
   [key: string]: any;
+  [key: string]: any;
   handleThemeSelect: (
     themeName: string,
     scope: LoadableSettingScope,

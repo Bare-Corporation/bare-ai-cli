@@ -17,6 +17,7 @@ import {
 import type {
   SessionMetrics,
   ModelMetrics,
+  RoleMetrics,
   ToolCallStats,
 } from '@bare-ai/core';
 import { uiTelemetryService, sessionId } from '@bare-ai/core';
@@ -139,7 +140,7 @@ function areMetricsEqual(a: SessionMetrics, b: SessionMetrics): boolean {
   return true;
 }
 
-export type { SessionMetrics, ModelMetrics };
+export type { SessionMetrics, ModelMetrics, RoleMetrics };
 
 export interface SessionStatsState {
   sessionId: string;

@@ -23,6 +23,7 @@ import { useUIState } from '../contexts/UIStateContext.js';
 import { useConfig } from '../contexts/ConfigContext.js';
 import { useSettings } from '../contexts/SettingsContext.js';
 import { useVimMode } from '../contexts/VimModeContext.js';
+import { useInputState } from '../contexts/InputContext.js';
 import {
   ALL_ITEMS,
   type FooterItemId,
@@ -179,6 +180,7 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
   copyModeEnabled = false,
 }) => {
   const uiState = useUIState();
+  const { copyModeEnabled } = useInputState();
   const config = useConfig();
   const settings = useSettings();
   const { vimEnabled, vimMode } = useVimMode();
@@ -363,10 +365,7 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
           id,
           header,
           () => (
-            <MemoryUsageDisplay
-              color={itemColor}
-              isActive={!uiState.copyModeEnabled}
-            />
+            <MemoryUsageDisplay color={itemColor} isActive={!copyModeEnabled} />
           ),
           10,
         );

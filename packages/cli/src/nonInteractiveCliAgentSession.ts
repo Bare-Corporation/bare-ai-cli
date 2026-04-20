@@ -10,7 +10,7 @@ import type {
   UserFeedbackPayload,
   AgentEvent,
   ContentPart,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { isSlashCommand } from './ui/utils/commandUtils.js';
 import type { LoadedSettings } from './config/settings.js';
 import {
@@ -37,7 +37,8 @@ import {
   LegacyAgentSession,
   ToolErrorType,
   geminiPartsToContentParts,
-} from '@google/gemini-cli-core';
+  debugLogger,
+} from '@bare-ai/core';
 
 import type { Part } from '@google/genai';
 import readline from 'node:readline';
@@ -183,6 +184,7 @@ export async function runNonInteractive({
     };
 
     let errorToHandle: unknown | undefined;
+    let scheduler: Scheduler | undefined;
     let abortSession = () => {};
     try {
       consolePatcher.patch();
@@ -214,7 +216,7 @@ export async function runNonInteractive({
       });
 
       const geminiClient = config.getGeminiClient();
-      const scheduler = new Scheduler({
+      scheduler = new Scheduler({
         context: config,
         messageBus: config.getMessageBus(),
         getPreferredEditor: () => undefined,
@@ -599,6 +601,7 @@ export async function runNonInteractive({
             // Explicitly ignore these non-interactive events
             break;
           default:
+            debugLogger.error('Unknown agent event type:', event);
             event satisfies never;
             break;
         }
@@ -610,6 +613,7 @@ export async function runNonInteractive({
       cleanupStdinCancellation();
       abortController.signal.removeEventListener('abort', abortSession);
 
+      scheduler?.dispose();
       consolePatcher.cleanup();
       coreEvents.off(CoreEvent.UserFeedback, handleUserFeedback);
     }
