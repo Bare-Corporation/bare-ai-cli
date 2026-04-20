@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
   "name": "@bare-ai/cli",
   "version": "0.1.0-bare-ai",
+=======
+  "name": "@google/gemini-cli",
+  "version": "0.35.0-nightly.20260313.bb060d7a9",
+>>>>>>> e3df87cf1
   "engines": {
     "node": ">=20.0.0"
   },
@@ -14,7 +19,11 @@
     "url": "git+https://github.com/Cian-CloudIntCorp/bare-ai-cli.git"
   },
   "config": {
+<<<<<<< HEAD
     "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.1.0-bare-ai"
+=======
+    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.35.0-nightly.20260313.bb060d7a9"
+>>>>>>> e3df87cf1
   },
   "scripts": {
     "start": "cross-env NODE_ENV=development node scripts/start.js",
