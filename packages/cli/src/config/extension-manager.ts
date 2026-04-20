@@ -564,7 +564,8 @@ Would you like to attempt to install via "git clone" instead?`,
 
   protected override async startExtension(extension: GeminiCLIExtension) {
     await super.startExtension(extension);
-    if (extension.themes && !themeManager.hasExtensionThemes(extension.name)) {
+    if (extension.themes) {
+      themeManager.clearExtensionThemes();
       themeManager.registerExtensionThemes(extension.name, extension.themes);
     }
   }
