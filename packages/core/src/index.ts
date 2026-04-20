@@ -290,3 +290,4 @@ export type ToolDisplay = any;
 export type ToolVisibilityContext = any;
 export { isProjectSkillPatchTarget } from './services/memoryPatchUtils.js';
 export { applyInboxPatch, dismissInboxPatch } from './commands/memory.js';
+export * from './services/contextManager.js';
