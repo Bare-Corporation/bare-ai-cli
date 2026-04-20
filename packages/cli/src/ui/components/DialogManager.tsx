@@ -79,7 +79,6 @@ export const DialogManager = ({
   if (quotaState.proQuotaRequest) {
     return (
       <ProQuotaDialog
-<<<<<<< HEAD
         failedModel={uiState.quota.proQuotaRequest.failedModel}
         fallbackModel={uiState.quota.proQuotaRequest.fallbackModel}
         message={uiState.quota.proQuotaRequest.message}
@@ -90,14 +89,6 @@ export const DialogManager = ({
           !!uiState.quota.proQuotaRequest.isModelNotFoundError
         }
         authType={uiState.quota.proQuotaRequest.authType}
-=======
-        failedModel={quotaState.proQuotaRequest.failedModel}
-        fallbackModel={quotaState.proQuotaRequest.fallbackModel}
-        message={quotaState.proQuotaRequest.message}
-        isTerminalQuotaError={quotaState.proQuotaRequest.isTerminalQuotaError}
-        isModelNotFoundError={!!quotaState.proQuotaRequest.isModelNotFoundError}
-        authType={quotaState.proQuotaRequest.authType}
->>>>>>> 5333e5ab2
         onChoice={uiActions.handleProQuotaChoice}
       />
     );

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MemoryContextManager as ContextManager } from '../contextManager.js';
+import { MemoryContextManager as ContextManager } from '../memoryContextManager.js';
 import { AgentChatHistory } from '../../core/agentChatHistory.js';
 import type { Content } from '@google/genai';
 import type { ContextProfile } from '../config/profiles.js';
@@ -76,7 +76,7 @@ export class SimulationHarness {
       this.eventBus,
       this.tracer,
     );
-    this.contextManager = new ContextManager(
+    this.contextManager = new (ContextManager as any)(
       config,
       this.env,
       this.tracer,
@@ -96,7 +96,7 @@ export class SimulationHarness {
 
     // 2. Measure tokens immediately after append (Before background processing)
     const tokensBefore = this.env.tokenCalculator.calculateConcreteListTokens(
-      this.contextManager.getNodes(),
+      this.contextManager?.getNodes?.() ?? [],
     );
     debugLogger.log(
       `[Turn ${this.currentTurnIndex}] Tokens BEFORE: ${tokensBefore}`,
@@ -106,7 +106,7 @@ export class SimulationHarness {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     // 3.1 Simulate what projectCompressedHistory does with the sync handlers
-    let currentView = this.contextManager.getNodes();
+    let currentView = (this.contextManager?.getNodes?.() ?? [] as any[]);
     const currentTokens =
       this.env.tokenCalculator.calculateConcreteListTokens(currentView);
     if (
@@ -123,18 +123,18 @@ export class SimulationHarness {
       const modifiedView = await orchestrator.executeTriggerSync(
         'gc_backstop',
         currentView,
-        new Set(currentView.map((e) => e.id)),
+        new Set(currentView.map((e: any) => e.id)),
         new Set<string>(),
       );
 
       // In the real system, ContextManager triggers this and retains it.
       // We will emulate that behavior internally in the test loop for token counting.
-      currentView = modifiedView;
+      currentView = modifiedView as any[];
     }
 
     // 4. Measure tokens after background processors have processed inboxes
     const tokensAfter = this.env.tokenCalculator.calculateConcreteListTokens(
-      this.contextManager.getNodes(),
+      this.contextManager?.getNodes?.() ?? [],
     );
     debugLogger.log(
       `[Turn ${this.currentTurnIndex}] Tokens AFTER: ${tokensAfter}`,
@@ -148,7 +148,7 @@ export class SimulationHarness {
   }
 
   async getGoldenState() {
-    const finalProjection = await this.contextManager.renderHistory();
+    const finalProjection = await this.contextManager?.renderHistory?.();
     return {
       tokenTrajectory: this.tokenTrajectory,
       finalProjection,

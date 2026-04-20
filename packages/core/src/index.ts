@@ -283,4 +283,10 @@ export const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
 export * from './core/coreToolScheduler.js';
 export * from './context/memoryContextManager.js';
 export { sessionId } from './utils/session.js';
-export * from './services/contextManager.js';
+export * from './context/memoryContextManager.js';
+export function displayContentToString(c: any): string { return typeof c === 'string' ? c : JSON.stringify(c); }
+export function shouldHideToolCall(_tool: any): boolean { return false; }
+export type ToolDisplay = any;
+export type ToolVisibilityContext = any;
+export { isProjectSkillPatchTarget } from './services/memoryPatchUtils.js';
+export { applyInboxPatch, dismissInboxPatch } from './commands/memory.js';

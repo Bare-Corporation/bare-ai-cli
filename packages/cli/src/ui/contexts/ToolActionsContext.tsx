@@ -64,8 +64,7 @@ export const useToolActions = (): ToolActionsContextValue => {
 };
 
 interface ToolActionsProviderProps {
-  [key: string]: any;
-  [key: string]: any;
+
   children: React.ReactNode;
   config: Config;
   toolCalls: IndividualToolCallDisplay[];

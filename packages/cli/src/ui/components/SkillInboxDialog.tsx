@@ -12,6 +12,7 @@ import { theme } from '../semantic-colors.js';
 import { useKeypress } from '../hooks/useKeypress.js';
 import { Command } from '../key/keyMatchers.js';
 import { useKeyMatchers } from '../hooks/useKeyMatchers.js';
+import { applyInboxPatch, dismissInboxPatch, isProjectSkillPatchTarget } from '@bare-ai/core';
 import { BaseSelectionList } from './shared/BaseSelectionList.js';
 import type { SelectionListItem } from '../hooks/useSelectionList.js';
 import { DialogFooter } from './shared/DialogFooter.js';
@@ -26,14 +27,7 @@ import {
   listInboxPatches,
   moveInboxSkill,
   dismissInboxSkill,
-<<<<<<< HEAD
 } from '@bare-ai/core';
-=======
-  applyInboxPatch,
-  dismissInboxPatch,
-  isProjectSkillPatchTarget,
-} from '@bare-ai/core';
->>>>>>> 5333e5ab2
 
 type Phase = 'list' | 'skill-preview' | 'skill-action' | 'patch-preview';
 

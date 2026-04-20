@@ -6,7 +6,7 @@
 
 import { vi } from 'vitest';
 import { AgentChatHistory } from '../../core/agentChatHistory.js';
-import { MemoryContextManager as ContextManager } from '../contextManager.js';
+import { MemoryContextManager as ContextManager } from '../memoryContextManager.js';
 import { randomUUID } from 'node:crypto';
 import { ContextTracer } from '../tracer.js';
 import { ContextEnvironmentImpl } from '../pipeline/environmentImpl.js';
@@ -265,7 +265,7 @@ export function setupContextComponentTest(
     tracer,
   );
 
-  const contextManager = new ContextManager(
+  const contextManager = new (ContextManager as any)(
     sidecar,
     env,
     tracer,
