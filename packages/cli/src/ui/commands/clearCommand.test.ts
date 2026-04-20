@@ -52,7 +52,7 @@ describe('clearCommand', () => {
             fireSessionEndEvent: vi.fn().mockResolvedValue(undefined),
             fireSessionStartEvent: vi.fn().mockResolvedValue(undefined),
           }),
-          userHintService: {
+          injectionService: {
             clear: mockHintClear,
           },
         },
