@@ -88,6 +88,7 @@ describe('Core System Prompt (prompts.ts)', () => {
         getAllTools: vi.fn().mockReturnValue([]),
       }),
       getEnableShellOutputEfficiency: vi.fn().mockReturnValue(true),
+      getSandboxEnabled: vi.fn().mockReturnValue(false),
       storage: {
         getProjectTempDir: vi.fn().mockReturnValue('/tmp/project-temp'),
         getPlansDir: vi.fn().mockReturnValue('/tmp/project-temp/plans'),
@@ -408,6 +409,7 @@ describe('Core System Prompt (prompts.ts)', () => {
           getAllToolNames: vi.fn().mockReturnValue(toolNames),
         }),
         getEnableShellOutputEfficiency: vi.fn().mockReturnValue(true),
+        getSandboxEnabled: vi.fn().mockReturnValue(false),
         storage: {
           getProjectTempDir: vi.fn().mockReturnValue('/tmp/project-temp'),
         },
