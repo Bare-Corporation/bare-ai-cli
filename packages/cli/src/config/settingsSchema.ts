@@ -426,6 +426,15 @@ const SETTINGS_SCHEMA = {
     description: 'User interface settings.',
     showInDialog: false,
     properties: {
+      escapePastedAtSymbols: {
+        type: 'boolean',
+        label: 'Escape Pasted @ Symbols',
+        category: 'UI',
+        requiresRestart: false,
+        default: false,
+        description: 'When enabled, @ symbols in pasted text are escaped to prevent unintended @path expansion.',
+        showInDialog: true,
+      },
       theme: {
         type: 'string',
         label: 'Theme',
@@ -1488,6 +1497,24 @@ const SETTINGS_SCHEMA = {
     description: 'Security-related settings.',
     showInDialog: false,
     properties: {
+      toolSandboxing: {
+        type: 'boolean',
+        label: 'Tool Sandboxing',
+        category: 'Security',
+        requiresRestart: true,
+        default: false,
+        description: 'Tool-level sandboxing. Isolates individual tools instead of the entire CLI process.',
+        showInDialog: true,
+      },
+      disableAlwaysAllow: {
+        type: 'boolean',
+        label: 'Disable Always Allow',
+        category: 'Security',
+        requiresRestart: true,
+        default: false,
+        description: 'Disable "Always allow" options in tool confirmation dialogs.',
+        showInDialog: true,
+      },
       disableYoloMode: {
         type: 'boolean',
         label: 'Disable YOLO Mode',
@@ -1713,6 +1740,24 @@ const SETTINGS_SCHEMA = {
     description: 'Setting to enable experimental features',
     showInDialog: false,
     properties: {
+      dynamicModelConfiguration: {
+        type: 'boolean',
+        label: 'Dynamic Model Configuration',
+        category: 'Experimental',
+        requiresRestart: true,
+        default: false,
+        description: 'Enable dynamic model configuration via settings.',
+        showInDialog: false,
+      },
+      topicUpdateNarration: {
+        type: 'boolean',
+        label: 'Topic & Update Narration',
+        category: 'Experimental',
+        requiresRestart: false,
+        default: true,
+        description: 'Enable the Topic & Update communication model for reduced chattiness.',
+        showInDialog: true,
+      },
       toolOutputMasking: {
         type: 'object',
         label: 'Tool Output Masking',

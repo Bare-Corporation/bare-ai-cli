@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { env } from 'node:process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { DEFAULT_GEMINI_MODEL, BARE_AI_DIR } from '@bare-ai/core';
+import { BARE_AI_DIR as GEMINI_DIR } from '@bare-ai/core';
 export { BARE_AI_DIR };
 import * as pty from '@lydell/node-pty';
 import stripAnsi from 'strip-ansi';

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { AgentLoopContext } from '@bare-ai/core';
 import {
   CoreToolScheduler,
   type GeminiClient,
@@ -494,11 +495,11 @@ export class Task {
 
   private createScheduler(): CoreToolScheduler {
     const scheduler = new CoreToolScheduler({
+      context: this.config as unknown as AgentLoopContext,
       outputUpdateHandler: this._schedulerOutputUpdate.bind(this),
       onAllToolCallsComplete: this._schedulerAllToolCallsComplete.bind(this),
       onToolCallsUpdate: this._schedulerToolCallsUpdate.bind(this),
       getPreferredEditor: () => DEFAULT_GUI_EDITOR,
-      config: this.config,
     });
     return scheduler;
   }
