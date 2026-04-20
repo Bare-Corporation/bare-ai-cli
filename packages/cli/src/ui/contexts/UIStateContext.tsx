@@ -103,6 +103,7 @@ export interface AccountSuspensionInfo {
 }
 
 export interface UIState {
+  [key: string]: any;
   history: HistoryItem[];
   historyManager: UseHistoryManagerReturn;
   isThemeDialogOpen: boolean;

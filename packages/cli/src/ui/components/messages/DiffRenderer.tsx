@@ -160,7 +160,7 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
         maxWidth: terminalWidth,
         theme,
         settings,
-        disableColor,
+        /* disableColor, */
         paddingX,
       });
     } else {
@@ -178,7 +178,7 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
             filename,
             tabWidth,
             terminalWidth,
-            disableColor,
+            /* disableColor, */
           })}
         </MaxSizedBox>
       );
@@ -194,7 +194,7 @@ export const DiffRenderer: React.FC<DiffRendererProps> = ({
     theme,
     settings,
     tabWidth,
-    disableColor,
+    /* disableColor, */
     paddingX,
   ]);
 
@@ -383,7 +383,7 @@ export const renderDiffLines = ({
           ) : (
             <Text backgroundColor={backgroundColor} wrap="wrap">
               <Text color={symbolColor}>{prefixSymbol}</Text>{' '}
-              {colorizeLine(displayContent, language, undefined)}
+              {colorizeLine(displayContent)}
             </Text>
           )}
         </Box>,
