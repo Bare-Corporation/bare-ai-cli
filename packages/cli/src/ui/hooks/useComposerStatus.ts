@@ -45,7 +45,7 @@ export const useComposerStatus = () => {
     Boolean(uiState.customDialog);
 
   const isInteractiveShellWaiting = Boolean(
-    uiState.currentLoadingPhrase?.includes(INTERACTIVE_SHELL_WAITING_PHRASE),
+    (typeof uiState.currentLoadingPhrase === "string" ? uiState.currentLoadingPhrase : "").includes(INTERACTIVE_SHELL_WAITING_PHRASE),
   );
 
   const showLoadingIndicator =
