@@ -72,7 +72,7 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
       return '';
     }
 
-    const parts = [];
+    const parts: string[] = [];
     if (mcpServerCount > 0) {
       parts.push(
         `${mcpServerCount} MCP server${mcpServerCount > 1 ? 's' : ''}`,

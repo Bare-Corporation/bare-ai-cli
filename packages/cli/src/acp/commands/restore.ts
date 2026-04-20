@@ -82,7 +82,7 @@ export class RestoreCommand implements Command {
         gitService,
       );
 
-      const restoreResult = [];
+      const restoreResult: any[] = [];
       for await (const result of restoreResultGenerator) {
         restoreResult.push(result);
       }

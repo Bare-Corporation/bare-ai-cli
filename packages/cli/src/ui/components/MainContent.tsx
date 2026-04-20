@@ -187,7 +187,9 @@ export const MainContent = () => {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: (typeof virtualizedData)[number] }) => {
+    ({ item: rawItem }: { item: unknown }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const item = rawItem as any;
       if (item.type === 'header') {
         return (
           <MemoizedAppHeader
@@ -237,9 +239,11 @@ export const MainContent = () => {
         hasFocus={!uiState.isEditorDialogOpen && !uiState.embeddedShellFocused}
         width={uiState.terminalWidth}
         data={virtualizedData}
-        renderItem={renderItem}
+        renderItem={renderItem as (info: { item: unknown; index: number }) => React.ReactElement}
         estimatedItemHeight={() => 100}
-        keyExtractor={(item, _index) => {
+        keyExtractor={(rawItem, _index) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const item = rawItem as any;
           if (item.type === 'header') return 'header';
           if (item.type === 'history') return item.item.id.toString();
           return 'pending';

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { AgentLoopContext } from '@bare-ai/core';
 import type { PartListUnion } from '@google/genai';
 import { parseSlashCommand } from './utils/commands.js';
 import {
@@ -67,7 +68,8 @@ export const handleSlashCommand = async (
 
       const commandContext: CommandContext = {
         services: {
-          agentContext: config,
+          agentContext: config as unknown as AgentLoopContext,
+        config,
           settings,
           git: undefined,
           logger,

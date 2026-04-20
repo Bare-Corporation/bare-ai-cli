@@ -241,7 +241,7 @@ export const BackgroundShellDisplay = ({
       pidInfoWidth;
 
     let currentWidth = 0;
-    const tabs = [];
+    const tabs: React.ReactElement[] = [];
 
     for (let i = 0; i < shellList.length; i++) {
       const shell = shellList[i];

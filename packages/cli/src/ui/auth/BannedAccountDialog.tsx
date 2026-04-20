@@ -35,7 +35,7 @@ export function BannedAccountDialog({
     accountSuspensionInfo.appealLinkText ?? 'Open the Google Form';
 
   const items = useMemo(() => {
-    const menuItems = [];
+    const menuItems: {label: string; value: string; key: string}[] = [];
     if (appealUrl) {
       menuItems.push({
         label: appealLinkText,

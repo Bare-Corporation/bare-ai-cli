@@ -149,7 +149,7 @@ export const McpStatus: React.FC<McpStatusProps> = ({
         const toolCount = serverTools.length;
         const promptCount = serverPrompts.length;
         const resourceCount = serverResources.length;
-        const parts = [];
+        const parts: string[] = [];
         if (toolCount > 0) {
           parts.push(`${toolCount} ${toolCount === 1 ? 'tool' : 'tools'}`);
         }

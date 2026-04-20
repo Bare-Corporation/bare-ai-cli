@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { AgentLoopContext } from '@bare-ai/core';
 import type { ReactNode } from 'react';
 import type {
   HistoryItemWithoutId,
@@ -27,6 +28,7 @@ import type {
 
 // Grouped dependencies for clarity and easier mocking
 export interface CommandContext {
+  agentContext?: AgentLoopContext;
   // Invocation properties for when commands are called.
   invocation?: {
     /** The raw, untrimmed input string from the user. */
@@ -38,8 +40,10 @@ export interface CommandContext {
   };
   // Core services and configuration
   services: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    agentContext?: any;
     // TODO(abhipatel12): Ensure that config is never null.
-    config: Config | null;
+    config?: Config | null;
     settings: LoadedSettings;
     git: GitService | undefined;
     logger: Logger;

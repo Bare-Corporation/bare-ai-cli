@@ -378,7 +378,7 @@ function VirtualizedList<T>(
     observedNodes.current = currentNodes;
   });
 
-  const renderedItems = [];
+  const renderedItems: React.ReactElement[] = [];
   for (let i = startIndex; i <= endIndex; i++) {
     const item = data[i];
     if (item) {
