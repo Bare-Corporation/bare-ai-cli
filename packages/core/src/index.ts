@@ -283,3 +283,4 @@ export const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
 export * from './core/coreToolScheduler.js';
 export * from './context/memoryContextManager.js';
 export { sessionId } from './utils/session.js';
+export * from './services/contextManager.js';

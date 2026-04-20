@@ -11,9 +11,15 @@ import {
   CoreToolCallStatus,
   ApprovalMode,
   makeFakeConfig,
+<<<<<<< HEAD
 } from '@bare-ai/core';
 import { type UIState } from './contexts/UIStateContext.js';
 import type { SerializableConfirmationDetails } from '@bare-ai/core';
+=======
+  type SerializableConfirmationDetails,
+} from '@bare-ai/core';
+import { type UIState } from './contexts/UIStateContext.js';
+>>>>>>> 5333e5ab2
 import { act } from 'react';
 import { StreamingState } from './types.js';
 
@@ -107,15 +113,6 @@ describe('Full Terminal Tool Confirmation Snapshot', () => {
       constrainHeight: true,
       isConfigInitialized: true,
       cleanUiDetailsVisible: true,
-      quota: {
-        userTier: 'PRO',
-        stats: {
-          limits: {},
-          usage: {},
-        },
-        proQuotaRequest: null,
-        validationRequest: null,
-      },
       pendingHistoryItems: [
         {
           id: 2,
@@ -145,6 +142,13 @@ describe('Full Terminal Tool Confirmation Snapshot', () => {
     const { waitUntilReady, lastFrame, generateSvg, unmount } =
       await renderWithProviders(<App />, {
         uiState: mockUIState,
+        quotaState: {
+          userTier: 'PRO',
+          stats: {
+            remaining: 100,
+            limit: 1000,
+          },
+        },
         config: mockConfig,
         settings: createMockSettings({
           merged: {
