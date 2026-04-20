@@ -244,15 +244,9 @@ export async function startInteractiveUI(
         <KeyMatchersProvider value={matchers}>
           <KeypressProvider
             config={config}
-            debugKeystrokeLogging={
-              settings.merged.general.debugKeystrokeLogging
-            }
           >
             <MouseProvider
               mouseEventsEnabled={mouseEventsEnabled}
-              debugKeystrokeLogging={
-                settings.merged.general.debugKeystrokeLogging
-              }
             >
               <TerminalProvider>
                 <ScrollProvider>

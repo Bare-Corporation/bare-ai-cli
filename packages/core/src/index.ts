@@ -246,3 +246,4 @@ export { GEMINI_DIR } from './config/constants.js';
 
 // ==========================================
 export const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
+export { PRIORITY_YOLO_ALLOW_ALL } from './policy/types.js';
