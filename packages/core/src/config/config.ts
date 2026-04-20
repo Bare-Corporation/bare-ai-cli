@@ -1600,6 +1600,7 @@ export class Config implements McpContext, AgentLoopContext {
   getUseTerminalBuffer(): boolean { return false; }
   getUseRenderProcess(): boolean { return false; }
   getAgentSessionNoninteractiveEnabled(): boolean { return false; }
+  getExperimentalContextManagementConfig(): any { return {}; }
   isPlanMode(): boolean {
     return false;
   }

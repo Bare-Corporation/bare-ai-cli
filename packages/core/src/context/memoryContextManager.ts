@@ -200,4 +200,7 @@ export class MemoryContextManager {
   getLoadedPaths(): ReadonlySet<string> {
     return this.loadedPaths;
   }
+
+  getNodes(): readonly any[] { return []; }
+  async renderHistory(): Promise<any> { return {}; }
 }

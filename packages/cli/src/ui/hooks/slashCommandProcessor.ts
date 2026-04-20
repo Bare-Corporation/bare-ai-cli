@@ -65,8 +65,7 @@ import {
 import { runExitCleanup } from '../../utils/cleanup.js';
 
 interface SlashCommandProcessorActions {
-  [key: string]: any;
-  [key: string]: any;
+
   openAuthDialog: () => void;
   openThemeDialog: () => void;
   openEditorDialog: () => void;

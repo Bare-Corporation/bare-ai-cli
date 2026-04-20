@@ -261,7 +261,8 @@ class WebSearchToolInvocation extends BaseToolInvocation<
   // -------------------------------------------------------------------------
   // Main entry point — routes to the appropriate backend
   // -------------------------------------------------------------------------
-  async execute(signal: AbortSignal): Promise<WebSearchToolResult> {
+  async execute(options: { abortSignal?: AbortSignal } | AbortSignal): Promise<WebSearchToolResult> {
+    const signal = (options instanceof AbortSignal ? options : options?.abortSignal) as AbortSignal;
     const useSearXNG = !!process.env['BARE_AI_SEARCH_URL'];
 
     debugLogger.log(
