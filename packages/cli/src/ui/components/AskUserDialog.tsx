@@ -508,8 +508,9 @@ const ChoiceQuestionView: React.FC<ChoiceQuestionViewProps> = ({
   keyboardHints,
 }) => {
   const isAlternateBuffer = useAlternateBuffer();
-  const numOptions =
-    (question.options?.length ?? 0) + (question.type !== 'yesno' ? 1 : 0);
+  const hasAll = question.multiSelect && (question.options?.length ?? 0) > 1;
+  // Calculate total options including 'All' and 'Other' to ensure consistent numbering column width
+  const numOptions = (question.options?.length ?? 0) + (hasAll ? 1 : 0) + 1;
   const numLen = String(numOptions).length;
   const radioWidth = 2; // "● "
   const numberWidth = numLen + 2; // e.g., "1. "
@@ -731,17 +732,15 @@ const ChoiceQuestionView: React.FC<ChoiceQuestionViewProps> = ({
       list.push({ key: 'all', value: allItem });
     }
 
-    // Only add custom option for choice type, not yesno
-    if (question.type !== 'yesno') {
-      const otherItem: OptionItem = {
-        key: 'other',
-        label: customOptionText || '',
-        description: '',
-        type: 'other',
-        index: list.length,
-      };
-      list.push({ key: 'other', value: otherItem });
-    }
+    // Add custom option for choice and yesno types
+    const otherItem: OptionItem = {
+      key: 'other',
+      label: customOptionText || '',
+      description: '',
+      type: 'other',
+      index: list.length,
+    };
+    list.push({ key: 'other', value: otherItem });
 
     if (question.multiSelect) {
       const doneItem: OptionItem = {
@@ -755,7 +754,7 @@ const ChoiceQuestionView: React.FC<ChoiceQuestionViewProps> = ({
     }
 
     return list;
-  }, [questionOptions, question.multiSelect, question.type, customOptionText]);
+  }, [questionOptions, question.multiSelect, customOptionText]);
 
   const handleHighlight = useCallback(
     (itemValue: OptionItem) => {

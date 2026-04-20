@@ -1,29 +1,21 @@
-import2';
-import { ToolResultDisplay } from '@bare-ai/core';
+import { ToolResultDisplay, AnsiOutput } from '@bare-ai/core';
+import { renderWithProviders, makeFakeConfig, createMockSettings } from '../test-utils';
 
-export function Tool3() {
-  // Implementation for Tool3
-}
+exportawait waitUntilReady();
+    const output = lastFrame();
 
-describe('ToolResultDisplay Overflow', () => {
-  it('shows the head of the content when overflowDirection is bottom (string)', async () => {
-    const content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5';
-    const tool5');
-  });
+    expect(output).not.toContain('Line 
+        terminalWidth={80}
+        maxLines={3}
+        overflowDirection="top"
+      
 
-  it('shows the tail of the content when overflowDirection is top (string)', async () => {
-    const content = 'Line 1\nLine 2\nLine 3\n
+[90m[Telemetry | Engine: gemini-3.1-pro-preview-customtools | Mode: Stream] Tokens: 9092 (Prompt: 5270, Completion: 429)[0m
+import { ToolResultDisplay, AnsiOutput } from '@bare-ai/core';
+import { renderWithProviders, makeFakeConfig, createMockSettings } from '../test-utils';
 
-[90m[Telemetry | Engine: gemini-2.5-flash-lite | Mode: Stream] Tokens: 4137 (Prompt: 3874, Completion: 263)[0m
-import2';
-import { ToolResultDisplay } from '@bare-ai/core';
+exportawait waitUntilReady();
+    const output = lastFrame();
 
-export function Tool3() {
-  // Implementation for Tool3
-}
-
-describe('ToolResultDisplay Overflow', () => {
-  it('shows the head of the content when overflowDirection is bottom (string)', async () => {
-    const content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5';
-    const tool5');
-  });
+    expect(output).not.toContain('Line 
+        terminalWidth={80}

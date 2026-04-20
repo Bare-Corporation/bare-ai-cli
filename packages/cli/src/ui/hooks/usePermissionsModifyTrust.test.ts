@@ -22,7 +22,7 @@ import type { LoadedTrustedFolders } from '../../config/trustedFolders.js';
 import { coreEvents } from '@bare-ai/core';
 
 // Hoist mocks
-const mockedCwd = vi.hoisted(() => vi.fn());
+const mockedCwd = vi.hoisted(() => vi.fn().mockReturnValue('/mock/cwd'));
 const mockedLoadTrustedFolders = vi.hoisted(() => vi.fn());
 const mockedIsWorkspaceTrusted = vi.hoisted(() => vi.fn());
 const mockedUseSettings = vi.hoisted(() => vi.fn());
