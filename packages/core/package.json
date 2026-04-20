@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:ci": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bundle:browser-mcp": "node scripts/bundle-browser-mcp.mjs"
   },
   "files": [
     "dist"

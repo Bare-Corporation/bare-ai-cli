@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
   "name": "@bare-ai/cli-a2a-server",
   "version": "0.1.0-bare-ai",
-=======
-  "name": "@google/gemini-cli-a2a-server",
-  "version": "0.35.0-nightly.20260313.bb060d7a9",
->>>>>>> e3df87cf1
   "description": "Gemini CLI A2A Server",
   "repository": {
     "type": "git",

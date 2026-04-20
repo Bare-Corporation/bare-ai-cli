@@ -113,6 +113,8 @@ export class GeminiClient {
   private readonly toolOutputMaskingService: ToolOutputMaskingService;
   private lastPromptId: string;
   private currentSequenceModel: string | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private context: any;
   private lastSentIdeContext: IdeContext | undefined;
   private forceFullIdeContext = true;
   private messageHistory: Message[] = [];
@@ -124,6 +126,7 @@ export class GeminiClient {
   private hasFailedCompressionAttempt = false;
 
   constructor(private readonly config: Config) {
+    this.context = config as unknown as typeof this.context;
     this.loopDetector = new LoopDetectionService(config);
     this.compressionService = new ChatCompressionService();
     this.toolOutputMaskingService = new ToolOutputMaskingService();
