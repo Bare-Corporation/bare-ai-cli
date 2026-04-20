@@ -181,10 +181,10 @@ export async function start_sandbox(
         // proxyProcess.stdout?.on('data', (data) => {
         //   console.info(data.toString());
         // });
-        proxyProcess.stderr?.on('data', (data) => {
+        (proxyProcess)?.stderr?.on('data', (data) => {
           debugLogger.debug(`[PROXY STDERR]: ${data.toString().trim()}`);
         });
-        proxyProcess.on('close', (code, signal) => {
+        proxyProcess!.on('close', (code, signal) => {
           if (sandboxProcess?.pid) {
             process.kill(-sandboxProcess.pid, 'SIGTERM');
           }
@@ -269,7 +269,7 @@ export async function start_sandbox(
     }
 
     // stop if image is missing
-    if (!(await ensureSandboxImageIsPresent(command, image, cliConfig))) {
+    if (!(await ensureSandboxImageIsPresent(command!, image!, cliConfig))) {
       const remedy =
         image === LOCAL_DEV_SANDBOX_IMAGE_NAME
           ? 'Try running `npm run build:all` or `npm run build:sandbox` under the bare-ai-cli repo to build it locally, or check the image name and your network connection.'
@@ -444,7 +444,7 @@ export async function start_sandbox(
     }
 
     // name container after image, plus random suffix to avoid conflicts
-    const imageName = parseImageName(image);
+    const imageName = parseImageName(image!);
     const isIntegrationTest =
       process.env['GEMINI_CLI_INTEGRATION_TEST'] === 'true';
     let containerName;
@@ -659,7 +659,7 @@ export async function start_sandbox(
     }
 
     // push container image name
-    args.push(image);
+    args.push(image!);
 
     // push container entrypoint (including args)
     args.push(...finalEntrypoint);
@@ -686,14 +686,14 @@ export async function start_sandbox(
         `${process.cwd()}:${workdir}`,
         '--workdir',
         workdir,
-        image,
+        image!,
         // proxyCommand may be a shell string, so parse it into tokens safely
         ...parse(proxyCommand, process.env).filter(
           (f): f is string => typeof f === 'string',
         ),
       ];
 
-      proxyProcess = spawn(command, proxyContainerArgs, {
+      proxyProcess = spawn(command!, proxyContainerArgs, {
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: false, // <-- no shell; args are passed directly
         detached: true,
@@ -714,12 +714,12 @@ export async function start_sandbox(
       // proxyProcess.stdout?.on('data', (data) => {
       //   console.info(data.toString());
       // });
-      proxyProcess.stderr?.on('data', (data) => {
+      (proxyProcess)?.stderr?.on('data', (data) => {
         debugLogger.debug(`[PROXY STDERR]: ${data.toString().trim()}`);
       });
-      proxyProcess.on('close', (code, signal) => {
+      proxyProcess!.on('close', (code, signal) => {
         if (sandboxProcess?.pid) {
-          process.kill(-sandboxProcess.pid, 'SIGTERM');
+          process.kill(-sandboxProcess!.pid, 'SIGTERM');
         }
         throw new FatalSandboxError(
           `Proxy container command '${command} ${proxyContainerArgs.join(' ')}' exited with code ${code}, signal ${signal}`,
@@ -738,12 +738,12 @@ export async function start_sandbox(
 
     // spawn child and let it inherit stdio
     process.stdin.pause();
-    sandboxProcess = spawn(command, args, {
+    sandboxProcess = spawn(command!, args, {
       stdio: 'inherit',
     });
 
     return await new Promise<number>((resolve, reject) => {
-      sandboxProcess.on('error', (err) => {
+      sandboxProcess!.on('error', (err) => {
         coreEvents.emitFeedback('error', 'Sandbox process error', err);
         reject(err);
       });

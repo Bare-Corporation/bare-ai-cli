@@ -129,7 +129,8 @@ export async function loadSandboxConfig(
     sandboxOption !== null &&
     !Array.isArray(sandboxOption)
   ) {
-    const config = sandboxOption;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config = sandboxOption as any;
     sandboxValue = config.enabled ? (config.command ?? true) : false;
     allowedPaths = config.allowedPaths ?? [];
     networkAccess = config.networkAccess ?? false;
