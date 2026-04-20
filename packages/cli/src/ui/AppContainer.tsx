@@ -2090,6 +2090,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     permissionConfirmationRequest,
     hasConfirmUpdateExtensionRequests,
     hasLoopDetectionConfirmationRequest,
+    notificationMethod: (settings?.merged?.general as any)?.notificationMethod ?? "terminal",
   });
 
   const isPassiveShortcutsHelpState =
