@@ -7,10 +7,10 @@
 import {
   debugLogger,
   listExtensions,
+  getErrorMessage,
   type ExtensionInstallMetadata,
 } from '@bare-ai/core';
 import type { ExtensionUpdateInfo } from '../../config/extension.js';
-import { getErrorMessage } from '../../utils/errors.js';
 import {
   emptyIcon,
   MessageType,

@@ -508,16 +508,19 @@ describe('Settings Loading and Merging', () => {
       const userSettingsContent = {
         security: {
           disableYoloMode: false,
+          disableAlwaysAllow: false,
         },
       };
       const workspaceSettingsContent = {
         security: {
           disableYoloMode: false, // This should be ignored
+          disableAlwaysAllow: false, // This should be ignored
         },
       };
       const systemSettingsContent = {
         security: {
           disableYoloMode: true,
+          disableAlwaysAllow: true,
         },
       };
 
@@ -535,6 +538,7 @@ describe('Settings Loading and Merging', () => {
 
       const settings = loadSettings(MOCK_WORKSPACE_DIR);
       expect(settings.merged.security?.disableYoloMode).toBe(true); // System setting should be used
+      expect(settings.merged.security?.disableAlwaysAllow).toBe(true); // System setting should be used
     });
 
     it.each([
@@ -2469,7 +2473,7 @@ describe('Settings Loading and Merging', () => {
 
       expect(mockCoreEvents.emitFeedback).toHaveBeenCalledWith(
         'error',
-        'There was an error saving your latest settings changes.',
+        'Failed to save settings: Write failed',
         error,
       );
     });

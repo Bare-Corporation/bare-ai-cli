@@ -66,6 +66,7 @@ import {
   DEFAULT_GEMINI_MODEL_AUTO,
 } from './models.js';
 import { Storage } from './storage.js';
+import type { AgentLoopContext } from './agent-loop-context.js';
 
 vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>();
@@ -551,8 +552,9 @@ describe('Server Config (config.ts)', () => {
 
       await config.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
 
+      const loopContext: AgentLoopContext = config;
       expect(
-        config.getGeminiClient().stripThoughtsFromHistory,
+        loopContext.geminiClient.stripThoughtsFromHistory,
       ).toHaveBeenCalledWith();
     });
 
@@ -570,8 +572,9 @@ describe('Server Config (config.ts)', () => {
 
       await config.refreshAuth(AuthType.USE_VERTEX_AI);
 
+      const loopContext: AgentLoopContext = config;
       expect(
-        config.getGeminiClient().stripThoughtsFromHistory,
+        loopContext.geminiClient.stripThoughtsFromHistory,
       ).toHaveBeenCalledWith();
     });
 
@@ -589,8 +592,9 @@ describe('Server Config (config.ts)', () => {
 
       await config.refreshAuth(AuthType.USE_GEMINI);
 
+      const loopContext: AgentLoopContext = config;
       expect(
-        config.getGeminiClient().stripThoughtsFromHistory,
+        loopContext.geminiClient.stripThoughtsFromHistory,
       ).not.toHaveBeenCalledWith();
     });
   });
@@ -2918,7 +2922,8 @@ describe('Config JIT Initialization', () => {
       await config.initialize();
 
       const skillManager = config.getSkillManager();
-      const toolRegistry = config.getToolRegistry();
+      const loopContext: AgentLoopContext = config;
+      const toolRegistry = loopContext.toolRegistry;
 
       vi.spyOn(skillManager, 'discoverSkills').mockResolvedValue(undefined);
       vi.spyOn(skillManager, 'setDisabledSkills');
@@ -2954,7 +2959,8 @@ describe('Config JIT Initialization', () => {
       await config.initialize();
 
       const skillManager = config.getSkillManager();
-      const toolRegistry = config.getToolRegistry();
+      const loopContext: AgentLoopContext = config;
+      const toolRegistry = loopContext.toolRegistry;
 
       vi.spyOn(skillManager, 'discoverSkills').mockResolvedValue(undefined);
       vi.spyOn(toolRegistry, 'registerTool');
