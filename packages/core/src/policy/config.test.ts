@@ -979,6 +979,34 @@ name = "invalid-name"
     vi.doUnmock('node:fs/promises');
   });
 
+  it('should support mcpName in policy rules from TOML', async () => {
+    mockPolicyFile(
+      nodePath.join(MOCK_DEFAULT_DIR, 'mcp.toml'),
+      `
+  [[rule]]
+  toolName = "my-tool"
+  mcpName = "my-server"
+  decision = "allow"
+  priority = 150
+  `,
+    );
+
+    const config = await createPolicyEngineConfig(
+      {},
+      ApprovalMode.DEFAULT,
+      MOCK_DEFAULT_DIR,
+    );
+
+    const rule = config.rules?.find(
+      (r) =>
+        r.toolName === 'mcp_my-server_my-tool' &&
+        r.mcpName === 'my-server' &&
+        r.decision === PolicyDecision.ALLOW,
+    );
+    expect(rule).toBeDefined();
+    expect(rule?.priority).toBeCloseTo(1.15, 5);
+  });
+
   it('should have default ASK_USER rule for discovered tools', async () => {
     vi.resetModules();
     vi.doUnmock('node:fs/promises');

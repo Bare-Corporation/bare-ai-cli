@@ -40,7 +40,7 @@ describe('ToolOverflowConsistencyChecks: ToolGroupMessage and ToolResultDisplay 
       return null;
     };
 
-    const { unmount, waitUntilReady } = renderWithProviders(
+    const { unmount, waitUntilReady } = await renderWithProviders(
       <>
         <StateCapture />
         <ToolGroupMessage
@@ -93,7 +93,7 @@ describe('ToolOverflowConsistencyChecks: ToolGroupMessage and ToolResultDisplay 
       },
     ];
 
-    const { lastFrame, unmount, waitUntilReady } = renderWithProviders(
+    const { lastFrame, unmount, waitUntilReady } = await renderWithProviders(
       <ToolGroupMessage
         item={{ id: 1, type: 'tool_group', tools: toolCalls }}
         toolCalls={toolCalls}
