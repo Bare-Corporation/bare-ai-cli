@@ -45,6 +45,7 @@ import {
   type SandboxManager,
   NoopSandboxManager,
 } from '../services/sandboxManager.js';
+import { SandboxPolicyManager } from '../policy/sandboxPolicyManager.js';
 import { createSandboxManager } from '../services/sandboxManagerFactory.js';
 import { SandboxedFileSystemService } from '../services/sandboxedFileSystemService.js';
 import {
@@ -312,6 +313,7 @@ export interface CustomTheme {
  * packages/cli/src/config/settingsSchema.ts (agents.browser.properties).
  */
 export interface BrowserAgentCustomConfig {
+  maxActionsPerTask?: number;
   /**
    * Session mode:
    * - 'persistent': Launch Chrome with a persistent profile at ~/.cache/chrome-devtools-mcp/ (default)
@@ -1560,6 +1562,12 @@ export class Config implements McpContext, AgentLoopContext {
     return this._geminiClient;
   }
 
+  get sandboxPolicyManager(): SandboxPolicyManager {
+    return new SandboxPolicyManager();
+  }
+  isPlanMode(): boolean {
+    return false;
+  }
   get userHintService() {
     return {
       onUserHint: (_cb: unknown) => {},

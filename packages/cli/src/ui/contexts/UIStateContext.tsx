@@ -165,7 +165,7 @@ export interface UIState {
   shortcutsHelpVisible: boolean;
   cleanUiDetailsVisible: boolean;
   elapsedTime: number;
-  currentLoadingPhrase: string | undefined;
+  currentLoadingPhrase: string | { currentTip: string | undefined; currentWittyPhrase: string | undefined } | undefined;
   currentTip: string | undefined;
   currentWittyPhrase: string | undefined;
   historyRemountKey: number;
