@@ -426,6 +426,15 @@ const SETTINGS_SCHEMA = {
     description: 'User interface settings.',
     showInDialog: false,
     properties: {
+      collapseDrawerDuringApproval: {
+        type: 'boolean',
+        label: 'Collapse Drawer During Approval',
+        category: 'UI',
+        requiresRestart: false,
+        default: false,
+        description: 'Collapse the input drawer when a tool confirmation is shown.',
+        showInDialog: true,
+      },
       escapePastedAtSymbols: {
         type: 'boolean',
         label: 'Escape Pasted @ Symbols',

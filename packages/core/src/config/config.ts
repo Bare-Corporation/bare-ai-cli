@@ -1565,6 +1565,12 @@ export class Config implements McpContext, AgentLoopContext {
   get sandboxPolicyManager(): SandboxPolicyManager {
     return new SandboxPolicyManager();
   }
+  getGemini31FlashLiteLaunched(): Promise<boolean> {
+    return this.getGemini31Launched();
+  }
+  getGemini31FlashLiteLaunchedSync(): boolean {
+    return this.getGemini31LaunchedSync();
+  }
   isPlanMode(): boolean {
     return false;
   }
