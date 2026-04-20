@@ -44,7 +44,8 @@ export const useLoadingIndicator = ({
     isPhraseCyclingActive,
     isWaiting,
     shouldShowFocusHint,
-    loadingPhrasesMode,
+    loadingPhrasesMode !== 'off',
+    loadingPhrasesMode === 'witty' || loadingPhrasesMode === 'all',
     customWittyPhrases,
   );
 

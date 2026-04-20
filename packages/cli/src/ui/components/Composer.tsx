@@ -238,7 +238,9 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
                 currentLoadingPhrase={
                   settings.merged.ui.loadingPhrases === 'off'
                     ? undefined
-                    : uiState.currentLoadingPhrase
+                    : typeof uiState.currentLoadingPhrase === 'string'
+                      ? uiState.currentLoadingPhrase
+                      : uiState.currentLoadingPhrase?.currentTip
                 }
                 thoughtLabel={
                   inlineThinkingMode === 'full' ? 'Thinking...' : undefined
@@ -282,10 +284,12 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
                       : uiState.thought
                   }
                   currentLoadingPhrase={
-                    settings.merged.ui.loadingPhrases === 'off'
-                      ? undefined
-                      : uiState.currentLoadingPhrase
-                  }
+                  settings.merged.ui.loadingPhrases === 'off'
+                    ? undefined
+                    : typeof uiState.currentLoadingPhrase === 'string'
+                      ? uiState.currentLoadingPhrase
+                      : uiState.currentLoadingPhrase?.currentTip
+                }
                   thoughtLabel={
                     inlineThinkingMode === 'full' ? 'Thinking...' : undefined
                   }

@@ -1522,6 +1522,7 @@ function toPermissionOptions(
     case 'info':
     case 'ask_user':
     case 'exit_plan_mode':
+    case 'sandbox_expansion':
       break;
     default: {
       const unreachable: never = confirmation;

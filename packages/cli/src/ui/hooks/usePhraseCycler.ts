@@ -167,8 +167,8 @@ export const usePhraseCycler = (
     maxLength,
   ]);
 
-  let currentTip = undefined;
-  let currentWittyPhrase = undefined;
+  let currentTip: string | undefined = undefined;
+  let currentWittyPhrase: string | undefined = undefined;
 
   if (shouldShowFocusHint) {
     currentTip = INTERACTIVE_SHELL_WAITING_PHRASE;

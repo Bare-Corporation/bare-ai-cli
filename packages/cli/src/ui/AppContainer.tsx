@@ -2037,46 +2037,23 @@ Logging in with Google... Restarting Bare AI CLI to continue.
 
   const loadingPhrases = settings.merged.ui.loadingPhrases;
   const showStatusTips = loadingPhrases === 'tips' || loadingPhrases === 'all';
-  const showStatusWit = loadingPhrases === 'witty' || loadingPhrases === 'all';
 
-  const showLoadingIndicator =
-    (!embeddedShellFocused || isBackgroundShellVisible) &&
-    streamingState === StreamingState.Responding &&
-    !hasPendingActionRequired;
 
-  let estimatedStatusLength = 0;
-  if (activeHooks.length > 0 && settings.merged.hooksConfig.notifications) {
-    const hookLabel =
-      activeHooks.length > 1 ? 'Executing Hooks' : 'Executing Hook';
-    const hookNames = activeHooks
-      .map(
-        (h) =>
-          h.name +
-          (h.index && h.total && h.total > 1 ? ` (${h.index}/${h.total})` : ''),
-      )
-      .join(', ');
-    estimatedStatusLength = hookLabel.length + hookNames.length + 10;
-  } else if (showLoadingIndicator) {
-    const thoughtText = thought?.subject || 'Waiting for model...';
-    estimatedStatusLength = thoughtText.length + 25;
-  } else if (hasPendingActionRequired) {
-    estimatedStatusLength = 35;
-  }
 
-  const maxLength = terminalWidth - estimatedStatusLength - 5;
 
-  const { elapsedTime, currentLoadingPhrase, currentTip, currentWittyPhrase } =
+
+  const { elapsedTime, currentLoadingPhrase } =
     useLoadingIndicator({
       streamingState,
       shouldShowFocusHint,
       retryStatus,
-      showTips: showStatusTips,
-      showWit: showStatusWit,
+      loadingPhrasesMode: showStatusTips ? 'all' : 'off',
       customWittyPhrases: settings.merged.ui.customWittyPhrases,
       errorVerbosity: settings.merged.ui.errorVerbosity,
-      maxLength,
     });
 
+  const currentTip = typeof currentLoadingPhrase === 'object' ? currentLoadingPhrase?.currentTip : undefined;
+  const currentWittyPhrase = typeof currentLoadingPhrase === 'object' ? currentLoadingPhrase?.currentWittyPhrase : undefined;
   const allowPlanMode =
     config.isPlanEnabled() &&
     streamingState === StreamingState.Idle &&
