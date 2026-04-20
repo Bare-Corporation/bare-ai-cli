@@ -10,6 +10,7 @@ import {
   MessageSenderType,
   debugLogger,
   geminiPartsToContentParts,
+  displayContentToString,
   parseThought,
   CoreToolCallStatus,
   type ApprovalMode,
@@ -196,6 +197,7 @@ export const useAgentStream = ({
             name: displayName,
             originalRequestName: event.name,
             description: desc,
+            display: event.display,
             status: CoreToolCallStatus.Scheduled,
             isClientInitiated: false,
             renderOutputAsMarkdown: isOutputMarkdown,
@@ -221,10 +223,9 @@ export const useAgentStream = ({
               else if (evtStatus === 'success')
                 status = CoreToolCallStatus.Success;
 
+              const display = event.display?.result;
               const liveOutput =
-                event.displayContent?.[0]?.type === 'text'
-                  ? event.displayContent[0].text
-                  : tc.resultDisplay;
+                displayContentToString(display) ?? tc.resultDisplay;
               const progressMessage =
                 legacyState?.progressMessage ?? tc.progressMessage;
               const progress = legacyState?.progress ?? tc.progress;
@@ -236,6 +237,9 @@ export const useAgentStream = ({
               return {
                 ...tc,
                 status,
+                display: event.display
+                  ? { ...tc.display, ...event.display }
+                  : tc.display,
                 resultDisplay: liveOutput,
                 progressMessage,
                 progress,
@@ -254,16 +258,18 @@ export const useAgentStream = ({
 
               const legacyState = event._meta?.legacyState;
               const outputFile = legacyState?.outputFile;
+              const display = event.display?.result;
               const resultDisplay =
-                event.displayContent?.[0]?.type === 'text'
-                  ? event.displayContent[0].text
-                  : tc.resultDisplay;
+                displayContentToString(display) ?? tc.resultDisplay;
 
               return {
                 ...tc,
                 status: event.isError
                   ? CoreToolCallStatus.Error
                   : CoreToolCallStatus.Success,
+                display: event.display
+                  ? { ...tc.display, ...event.display }
+                  : tc.display,
                 resultDisplay,
                 outputFile,
               };

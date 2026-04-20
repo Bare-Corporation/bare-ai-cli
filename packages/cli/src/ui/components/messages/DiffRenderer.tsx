@@ -383,7 +383,7 @@ export const renderDiffLines = ({
           ) : (
             <Text backgroundColor={backgroundColor} wrap="wrap">
               <Text color={symbolColor}>{prefixSymbol}</Text>{' '}
-              {colorizeLine(displayContent, language ?? null)}
+              {colorizeLine(displayContent)}
             </Text>
           )}
         </Box>,
