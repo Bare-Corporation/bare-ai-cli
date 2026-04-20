@@ -68,7 +68,7 @@ describe('ExtensionManager', () => {
   afterEach(() => {
     try {
       fs.rmSync(tempHomeDir, { recursive: true, force: true });
-    } catch (_e) {
+    } catch {
       // Ignore
     }
   });
