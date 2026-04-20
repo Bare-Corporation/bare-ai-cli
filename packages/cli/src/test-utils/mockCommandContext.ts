@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { AgentLoopContext } from '@bare-ai/core';
 import { vi } from 'vitest';
 import type { CommandContext } from '../ui/commands/types.js';
 import type { LoadedSettings } from '../config/settings.js';
@@ -37,7 +38,8 @@ export const createMockCommandContext = (
       args: '',
     },
     services: {
-      agentContext: null,
+      agentContext: null as unknown as AgentLoopContext,
+    config: null,
 
       settings: {
         merged: defaultMergedSettings,

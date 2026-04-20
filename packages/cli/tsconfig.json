@@ -11,7 +11,13 @@
     "types": [
       "node",
       "vitest/globals"
-    ]
+    ],
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "strict": false,
+    "strictPropertyInitialization": true,
+    "strictFunctionTypes": false,
+    "useUnknownInCatchVariables": false
   },
   "include": [
     "index.ts",

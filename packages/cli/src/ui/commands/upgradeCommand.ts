@@ -17,28 +17,16 @@ export const upgradeCommand: SlashCommand = {
   description: 'Upgrade your Gemini Code Assist tier for higher limits',
   autoExecute: true,
   action: async (context) => {
-    const config = context.services.agentContext?.config;
-    const authType = config?.getContentGeneratorConfig()?.authType;
+    const authType =
+      context.services.config?.getContentGeneratorConfig()?.authType;
     if (authType !== AuthType.LOGIN_WITH_GOOGLE) {
       return {
         type: 'message',
         messageType: 'error',
-        content: 'The /upgrade command is only available when logged in with Google.',
+        content:
+          'The /upgrade command is only available when logged in with Google.',
       };
     }
-<<<<<<< HEAD
-=======
-
-    const tierName = config?.getUserTierName();
-    if (isUltraTier(tierName)) {
-      return {
-        type: 'message',
-        messageType: 'info',
-        content: `You are already on the highest tier: ${tierName}.`,
-      };
-    }
-
->>>>>>> 6c78eb7a3
     if (!shouldLaunchBrowser()) {
       return {
         type: 'message',

@@ -633,7 +633,7 @@ function reportIgnoredFiles(
     ignoredByReason[file.reason].push(file.path);
   }
 
-  const messages = [];
+  const messages: string[] = [];
   if (ignoredByReason['git'].length) {
     messages.push(`Git-ignored: ${ignoredByReason['git'].join(', ')}`);
   }

@@ -87,7 +87,7 @@ export function ports(): string[] {
 export function entrypoint(workdir: string, cliArgs: string[]): string[] {
   const isWindows = os.platform() === 'win32';
   const containerWorkdir = getContainerPath(workdir);
-  const shellCmds = [];
+  const shellCmds: string[] = [];
   const pathSeparator = isWindows ? ';' : ':';
 
   let pathSuffix = '';

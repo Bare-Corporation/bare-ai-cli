@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { AgentLoopContext } from '@bare-ai/core';
 import type { Config, GitService } from '@bare-ai/core';
 import type { LoadedSettings } from '../../config/settings.js';
 
 export interface CommandContext {
+  agentContext: AgentLoopContext;
   config: Config;
   settings: LoadedSettings;
   git?: GitService;

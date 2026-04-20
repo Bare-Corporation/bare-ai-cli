@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { AgentLoopContext } from '@bare-ai/core';
 import {
   type Config,
   type GeminiChat,
@@ -805,7 +806,7 @@ export class Session {
     parts: Part[],
   ): Promise<boolean> {
     const gitService = await this.config.getGitService();
-    const commandContext = {
+    const commandContext = { agentContext: this.config as unknown as AgentLoopContext,
       config: this.config,
       settings: this.settings,
       git: gitService,

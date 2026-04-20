@@ -118,7 +118,7 @@ async function downloadFiles({
   proxy: string | undefined;
   abortController: AbortController;
 }): Promise<void> {
-  const downloads = [];
+  const downloads: Promise<void>[] = [];
   for (const fileBasename of paths) {
     downloads.push(
       (async () => {
@@ -255,7 +255,7 @@ export const setupGithubCommand: SlashCommand = {
     await updateGitignore(gitRepoRoot);
 
     // Print out a message
-    const commands = [];
+    const commands: string[] = [];
     if (process.platform !== 'win32') {
       commands.push('set -eEuo pipefail');
     }

@@ -388,12 +388,12 @@ function* emitKeys(
     let sequence = ch;
     let escaped = false;
 
-    let name = undefined;
+    let name: string | undefined = undefined;
     let shift = false;
     let alt = false;
     let ctrl = false;
     let cmd = false;
-    let code = undefined;
+    let code: string | undefined = undefined;
     let insertable = false;
 
     if (ch === ESC) {

@@ -136,7 +136,7 @@ export const useExtensionUpdates = (
 
     // We only notify if we have unprocessed extensions in the UPDATE_AVAILABLE
     // state.
-    const pendingUpdates = [];
+    const pendingUpdates: string[] = [];
     const updatePromises: Array<Promise<ExtensionUpdateInfo | undefined>> = [];
     for (const extension of extensions) {
       const currentState = extensionsUpdateState.extensionStatuses.get(

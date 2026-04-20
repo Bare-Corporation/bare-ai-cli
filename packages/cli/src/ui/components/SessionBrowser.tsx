@@ -442,7 +442,7 @@ const SessionItem = ({
 
   const prefix = isActive ? '❯ ' : '  ';
   let additionalInfo = '';
-  let matchDisplay = null;
+  let matchDisplay: React.ReactElement | null = null;
 
   // Add "(current)" label for the current session
   if (session.isCurrentSession) {

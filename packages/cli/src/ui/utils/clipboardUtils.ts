@@ -514,10 +514,10 @@ export function parsePastedPaths(text: string): string | null {
     return `@${escapePath(text)} `;
   }
 
-  const validPaths = [];
+  const validPaths: string[] = [];
   for (const segment of splitDragAndDropPaths(text)) {
     if (isValidFilePath(segment)) {
-      validPaths.push(`@${escapePath(segment)}`);
+      (validPaths as string[]).push(`@${escapePath(segment)}`);
     } else {
       return null; // If any segment is invalid, return null for the whole string
     }

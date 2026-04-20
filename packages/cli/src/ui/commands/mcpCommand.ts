@@ -61,7 +61,7 @@ const authCommand: SlashCommand = {
       // 1. Servers with oauth.enabled in config
       // 2. Servers detected as requiring OAuth (returned 401)
       const configuredOAuthServers = Object.entries(mcpServers)
-        .filter(([_, server]) => server.oauth?.enabled)
+        .filter(([_, server]) => (server as any)?.oauth?.enabled)
         .map(([name, _]) => name);
 
       const detectedOAuthServers = Array.from(
