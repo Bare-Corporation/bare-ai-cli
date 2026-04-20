@@ -255,7 +255,7 @@ export const useExecutionLifecycle = (
         ...({
           type: 'REGISTER_TASK',
           pid,
-          task: { command, initialOutput, completionBehavior } as any,
+          task: { task: command as any, ...( { initialOutput } as any ), completionBehavior } as any,
         } as any),
       });
 
@@ -535,8 +535,8 @@ export const useExecutionLifecycle = (
           }
 
           let finalOutput: string =
-            String(result.ansiOutput) && String(result.ansiOutput).length > 0
-              ? String(result.ansiOutput)
+            String((result as any).ansiOutput) && String((result as any).ansiOutput).length > 0
+              ? String((result as any).ansiOutput)
               : mainContent;
           let finalStatus = CoreToolCallStatus.Success;
 

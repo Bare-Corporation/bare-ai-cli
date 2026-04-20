@@ -50,7 +50,7 @@ loaded into every conversation.
 
 ### Scenario: Using the hierarchy
 
-Context is loaded hierarchically. This allows you to have general rules for
+Context is loaded hierarchically. This lets you have general rules for
 everything and specific rules for sub-projects.
 
 1.  **Global:** `~/.gemini/BARE_AI.md` (Rules for _every_ project you work on).

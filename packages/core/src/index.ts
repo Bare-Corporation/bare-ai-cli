@@ -251,7 +251,7 @@ export * from './telemetry/index.js';
 export * from './telemetry/billingEvents.js';
 export { logBillingEvent } from './telemetry/loggers.js';
 export * from './telemetry/constants.js';
-export { sessionId, createSessionId } from './utils/session.js';
+export { createSessionId } from './utils/session.js';
 export * from './utils/compatibility.js';
 export * from './utils/browser.js';
 export { Storage } from './config/storage.js';
@@ -281,3 +281,4 @@ export { GEMINI_DIR } from './config/constants.js';
 // ==========================================
 export const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
 export * from './core/coreToolScheduler.js';
+export * from './services/contextManager.js';

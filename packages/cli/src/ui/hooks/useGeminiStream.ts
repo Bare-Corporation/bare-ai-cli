@@ -232,14 +232,13 @@ export const useGeminiStream = (
     useStateAndRef<boolean>(true);
   const processedMemoryToolsRef = useRef<Set<string>>(new Set());
   const { startNewPrompt, getPromptCount } = useSessionStats();
-  const storage = config.storage;
-  const logger = useLogger(storage);
+  const logger = useLogger(config);
   const gitService = useMemo(() => {
     if (!config.getProjectRoot()) {
       return;
     }
-    return new GitService(config.getProjectRoot(), storage);
-  }, [config, storage]);
+    return new GitService(config.getProjectRoot(), config.storage);
+  }, [config]);
 
   useEffect(() => {
     const handleRetryAttempt = (payload: RetryAttemptPayload) => {
@@ -1379,6 +1378,7 @@ export const useGeminiStream = (
           operation: options?.isContinuation
             ? GeminiCliOperation.SystemPrompt
             : GeminiCliOperation.UserPrompt,
+          sessionId: config.getSessionId(),
         },
         async ({ metadata: spanMetadata }) => {
           spanMetadata.input = query;
@@ -1884,7 +1884,7 @@ export const useGeminiStream = (
         }
 
         if (checkpointsToWrite.size > 0) {
-          const checkpointDir = storage.getProjectTempCheckpointsDir();
+          const checkpointDir = config.storage.getProjectTempCheckpointsDir();
           try {
             await fs.mkdir(checkpointDir, { recursive: true });
             for (const [fileName, content] of checkpointsToWrite) {
@@ -1901,15 +1901,7 @@ export const useGeminiStream = (
     };
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     saveRestorableToolCalls();
-  }, [
-    toolCalls,
-    config,
-    onDebugMessage,
-    gitService,
-    history,
-    geminiClient,
-    storage,
-  ]);
+  }, [toolCalls, config, onDebugMessage, gitService, history, geminiClient]);
 
   const lastOutputTime = Math.max(
     lastToolOutputTime,
