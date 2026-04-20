@@ -22,7 +22,7 @@ import { type ExtensionInstallMetadata } from '../config.js';
 import { KeychainService } from '../../services/keychainService.js';
 import { isNodeError, getErrorMessage } from '../../utils/errors.js';
 import { debugLogger } from '../../utils/debugLogger.js';
-import { homedir, GEMINI_DIR } from '../../utils/paths.js';
+import { homedir, BARE_AI_DIR as GEMINI_DIR } from '../../utils/paths.js';
 import stableStringify from 'json-stable-stringify';
 import {
   type IExtensionIntegrity,

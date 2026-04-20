@@ -34,3 +34,9 @@ export const DEFAULT_FILE_FILTERING_OPTIONS: FileFilteringOptions = {
 export const GEMINI_IGNORE_FILE_NAME = '.geminiignore';
 
 export const GEMINI_DIR = '.gemini';
+
+// Extension integrity constants
+export const INTEGRITY_FILENAME = '.integrity';
+export const INTEGRITY_KEY_FILENAME = '.integrity-key';
+export const KEYCHAIN_SERVICE_NAME = 'bare-ai-cli';
+export const SECRET_KEY_ACCOUNT = 'integrity-secret-key';

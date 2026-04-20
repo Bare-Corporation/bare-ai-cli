@@ -1514,6 +1514,14 @@ export class Config implements McpContext, AgentLoopContext {
     return this._geminiClient;
   }
 
+  get userHintService() {
+    return {
+      onUserHint: (_cb: unknown) => {},
+      offUserHint: (_cb: unknown) => {},
+      clear: () => {},
+      addUserHint: (_hint: unknown) => {},
+    };
+  }
   get sandboxManager(): SandboxManager {
     return this._sandboxManager;
   }
