@@ -435,6 +435,15 @@ const SETTINGS_SCHEMA = {
         description: 'Collapse the input drawer when a tool confirmation is shown.',
         showInDialog: true,
       },
+      debugRainbow: {
+        type: 'boolean',
+        label: 'Debug Rainbow',
+        category: 'UI',
+        requiresRestart: false,
+        default: false,
+        description: 'Enable debug rainbow mode.',
+        showInDialog: false,
+      },
       escapePastedAtSymbols: {
         type: 'boolean',
         label: 'Escape Pasted @ Symbols',

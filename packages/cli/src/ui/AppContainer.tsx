@@ -1170,7 +1170,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     activePtyId,
     lastOutputTime,
     streamingState,
-    pendingToolCalls,
+    pendingToolCalls: pendingToolCalls as any,
     embeddedShellFocused,
     isInteractiveShellEnabled: config.isInteractiveShellEnabled(),
   });

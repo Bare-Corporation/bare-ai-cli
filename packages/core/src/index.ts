@@ -281,4 +281,5 @@ export { GEMINI_DIR } from './config/constants.js';
 // ==========================================
 export const UPGRADE_URL_PAGE = 'https://docs.bare-erp.com';
 export * from './core/coreToolScheduler.js';
-export * from './services/contextManager.js';
+export * from './context/memoryContextManager.js';
+export { sessionId } from './utils/session.js';

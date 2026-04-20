@@ -9,6 +9,7 @@ import {
   useTurnActivityMonitor,
   type MinimalTrackedToolCall,
 } from './useTurnActivityMonitor.js';
+import type { TrackedToolCall } from './useToolScheduler.js';
 import {
   SHELL_FOCUS_HINT_DELAY_MS,
   SHELL_ACTION_REQUIRED_TITLE_DELAY_MS,
@@ -47,7 +48,7 @@ export const useShellInactivityStatus = ({
   const { operationStartTime, isRedirectionActive } = useTurnActivityMonitor(
     streamingState,
     activePtyId,
-    pendingToolCalls,
+    pendingToolCalls as unknown as TrackedToolCall[],
   );
 
   const isAwaitingFocus =

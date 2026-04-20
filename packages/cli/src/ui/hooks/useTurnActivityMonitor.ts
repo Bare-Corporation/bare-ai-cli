@@ -1,3 +1,4 @@
+export interface MinimalTrackedToolCall { request: { callId: string; name: string; [key: string]: any }; [key: string]: any; }
 /**
  * @license
  * Copyright 2025 Google LLC

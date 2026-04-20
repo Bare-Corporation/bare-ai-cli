@@ -3386,7 +3386,7 @@ export class Config implements McpContext, AgentLoopContext {
           continue;
         }
 
-        const tool = new SubagentTool(definition, this, this.messageBus);
+        const tool = new SubagentTool(definition, this, this.messageBus) as unknown as AnyDeclarativeTool;
         registry.registerTool(tool);
       } catch (e: unknown) {
         debugLogger.warn(
