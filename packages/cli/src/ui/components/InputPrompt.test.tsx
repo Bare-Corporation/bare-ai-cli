@@ -170,6 +170,7 @@ describe('InputPrompt', () => {
     setCleanUiDetailsVisible: mockSetCleanUiDetailsVisible,
     toggleCleanUiDetailsVisible: mockToggleCleanUiDetailsVisible,
     revealCleanUiDetailsTemporarily: mockRevealCleanUiDetailsTemporarily,
+    addMessage: vi.fn(),
   };
 
   beforeEach(() => {
@@ -331,6 +332,8 @@ describe('InputPrompt', () => {
     vi.mocked(clipboardy.read).mockResolvedValue('');
 
     props = {
+      onQueueMessage: vi.fn(),
+
       buffer: mockBuffer,
       onSubmit: vi.fn(),
       userMessages: [],
@@ -1078,6 +1081,76 @@ describe('InputPrompt', () => {
     unmount();
   });
 
+  it('queues a message when Tab is pressed during generation', async () => {
+    props.buffer.setText('A new prompt');
+    props.streamingState = StreamingState.Responding;
+
+    const { stdin, unmount } = await renderWithProviders(
+      <InputPrompt {...props} />,
+      {
+        uiActions,
+      },
+    );
+
+    await act(async () => {
+      stdin.write('\t');
+    });
+
+    await waitFor(() => {
+      expect(props.onQueueMessage).toHaveBeenCalledWith('A new prompt');
+      expect(props.buffer.text).toBe('');
+    });
+    unmount();
+  });
+
+  it('shows an error when attempting to queue a slash command', async () => {
+    props.buffer.setText('/clear');
+    props.streamingState = StreamingState.Responding;
+
+    const { stdin, unmount } = await renderWithProviders(
+      <InputPrompt {...props} />,
+      {
+        uiActions,
+      },
+    );
+
+    await act(async () => {
+      stdin.write('\t');
+    });
+
+    await waitFor(() => {
+      expect(props.setQueueErrorMessage).toHaveBeenCalledWith(
+        'Slash commands cannot be queued',
+      );
+      expect(props.onQueueMessage).not.toHaveBeenCalled();
+    });
+    unmount();
+  });
+
+  it('shows an error when attempting to queue a shell command', async () => {
+    props.shellModeActive = true;
+    props.buffer.setText('ls');
+    props.streamingState = StreamingState.Responding;
+
+    const { stdin, unmount } = await renderWithProviders(
+      <InputPrompt {...props} />,
+      {
+        uiActions,
+      },
+    );
+
+    await act(async () => {
+      stdin.write('\t');
+    });
+
+    await waitFor(() => {
+      expect(props.setQueueErrorMessage).toHaveBeenCalledWith(
+        'Shell commands cannot be queued',
+      );
+      expect(props.onQueueMessage).not.toHaveBeenCalled();
+    });
+    unmount();
+  });
   it('should not submit on Enter when the buffer is empty or only contains whitespace', async () => {
     props.buffer.setText('   '); // Set buffer to whitespace
 
