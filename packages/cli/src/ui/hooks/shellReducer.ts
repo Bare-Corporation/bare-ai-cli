@@ -17,6 +17,10 @@ export interface BackgroundShell {
 }
 
 export interface ShellState {
+  backgroundTasks: Map<number, BackgroundShell>;
+  isBackgroundTaskVisible: boolean;
+  backgroundTaskCount: number;
+  activeBackgroundTaskPid: number | null;
   activeShellPtyId: number | null;
   lastShellOutputTime: number;
   backgroundShells: Map<number, BackgroundShell>;
@@ -37,9 +41,21 @@ export type ShellAction =
   | { type: 'UPDATE_SHELL'; pid: number; update: Partial<BackgroundShell> }
   | { type: 'APPEND_SHELL_OUTPUT'; pid: number; chunk: string | AnsiOutput }
   | { type: 'SYNC_BACKGROUND_SHELLS' }
+  | { type: 'SYNC_BACKGROUND_TASKS' }
+  | { type: 'REGISTER_TASK'; pid: number; task: BackgroundShell }
+  | { type: 'UPDATE_TASK'; pid: number; updates: Partial<BackgroundShell> }
+  | { type: 'DISMISS_TASK'; pid: number }
+  | { type: 'APPEND_TASK_OUTPUT'; pid: number; output: string }
   | { type: 'DISMISS_SHELL'; pid: number };
 
+// BackgroundTask is an alias for BackgroundShell for upstream compatibility
+export type BackgroundTask = BackgroundShell;
+
 export const initialState: ShellState = {
+  backgroundTasks: new Map(),
+  isBackgroundTaskVisible: false,
+  backgroundTaskCount: 0,
+  activeBackgroundTaskPid: null,
   activeShellPtyId: null,
   lastShellOutputTime: 0,
   backgroundShells: new Map(),
@@ -73,7 +89,7 @@ export function shellReducer(
         binaryBytesReceived: 0,
         status: 'running',
       });
-      return { ...state, backgroundShells: nextShells };
+      return { ...state, backgroundShells: nextShells, backgroundTasks: nextShells, backgroundTaskCount: nextShells.size };
     }
     case 'UPDATE_SHELL': {
       const shell = state.backgroundShells.get(action.pid);
@@ -85,7 +101,7 @@ export function shellReducer(
         nextShells.delete(action.pid);
       }
       nextShells.set(action.pid, updatedShell);
-      return { ...state, backgroundShells: nextShells };
+      return { ...state, backgroundShells: nextShells, backgroundTasks: nextShells, backgroundTaskCount: nextShells.size };
     }
     case 'APPEND_SHELL_OUTPUT': {
       const shell = state.backgroundShells.get(action.pid);
@@ -114,9 +130,11 @@ export function shellReducer(
       }
       return nextState;
     }
+    case 'SYNC_BACKGROUND_TASKS':
     case 'SYNC_BACKGROUND_SHELLS': {
       return { ...state, backgroundShells: new Map(state.backgroundShells) };
     }
+    case 'DISMISS_TASK':
     case 'DISMISS_SHELL': {
       const nextShells = new Map(state.backgroundShells);
       nextShells.delete(action.pid);
