@@ -176,6 +176,7 @@ export class BrowserManager {
   private mcpTransport: StdioClientTransport | undefined;
   private discoveredTools: McpTool[] = [];
   private disconnected = false;
+  private isClosing = false;
   private connectionPromise: Promise<void> | undefined;
 
   /** State for action rate limiting */
@@ -301,6 +302,11 @@ export class BrowserManager {
       POTENTIALLY_NAVIGATING_TOOLS.has(toolName) &&
       !signal?.aborted
     ) {
+      // Don't re-inject if explicitly switching to a page in the background
+      if (toolName === 'select_page' && args['bringToFront'] === false) {
+        return result;
+      }
+
       try {
         if (this.shouldInjectOverlay) {
           await injectAutomationOverlay(this, signal);
@@ -360,7 +366,7 @@ export class BrowserManager {
    */
   async ensureConnection(): Promise<void> {
     // Already connected and healthy — nothing to do
-    if (this.rawMcpClient && !this.disconnected) {
+    if (this.isConnected()) {
       return;
     }
 
@@ -424,6 +430,7 @@ export class BrowserManager {
    * the transport will terminate the browser.
    */
   async close(): Promise<void> {
+    this.isClosing = true;
     // Close MCP client first
     if (this.rawMcpClient) {
       try {
@@ -463,6 +470,7 @@ export class BrowserManager {
    * BrowserManager instance.
    */
   private async connectMcp(): Promise<void> {
+    this.isClosing = false;
     debugLogger.log('Connecting isolated MCP client to chrome-devtools-mcp...');
 
     // Create raw MCP SDK Client (not the wrapper McpClient)
@@ -478,7 +486,32 @@ export class BrowserManager {
 
     // Build args for chrome-devtools-mcp
     const browserConfig = this.config.getBrowserAgentConfig();
-    const sessionMode = browserConfig.customConfig.sessionMode ?? 'persistent';
+    let sessionMode = browserConfig.customConfig.sessionMode ?? 'persistent';
+
+    // Detect sandbox environment.
+    // SANDBOX env var is set to 'sandbox-exec' (seatbelt) or the container
+    // name (Docker/Podman/gVisor/LXC) when running inside a sandbox.
+    // CI uses 'sandbox:none' as a metadata label — not a real sandbox.
+    const sandboxType = process.env['SANDBOX'];
+    const isContainerSandbox =
+      !!sandboxType &&
+      sandboxType !== 'sandbox-exec' &&
+      sandboxType !== 'sandbox:none';
+    const isSeatbeltSandbox =
+      sandboxType === 'sandbox-exec' && sessionMode !== 'existing';
+
+    // Seatbelt sandbox: force isolated + headless for filesystem compatibility.
+    // Chrome exists on the host, but persistent profiles may conflict with
+    // seatbelt restrictions. Isolated mode uses tmpdir (always writable).
+    if (isSeatbeltSandbox) {
+      if (sessionMode !== 'isolated') {
+        sessionMode = 'isolated';
+        coreEvents.emitFeedback(
+          'info',
+          '🔒 Sandbox: Using isolated browser session for compatibility.',
+        );
+      }
+    }
 
     const mcpArgs = ['--experimental-vision'];
 
@@ -490,15 +523,42 @@ export class BrowserManager {
     if (sessionMode === 'isolated') {
       mcpArgs.push('--isolated');
     } else if (sessionMode === 'existing') {
-      mcpArgs.push('--autoConnect');
-      const message =
-        '🔒 Browsing with your signed-in Chrome profile — cookies and saved logins will be visible to the agent.';
-      coreEvents.emitFeedback('info', message);
-      coreEvents.emitConsoleLog('info', message);
+      if (isContainerSandbox) {
+        // In container sandboxes, --autoConnect can't discover Chrome on the
+        // host (it uses local pipes/sockets). Use --browser-url with the
+        // resolved IP of host.docker.internal instead of the hostname, because
+        // Chrome's DevTools protocol rejects HTTP requests where the Host
+        // header is not 'localhost' or an IP address.
+        const dns = await import('node:dns');
+        let browserHost = 'host.docker.internal';
+        try {
+          const { address } = await dns.promises.lookup(browserHost);
+          browserHost = address;
+        } catch {
+          // Fallback: use hostname as-is if DNS resolution fails
+          debugLogger.log(
+            `Could not resolve host.docker.internal, using hostname directly`,
+          );
+        }
+        const browserUrl = `http://${browserHost}:9222`;
+        mcpArgs.push('--browser-url', browserUrl);
+        coreEvents.emitFeedback(
+          'info',
+          `🔒 Container sandbox: Connecting to Chrome via ${browserHost}:9222.`,
+        );
+      } else {
+        mcpArgs.push('--autoConnect');
+        const message =
+          '🔒 Browsing with your signed-in Chrome profile — cookies and saved logins will be visible to the agent.';
+        coreEvents.emitFeedback('info', message);
+        coreEvents.emitConsoleLog('info', message);
+      }
     }
 
-    // Add optional settings from config
-    if (browserConfig.customConfig.headless) {
+    // Add optional settings from config.
+    // Force headless in seatbelt sandbox since Chrome profile/display access
+    // may be restricted, and the user is running in a sandboxed environment.
+    if (browserConfig.customConfig.headless || isSeatbeltSandbox) {
       mcpArgs.push('--headless');
     }
     if (browserConfig.customConfig.profilePath) {
@@ -571,11 +631,14 @@ export class BrowserManager {
     }
 
     this.mcpTransport.onclose = () => {
+      this.disconnected = true;
+      if (this.isClosing) {
+        return;
+      }
       debugLogger.error(
         'chrome-devtools-mcp transport closed unexpectedly. ' +
           'The MCP server process may have crashed.',
       );
-      this.disconnected = true;
     };
     this.mcpTransport.onerror = (error: Error) => {
       debugLogger.error(
@@ -595,7 +658,6 @@ export class BrowserManager {
           await this.rawMcpClient!.connect(this.mcpTransport!);
           debugLogger.log('MCP client connected to chrome-devtools-mcp');
           await this.discoverTools();
-          this.registerInputBlockerHandler();
           // clear the action counter for each connection
           this.actionCounter = 0;
         })(),
@@ -798,46 +860,5 @@ export class BrowserManager {
     }
     // If none matched, then deny
     return false;
-  }
-
-  /**
-   * Registers a fallback notification handler on the MCP client to
-   * automatically re-inject the input blocker after any server-side
-   * notification (e.g. page navigation, resource updates).
-   *
-   * This covers ALL navigation types (link clicks, form submissions,
-   * history navigation) — not just explicit navigate_page tool calls.
-   */
-  private registerInputBlockerHandler(): void {
-    if (!this.rawMcpClient) {
-      return;
-    }
-
-    if (!this.config.shouldDisableBrowserUserInput()) {
-      return;
-    }
-
-    const existingHandler = this.rawMcpClient.fallbackNotificationHandler;
-    this.rawMcpClient.fallbackNotificationHandler = async (notification: {
-      method: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      params?: any;
-    }) => {
-      // Chain with any existing handler first.
-      if (existingHandler) {
-        await existingHandler(notification);
-      }
-
-      // Only re-inject on resource update notifications which indicate
-      // page content has changed (navigation, new page, etc.)
-      if (notification.method === 'notifications/resources/updated') {
-        debugLogger.log('Page content changed, re-injecting input blocker...');
-        void injectInputBlocker(this);
-      }
-    };
-
-    debugLogger.log(
-      'Registered global notification handler for input blocker re-injection',
-    );
   }
 }
