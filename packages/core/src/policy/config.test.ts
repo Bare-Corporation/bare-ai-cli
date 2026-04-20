@@ -311,7 +311,7 @@ describe('createPolicyEngineConfig', () => {
     const settings: PolicySettings = {};
     const config = await createPolicyEngineConfig(settings, ApprovalMode.YOLO);
     const rule = config.rules?.find(
-      (r) => r.decision === PolicyDecision.ALLOW && !r.toolName,
+      (r) => r.decision === PolicyDecision.ALLOW && r.toolName === '*',
     );
     expect(rule).toBeDefined();
     // Priority 998 in default tier → 1.998 (999 reserved for ask_user exception)
@@ -594,7 +594,7 @@ describe('createPolicyEngineConfig', () => {
 
     // Should have the wildcard allow rule
     const wildcardRule = config.rules?.find(
-      (r) => !r.toolName && r.decision === PolicyDecision.ALLOW,
+      (r) => r.toolName === '*' && r.decision === PolicyDecision.ALLOW,
     );
     expect(wildcardRule).toBeDefined();
     // Priority 998 in default tier → 1.998 (999 reserved for ask_user exception)

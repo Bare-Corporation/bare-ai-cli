@@ -38,6 +38,7 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
   return {
     ...actual,
     coreEvents: {
+      // eslint-disable-next-line @typescript-eslint/no-misused-spread
       ...actual.coreEvents,
       emitFeedback: vi.fn(),
     },
