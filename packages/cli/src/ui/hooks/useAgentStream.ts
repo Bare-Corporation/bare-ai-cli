@@ -34,7 +34,6 @@ import { type BackgroundTask } from './useExecutionLifecycle.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { useStateAndRef } from './useStateAndRef.js';
-import { type MinimalTrackedToolCall } from './useTurnActivityMonitor.js';
 
 export interface UseAgentStreamOptions {
   agent?: AgentProtocol;
@@ -93,7 +92,7 @@ export const useAgentStream = ({
 
   // Use the trackedTools to mock pendingToolCalls for inactivity monitors
   const pendingToolCalls = useMemo(
-    (): MinimalTrackedToolCall[] =>
+    (): any[] =>
       trackedTools.map((t) => ({
         request: {
           name: t.originalRequestName || t.name,

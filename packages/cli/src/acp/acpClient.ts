@@ -347,7 +347,7 @@ export class GeminiAgent {
       mcpServers,
     );
 
-    const sessionSelector = new SessionSelector(config.storage);
+    const sessionSelector = new SessionSelector(config.storage as any);
     const { sessionData, sessionPath } =
       await sessionSelector.resolveSession(sessionId);
 

@@ -9,3 +9,4 @@ import { randomUUID } from 'node:crypto';
 export function createSessionId(): string {
   return randomUUID();
 }
+export const sessionId: string = createSessionId();
