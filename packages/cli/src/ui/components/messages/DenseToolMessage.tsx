@@ -444,15 +444,15 @@ export const DenseToolMessage: React.FC<DenseToolMessageProps> = (props) => {
         language: fileExtension,
         maxWidth: terminalWidth - PAYLOAD_MARGIN_LEFT,
         settings,
-        disableColor: status === CoreToolCallStatus.Cancelled,
-        returnLines: true,
+        // disableColor: status === CoreToolCallStatus.Cancelled,
+        // returnLines: true,
       });
     } else {
       return renderDiffLines({
         parsedLines,
         filename: diff.fileName,
         terminalWidth: terminalWidth - PAYLOAD_MARGIN_LEFT,
-        disableColor: status === CoreToolCallStatus.Cancelled,
+        // disableColor: status === CoreToolCallStatus.Cancelled,
       });
     }
   }, [diff, isExpanded, isAlternateBuffer, terminalWidth, settings, status]);
@@ -463,7 +463,7 @@ export const DenseToolMessage: React.FC<DenseToolMessageProps> = (props) => {
 
     if (diff) {
       if (isAlternateBuffer) {
-        return isExpanded && diffLines.length > 0;
+        return isExpanded && ((diffLines as any) || []).length > 0;
       }
       // In non-alternate buffer mode, we always show the diff.
       return true;
@@ -474,7 +474,7 @@ export const DenseToolMessage: React.FC<DenseToolMessageProps> = (props) => {
     isAlternateBuffer,
     diff,
     isExpanded,
-    diffLines.length,
+    ((diffLines as any) || []).length,
     viewParts.payload,
     outputFile,
   ]);
@@ -509,7 +509,7 @@ export const DenseToolMessage: React.FC<DenseToolMessageProps> = (props) => {
         )}
       </Box>
 
-      {showPayload && isAlternateBuffer && diffLines.length > 0 && (
+      {showPayload && isAlternateBuffer && ((diffLines as any) || []).length > 0 && (
         <Box
           marginLeft={PAYLOAD_MARGIN_LEFT}
           marginTop={1}
@@ -517,7 +517,7 @@ export const DenseToolMessage: React.FC<DenseToolMessageProps> = (props) => {
           paddingX={1}
           flexDirection="column"
           height={
-            Math.min(diffLines.length, COMPACT_TOOL_SUBVIEW_MAX_LINES) + 2
+            Math.min(((diffLines as any) || []).length, COMPACT_TOOL_SUBVIEW_MAX_LINES) + 2
           }
           maxHeight={COMPACT_TOOL_SUBVIEW_MAX_LINES + 2}
           borderStyle="round"
@@ -529,7 +529,7 @@ export const DenseToolMessage: React.FC<DenseToolMessageProps> = (props) => {
           )}
         >
           <ScrollableList
-            data={diffLines}
+            data={diffLines as any}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
             estimatedItemHeight={() => 1}

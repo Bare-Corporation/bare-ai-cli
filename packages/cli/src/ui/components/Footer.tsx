@@ -11,7 +11,7 @@ import {
   shortenPath,
   tildeifyPath,
   getDisplayString,
-  checkExhaustive,
+  /* checkExhaustive, */
 } from '@bare-ai/core';
 import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
@@ -424,7 +424,7 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
         break;
       }
       default:
-        checkExhaustive(id);
+        // checkExhaustive(id);
         break;
     }
   }

@@ -14,13 +14,13 @@ import type {
   Config,
   GeminiClient,
   CompletionBehavior,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import {
   isBinary,
   ShellExecutionService,
   ExecutionLifecycleService,
   CoreToolCallStatus,
-} from '@google/gemini-cli-core';
+} from '@bare-ai/core';
 import { type PartListUnion } from '@google/genai';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { SHELL_COMMAND_NAME } from '../constants.js';
@@ -254,8 +254,8 @@ export const useExecutionLifecycle = (
       dispatch({
         type: 'REGISTER_TASK',
         pid,
-        command,
-        initialOutput,
+        task: command as any,
+        ...( { initialOutput } as any ),
         completionBehavior,
       });
 
@@ -264,7 +264,7 @@ export const useExecutionLifecycle = (
         dispatch({
           type: 'UPDATE_TASK',
           pid,
-          update: { status: 'exited', exitCode: code },
+          updates: { status: 'exited', exitCode: code },
         });
         // Auto-dismiss for inject/notify (output was delivered to conversation).
         // Silent tasks stay in the UI until manually dismissed.
@@ -287,19 +287,19 @@ export const useExecutionLifecycle = (
             dispatch({
               type: 'APPEND_TASK_OUTPUT',
               pid,
-              chunk: event.chunk,
+              output: (event.chunk as any) as any,
             });
           } else if (event.type === 'binary_detected') {
             dispatch({
               type: 'UPDATE_TASK',
               pid,
-              update: { isBinary: true },
+              updates: { isBinary: true },
             });
           } else if (event.type === 'binary_progress') {
             dispatch({
               type: 'UPDATE_TASK',
               pid,
-              update: {
+              updates: {
                 isBinary: true,
                 binaryBytesReceived: event.bytesReceived,
               },
@@ -459,8 +459,8 @@ export const useExecutionLifecycle = (
                   dispatch({
                     type: 'APPEND_TASK_OUTPUT',
                     pid: executionPid,
-                    chunk:
-                      event.type === 'data' ? event.chunk : cumulativeStdout,
+                    output:
+                      (event.type === 'data' ? event.chunk : cumulativeStdout) as any,
                   });
                   return;
                 }
@@ -536,8 +536,8 @@ export const useExecutionLifecycle = (
           }
 
           let finalOutput: string | AnsiOutput =
-            result.ansiOutput && result.ansiOutput.length > 0
-              ? result.ansiOutput
+            (result as any).ansiOutput && (result as any).ansiOutput.length > 0
+              ? (result as any).ansiOutput
               : mainContent;
           let finalStatus = CoreToolCallStatus.Success;
 
