@@ -32,3 +32,9 @@ export const useQuotaState = () => {
   }
   return context;
 };
+
+import React, { useState } from 'react';
+export const QuotaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state] = useState<QuotaState>({});
+  return <QuotaContext.Provider value={state}>{children}</QuotaContext.Provider>;
+};

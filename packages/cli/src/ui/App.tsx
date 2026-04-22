@@ -11,6 +11,7 @@ import { QuittingDisplay } from './components/QuittingDisplay.js';
 import { ScreenReaderAppLayout } from './layouts/ScreenReaderAppLayout.js';
 import { DefaultAppLayout } from './layouts/DefaultAppLayout.js';
 import { InputProvider } from './contexts/InputContext.js';
+import { QuotaProvider } from './contexts/QuotaContext.js';
 import { AlternateBufferQuittingDisplay } from './components/AlternateBufferQuittingDisplay.js';
 import { useAlternateBuffer } from './hooks/useAlternateBuffer.js';
 
@@ -33,7 +34,7 @@ export const App = () => {
 
   return (
     <StreamingContext.Provider value={uiState.streamingState}>
-      {isScreenReaderEnabled ? <ScreenReaderAppLayout /> : <InputProvider><DefaultAppLayout /></InputProvider>}
+      {isScreenReaderEnabled ? <ScreenReaderAppLayout /> : <QuotaProvider><InputProvider><DefaultAppLayout /></InputProvider></QuotaProvider>}
     </StreamingContext.Provider>
   );
 };
