@@ -899,8 +899,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       toggleDebugProfiler,
       dispatchExtensionStateUpdate,
       addConfirmUpdateExtensionRequest,
-      toggleBackgroundShell: () => {
-        toggleBackgroundShellRef.current();
+      toggleBackgroundTasks: () => { setDebugMessage("The /tasks feature is not available in bare-ai-cli."); },
+      toggleBackgroundShell: () => { if (toggleBackgroundShellRef.current) toggleBackgroundShellRef.current();
         if (!isBackgroundShellVisibleRef.current) {
           setEmbeddedShellFocused(true);
           if (backgroundShellsRef.current.size > 1) {
@@ -2489,6 +2489,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       setShortcutsHelpVisible,
       setCleanUiDetailsVisible,
       toggleCleanUiDetailsVisible,
+      toggleBackgroundShell,
+      toggleBackgroundTasks: toggleBackgroundShell,
       revealCleanUiDetailsTemporarily,
       handleWarning,
       setEmbeddedShellFocused,
@@ -2580,6 +2582,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       setShortcutsHelpVisible,
       setCleanUiDetailsVisible,
       toggleCleanUiDetailsVisible,
+      toggleBackgroundShell,
       revealCleanUiDetailsTemporarily,
       handleWarning,
       setEmbeddedShellFocused,
