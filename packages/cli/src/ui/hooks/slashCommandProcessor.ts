@@ -212,6 +212,7 @@ export const useSlashCommandProcessor = (
     (): CommandContext => ({
       services: {
         agentContext: config,
+        config,
         settings,
         git: gitService,
         logger,
