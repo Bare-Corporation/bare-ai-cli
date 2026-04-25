@@ -19,6 +19,7 @@
 import {
   ModelSlashCommandEvent,
   logModelSlashCommand,
+  coreEvents,
 } from '@bare-ai/core';
 import {
   type CommandContext,
@@ -172,6 +173,7 @@ export const modelCommand: SlashCommand = {
         }
 
         context.services.config?.setModel(config.model_name.trim(), false);
+        coreEvents.emitModelChanged(config.model_name.trim());
         context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Hot-swap successful.` });
 
       } catch (err: any) {
