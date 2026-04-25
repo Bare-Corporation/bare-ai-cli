@@ -66,6 +66,7 @@ import { runExitCleanup } from '../../utils/cleanup.js';
 
 interface SlashCommandProcessorActions {
   [key: string]: any;
+  [key: string]: any;
 
   openAuthDialog: () => void;
   openThemeDialog: () => void;
@@ -74,6 +75,7 @@ interface SlashCommandProcessorActions {
   openSettingsDialog: () => void;
   openSessionBrowser: () => void;
   openModelDialog: () => void;
+  openVoiceModelDialog: () => void;
   openAgentConfigDialog: (
     name: string,
     displayName: string,
@@ -83,6 +85,7 @@ interface SlashCommandProcessorActions {
   quit: (messages: HistoryItem[]) => void;
   setDebugMessage: (message: string) => void;
   toggleCorgiMode: () => void;
+  toggleVoiceMode: () => void;
   toggleDebugProfiler: () => void;
   dispatchExtensionStateUpdate: (action: ExtensionUpdateAction) => void;
   addConfirmUpdateExtensionRequest: (request: ConfirmationRequest) => void;
@@ -235,6 +238,7 @@ export const useSlashCommandProcessor = (
         pendingItem,
         setPendingItem,
         toggleCorgiMode: actions.toggleCorgiMode,
+        toggleVoiceMode: actions.toggleVoiceMode,
         toggleDebugProfiler: actions.toggleDebugProfiler,
         toggleVimEnabled,
         reloadCommands,
@@ -505,6 +509,9 @@ export const useSlashCommandProcessor = (
                       return { type: 'handled' };
                     case 'model':
                       actions.openModelDialog();
+                      return { type: 'handled' };
+                    case 'voice-model':
+                      actions.openVoiceModelDialog();
                       return { type: 'handled' };
                     case 'agentConfig': {
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion

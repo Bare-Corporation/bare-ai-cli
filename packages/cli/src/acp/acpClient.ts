@@ -71,6 +71,7 @@ import { randomUUID } from 'node:crypto';
 import { loadCliConfig, type CliArgs } from '../config/config.js';
 import { runExitCleanup } from '../utils/cleanup.js';
 import { SessionSelector } from '../utils/sessionUtils.js';
+import { startAutoMemoryIfEnabled } from '../utils/autoMemory.js';
 
 import { CommandHandler } from './commandHandler.js';
 export async function runAcpClient(
@@ -300,6 +301,7 @@ export class GeminiAgent {
 
     await config.initialize();
     startupProfiler.flush(config);
+    startAutoMemoryIfEnabled(config);
 
     const geminiClient = config.getGeminiClient();
     const chat = await geminiClient.startChat();
@@ -438,6 +440,7 @@ export class GeminiAgent {
     // which starts the MCP servers and other heavy resources.
     await config.initialize();
     startupProfiler.flush(config);
+    startAutoMemoryIfEnabled(config);
 
     return config;
   }

@@ -81,6 +81,7 @@ describe('ShellProcessor', () => {
       getPolicyEngine: vi.fn().mockReturnValue({
         check: mockPolicyEngineCheck,
       }),
+      getExperimentalGemma: vi.fn().mockReturnValue(false),
       get config() {
         return this as unknown as Config;
       },
