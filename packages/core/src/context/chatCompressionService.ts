@@ -11,8 +11,9 @@ import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';
 import { tokenLimit } from '../core/tokenLimits.js';
 import { getCompressionPrompt } from '../core/prompts.js';
 import { getResponseText } from '../utils/partUtils.js';
+import { BareAiClient } from '../core/bareAiClient.js';
 import { logChatCompression } from '../telemetry/loggers.js';
-import { makeChatCompressionEvent, LlmRole } from '../telemetry/types.js';
+import { makeChatCompressionEvent } from '../telemetry/types.js';
 import {
   saveTruncatedToolOutput,
   formatTruncatedToolOutput,
@@ -234,6 +235,29 @@ async function truncateHistoryToBudget(
   return truncatedHistory;
 }
 
+
+// Sovereign: route compression through BareAiClient instead of Gemini
+async function compressViaBaraAiClient(
+  contents: any[],
+  systemInstruction: string,
+): Promise<any> {
+  const client = new BareAiClient();
+  const messages: import("../core/bareAiClient.js").Message[] = contents.map((c: any) => ({
+    role: c.role === 'model' ? 'assistant' : 'user',
+    content: c.parts?.map((p: any) => p.text ?? '').join('') ?? '',
+  }));
+  const result = await client.generateContent(systemInstruction, messages);
+  return {
+    candidates: [{
+      content: {
+        parts: [{ text: result.text }],
+        role: 'model',
+      },
+      finishReason: 'STOP',
+    }],
+  };
+}
+
 export class ChatCompressionService {
   async compress(
     chat: GeminiChat,
@@ -356,53 +380,26 @@ export class ChatCompressionService {
       ? 'A previous <state_snapshot> exists in the history. You MUST integrate all still-relevant information from that snapshot into the new one, updating it with the more recent events. Do not lose established constraints or critical knowledge.'
       : 'Generate a new <state_snapshot> based on the provided history.';
 
-    const summaryResponse = await config.getBaseLlmClient().generateContent({
-      modelConfigKey: { model: modelStringToModelConfigAlias(model) },
-      contents: [
+    const summaryResponse = await compressViaBaraAiClient(
+      [
         ...historyForSummarizer,
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `${anchorInstruction}\n\nFirst, reason in your scratchpad. Then, generate the updated <state_snapshot>.`,
-            },
-          ],
-        },
+        { role: 'user', parts: [{ text: `${anchorInstruction}
+First, reason in your scratchpad. Then, generate the updated <state_snapshot>.` }] },
       ],
-      systemInstruction: { text: getCompressionPrompt(config) },
-      promptId,
-      // TODO(joshualitt): wire up a sensible abort signal,
-      abortSignal: abortSignal ?? new AbortController().signal,
-      role: LlmRole.UTILITY_COMPRESSOR,
-    });
+      getCompressionPrompt(config),
+    );
     const summary = getResponseText(summaryResponse) ?? '';
 
     // Phase 3: The "Probe" Verification (Self-Correction)
     // We perform a second lightweight turn to ensure no critical information was lost.
-    const verificationResponse = await config
-      .getBaseLlmClient()
-      .generateContent({
-        modelConfigKey: { model: modelStringToModelConfigAlias(model) },
-        contents: [
-          ...historyForSummarizer,
-          {
-            role: 'model',
-            parts: [{ text: summary }],
-          },
-          {
-            role: 'user',
-            parts: [
-              {
-                text: 'Critically evaluate the <state_snapshot> you just generated. Did you omit any specific technical details, file paths, tool results, or user constraints mentioned in the history? If anything is missing or could be more precise, generate a FINAL, improved <state_snapshot>. Otherwise, repeat the exact same <state_snapshot> again.',
-              },
-            ],
-          },
-        ],
-        systemInstruction: { text: getCompressionPrompt(config) },
-        promptId: `${promptId}-verify`,
-        role: LlmRole.UTILITY_COMPRESSOR,
-        abortSignal: abortSignal ?? new AbortController().signal,
-      });
+    const verificationResponse = await compressViaBaraAiClient(
+      [
+        ...historyForSummarizer,
+        { role: 'model', parts: [{ text: summary }] },
+        { role: 'user', parts: [{ text: 'Critically evaluate the <state_snapshot> you just generated. Did you omit any specific technical details, file paths, tool results, or user constraints mentioned in the history? If anything is missing or could be more precise, generate a FINAL, improved <state_snapshot>. Otherwise, repeat the exact same <state_snapshot> again.' }] },
+      ],
+      getCompressionPrompt(config),
+    );
 
     const finalSummary = (
       getResponseText(verificationResponse)?.trim() || summary
