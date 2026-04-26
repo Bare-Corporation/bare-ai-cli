@@ -115,17 +115,18 @@ export const modelCommand: SlashCommand = {
         let disableTools = true; // default  
 
       switch (id) {
+
         // ---------------------------------------------------------
-        // THINKERS (No Tools) 
+        // THINKERS (No Tools)
         // ---------------------------------------------------------
-        case '000': case 'tir-na-ai:iGPU': targetModel = "tir-na-ai:iGPU"; break; 
+        case '000': case 'tir-na-ai:iGPU': targetModel = "tir-na-ai:iGPU"; break;
         case '001': case 'tir-na-ai:latest': targetModel = "tir-na-ai:latest"; break;
         case '011': case 'deepseek-r1:8b': targetModel = "deepseek-r1:8b"; break;
-        case '012': case 'deepseek-coder-v2:latest': targetModel = "deepseek-coder-v2:latest"; break; 
+        case '012': case 'deepseek-coder-v2:latest': targetModel = "deepseek-coder-v2:latest"; break;
         case '041': case 'gemma4:e4b': targetModel = "gemma4:e4b"; break;
         case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; break;
-        case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; break;        
-        case '203': case 'o1-preview': targetModel = "o1-preview"; break;
+        case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; break;
+        case '153': case 'o1-preview': targetModel = "o1-preview"; break;
 
         // ---------------------------------------------------------
         // DOERS (Tools Enabled)
@@ -133,18 +134,38 @@ export const modelCommand: SlashCommand = {
         case '021': case 'qwen2.5-coder:7b': targetModel = "qwen2.5-coder:7b"; disableTools = false; break;
         case '022': case 'qwen2.5-coder:14b': targetModel = "qwen2.5-coder:14b"; disableTools = false; break;
         case '023': case 'qwen2.5-coder:32b': targetModel = "qwen2.5-coder:32b"; disableTools = false; break;
-        case '031': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
+        case '030': case 'qwen3.5:0.8b': targetModel = "qwen3.5:0.8b"; disableTools = false; break;
+        case '031': case 'qwen3:5.4b': targetModel = "qwen3:5.4b"; disableTools = false; break;
         case '051': case 'mistral-nemo:latest': targetModel = "mistral-nemo:latest"; disableTools = false; break;
         case '061': case 'granite4:tiny-h': targetModel = "granite4:tiny-h"; disableTools = false; break;
-        
+        case '071': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
+        case '081': case 'gpt-oss:20b': targetModel = "gpt-oss:20b"; disableTools = false; break;
+
         // PREMIUM CLOUD DOERS
         case '101': case 'gemini-2.5-flash-lite': targetModel = "gemini-2.5-flash-lite"; disableTools = false; break;
         case '102': case 'gemini-2.5-flash': targetModel = "gemini-2.5-flash"; disableTools = false; break;
         case '103': case 'gemini-2.5-pro': targetModel = "gemini-2.5-pro"; disableTools = false; break;
         case '104': case 'gemini-3-flash-preview': targetModel = "gemini-3-flash-preview"; disableTools = false; break;
         case '105': case 'gemini-3.1-pro-preview': targetModel = "gemini-3.1-pro-preview"; disableTools = false; break;
-        case '201': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
-        case '202': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
+        case '151': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
+        case '152': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
+        case '155': case 'gpt-5.5': targetModel = "gpt-5.5"; disableTools = false; break;    
+        case '201': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
+        case '202': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
+        case '203': case 'claude-opus-4-7': targetModel = "claude-opus-4-7"; disableTools = false; break;
+        case '301': case 'deepseek-chat': targetModel = "deepseek-chat"; disableTools = false; break;
+        case '302': case 'deepseek-reasoner': targetModel = "deepseek-reasoner"; disableTools = false; break;
+        case '303': case 'deepseek-v4-flash': targetModel = "deepseek-v4-flash"; disableTools = false; break;
+        case '304': case 'deepseek-v4-pro': targetModel = "deepseek-v4-pro"; disableTools = false; break;
+        case '351': case 'Qwen-plus': targetModel = "Qwen-plus"; disableTools = false; break;
+        case '352': case 'Qwen-max': targetModel = "Qwen-max"; disableTools = false; break;
+        case '401': case 'Moonshot-v1-32k': targetModel = "Moonshot-v1-32k"; disableTools = false; break;
+        case '402': case 'Moonshot-v1-200k': targetModel = "Moonshot-v1-200k"; disableTools = false; break;
+        case '403': case 'Kimi-k5': targetModel = "Kimi-k5"; disableTools = false; break;
+        case '501': case 'Codestral-latest': targetModel = "Codestral-latest"; disableTools = false; break;
+        case '502': case 'Mistral-large-latest': targetModel = "Mistral-large-latest"; disableTools = false; break;
+        case '665': case 'grok-4-1-fast-reasoning': targetModel = "grok-4-1-fast-reasoning"; disableTools = false; break;
+        case '666': case 'grok-3': targetModel = "grok-3"; disableTools = false; break;
         
         default:
           // Fallback: If they typed a raw name not in the switch, assume it's a Doer and try Vault
