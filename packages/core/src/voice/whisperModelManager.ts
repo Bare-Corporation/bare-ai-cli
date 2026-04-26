@@ -7,7 +7,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { EventEmitter } from 'node:events';
-import { homedir, GEMINI_DIR } from '../utils/paths.js';
+import { homedir, BARE_AI_DIR as GEMINI_DIR } from '../utils/paths.js';
 import { debugLogger } from '../utils/debugLogger.js';
 
 export interface WhisperModelProgress {
