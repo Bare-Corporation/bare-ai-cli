@@ -15,7 +15,7 @@ export class LiteRtServerManager {
     gemmaSettings: GemmaModelRouterSettings | undefined,
   ): Promise<void> {
     if (!gemmaSettings?.enabled) return;
-    if (gemmaSettings.autoStartServer === false) return;
+    if ((gemmaSettings as any).autoStartServer === false) return;
     const binaryPath = getBinaryPath();
     if (!binaryPath || !fs.existsSync(binaryPath)) {
       debugLogger.log(

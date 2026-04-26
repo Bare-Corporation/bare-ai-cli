@@ -92,7 +92,6 @@ export interface AccountSuspensionInfo {
 
 export interface UIState {
   [key: string]: any;
-  [key: string]: any;
 
   history: HistoryItem[];
   historyManager: UseHistoryManagerReturn;

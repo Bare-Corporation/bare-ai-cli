@@ -29,6 +29,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import { themeManager } from '../../ui/themes/theme-manager.js';
+import { escapeShellArg } from '@bare-ai/core';
 import {
   shellReducer,
   initialState,

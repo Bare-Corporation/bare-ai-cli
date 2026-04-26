@@ -6,7 +6,7 @@
 
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { homedir, GEMINI_DIR } from '../utils/paths.js';
+import { homedir, BARE_AI_DIR as GEMINI_DIR } from '../utils/paths.js';
 import { GeminiLiveTranscriptionProvider } from './geminiLiveTranscriptionProvider.js';
 import { WhisperTranscriptionProvider } from './whisperTranscriptionProvider.js';
 import type { TranscriptionProvider } from './transcriptionProvider.js';

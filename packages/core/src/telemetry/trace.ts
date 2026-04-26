@@ -63,7 +63,7 @@ export interface SpanMetadata {
  * @returns The result of the function.
  */
 export async function runInDevTraceSpan<R>(
-  opts: SpanOptions & { operation: GeminiCliOperation; noAutoEnd?: boolean; logPrompts?: boolean; sessionId?: string },
+  opts: SpanOptions & { operation: GeminiCliOperation; noAutoEnd?: boolean; logPrompts?: boolean; sessionId?: string; tracesEnabled?: boolean },
   fn: ({
     metadata,
   }: {

@@ -43,7 +43,7 @@ function getUserConfiguredBinaryPath(
     const userGemmaSettings = loadSettings(workspaceDir).forScope(
       SettingScope.User,
     ).settings.experimental?.gemmaModelRouter;
-    return userGemmaSettings?.binaryPath?.trim() || undefined;
+    return (userGemmaSettings as any)?.binaryPath?.trim() || undefined;
   } catch {
     return undefined;
   }

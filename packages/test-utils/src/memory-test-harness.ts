@@ -90,7 +90,7 @@ export class MemoryTestHarness {
     label: string = 'snapshot',
     strategy: 'peak' | 'last' = 'last',
   ): Promise<MemorySnapshot> {
-    const metrics = rig.readMemoryMetrics(strategy);
+    const metrics = (rig as any).readMemoryMetrics(strategy);
 
     return {
       timestamp: metrics.timestamp,
@@ -146,24 +146,24 @@ export class MemoryTestHarness {
     snapshots.push(afterSnap);
 
     // Calculate peak values from ALL snapshots seen during the scenario
-    const allSnapshots = rig.readAllMemorySnapshots();
+    const allSnapshots = (rig as any).readAllMemorySnapshots();
     const scenarioSnapshots = allSnapshots.filter(
-      (s) =>
+      (s: any) =>
         s.timestamp >= beforeSnap.timestamp &&
         s.timestamp <= afterSnap.timestamp,
     );
 
     const peakHeapUsed = Math.max(
-      ...scenarioSnapshots.map((s) => s.heapUsed),
-      ...snapshots.map((s) => s.heapUsed),
+      ...scenarioSnapshots.map((s: any) => s.heapUsed),
+      ...snapshots.map((s: any) => s.heapUsed),
     );
     const peakRss = Math.max(
-      ...scenarioSnapshots.map((s) => s.rss),
-      ...snapshots.map((s) => s.rss),
+      ...scenarioSnapshots.map((s: any) => s.rss),
+      ...snapshots.map((s: any) => s.rss),
     );
     const peakExternal = Math.max(
-      ...scenarioSnapshots.map((s) => s.external),
-      ...snapshots.map((s) => s.external),
+      ...scenarioSnapshots.map((s: any) => s.external),
+      ...snapshots.map((s: any) => s.external),
     );
 
     // Get baseline
@@ -292,7 +292,7 @@ export class MemoryTestHarness {
     }
 
     // Find the first non-zero snapshot as baseline
-    const baseline = snapshots.find((s) => s.heapUsed > 0);
+    const baseline = snapshots.find((s: any) => s.heapUsed > 0);
     if (!baseline) {
       return; // No memory reported yet
     }
@@ -362,7 +362,7 @@ export class MemoryTestHarness {
           lines.push('─'.repeat(60));
 
           const heapDataMB = result.snapshots.map(
-            (s) => s.heapUsed / (1024 * 1024),
+            (s: any) => s.heapUsed / (1024 * 1024),
           );
 
           if (plot) {
@@ -374,7 +374,7 @@ export class MemoryTestHarness {
           }
 
           // Label the x-axis with snapshot labels
-          const labels = result.snapshots.map((s) => s.label);
+          const labels = result.snapshots.map((s: any) => s.label);
           lines.push('  ' + labels.join(' → '));
           lines.push('');
         }

@@ -917,7 +917,7 @@ export class GeminiClient {
               const tool = toolRegistry.getTool(toolName);
               if (tool) {
                 const invocation = tool.build(toolArgs);
-                const result = await invocation.execute({ abortSignal: linkedSignal } as any);
+                const result = await invocation.execute({ abortSignal: new AbortController().signal } as any);
                 toolResult = isString(result) ? result : JSON.stringify(result);
               } else {
                 toolResult = `Tool ${toolName} not found`;

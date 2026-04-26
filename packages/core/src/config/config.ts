@@ -186,6 +186,7 @@ export interface PlanSettings {
 }
 
 export interface TelemetrySettings {
+  traces?: boolean;
   enabled?: boolean;
   target?: TelemetryTarget;
   otlpEndpoint?: string;
@@ -208,6 +209,8 @@ export interface ToolOutputMaskingConfig {
 }
 
 export interface GemmaModelRouterSettings {
+  autoStartServer?: boolean;
+  binaryPath?: string;
   enabled?: boolean;
   classifier?: {
     host?: string;
@@ -2466,6 +2469,7 @@ export class Config implements McpContext, AgentLoopContext {
     return this.accessibility;
   }
 
+  getTelemetryTracesEnabled(): boolean { return false; } // Sovereign: telemetry disabled
   getTelemetryEnabled(): boolean {
     return this.telemetrySettings.enabled ?? false;
   }

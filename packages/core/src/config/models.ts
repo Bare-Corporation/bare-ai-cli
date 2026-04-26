@@ -461,3 +461,7 @@ export function isActiveModel(
     );
   }
 }
+
+// Gemma 4 models (batch 15)
+export const GEMMA_4_31B_IT_MODEL = 'gemma-4-31b-it';
+export const GEMMA_4_26B_A4B_IT_MODEL = 'gemma-4-26b-a4b-it';
