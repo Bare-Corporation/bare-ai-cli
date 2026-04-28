@@ -878,15 +878,14 @@ export class GeminiClient {
           model: modelToUse,
           duration_ms: Date.now() - apiStartTime,
           usage: {
-            input_token_count: 0,
-            output_token_count: 0,
-            total_token_count: 0,
+            input_token_count: currentResult.usage?.prompt_tokens ?? 0,
+            output_token_count: currentResult.usage?.completion_tokens ?? 0,
+            total_token_count: currentResult.usage?.total_tokens ?? 0,
             cached_content_token_count: 0,
             thoughts_token_count: 0,
             tool_token_count: 0,
           },
         } as UiEvent);
-
         // Track user prompt locally AFTER the call
         loopHistory.push({ role: 'user', content: promptText });
 
@@ -1002,17 +1001,17 @@ export class GeminiClient {
               model: modelToUse,
               duration_ms: Date.now() - toolApiStartTime,
               usage: {
-                input_token_count: 0,
-                output_token_count: 0,
-                total_token_count: 0,
+                input_token_count: currentResult.usage?.prompt_tokens ?? 0,
+                output_token_count: currentResult.usage?.completion_tokens ?? 0,
+                total_token_count: currentResult.usage?.total_tokens ?? 0,
                 cached_content_token_count: 0,
                 thoughts_token_count: 0,
                 tool_token_count: 0,
               },
             } as UiEvent);
           }
-        }   
-
+        }  
+ 
         const finalText = currentResult.text || '';
         if (finalText) {
           yield {
