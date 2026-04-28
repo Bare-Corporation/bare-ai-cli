@@ -6,8 +6,8 @@
 
 /**
 ############################################################
-#    ____ _                  _ _       ____        #
-#   / ___| | ___  _   _  ___| (_)_ __ | |_      / ___|___   #
+#    ____ _                  _ _                ____       #
+#   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
 #  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
 #  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
 #   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
@@ -40,6 +40,7 @@ import * as os from 'node:os';
 export interface Message {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string | null;
+  reasoning_content?: string | null;  // added for deepseek V4 for tooluse 
   tool_calls?: ToolCall[];
   tool_call_id?: string;
   name?: string;
@@ -66,6 +67,7 @@ export interface ToolCall {
 export interface GenerateResult {
   text: string;
   toolCalls?: ToolCall[];
+  reasoning_content?: string | null;  // added for deepseek V4 for tooluse 
 }
 
 interface UsageMetrics {
@@ -78,6 +80,7 @@ interface OllamaResponse {
   choices?: Array<{
     message?: {
       content?: string | null;
+      reasoning_content?: string | null;  // added for deepseek V4 for tooluse 
       tool_calls?: ToolCall[];
     };
   }>;
@@ -104,6 +107,7 @@ type EndpointProvider =
   | 'anthropic'
   | 'gemini'
   | 'openai'
+  | 'deepseek'
   | 'generic';
 
 function detectProvider(endpoint: string): EndpointProvider {
@@ -118,6 +122,7 @@ function detectProvider(endpoint: string): EndpointProvider {
   ) {
     return 'ollama';
   }
+  if (url.includes('deepseek.com')) return 'deepseek';
   return 'generic';
 }
 
@@ -429,10 +434,22 @@ export class BareAiClient {
     // Detect provider from endpoint URL for header/feature branching
     const provider = detectProvider(activeEndpoint);
 
-    // Prepend system prompt if we have one
+    // Sanitise history for provider compatibility during model switching
+    const sanitisedMessages = messages.map(msg => {
+      const clean: Message = { role: msg.role, content: msg.content };
+      if (msg.tool_calls) clean.tool_calls = msg.tool_calls;
+      if (msg.tool_call_id) clean.tool_call_id = msg.tool_call_id;
+      if (msg.name) clean.name = msg.name;
+      // Only pass reasoning_content to DeepSeek — other providers reject it
+      if (msg.reasoning_content && provider === 'deepseek') {
+        clean.reasoning_content = msg.reasoning_content;
+      }
+      return clean;
+    });
+
     const allMessages: Message[] = this.systemPrompt
-      ? [{ role: 'system', content: this.systemPrompt }, ...messages]
-      : messages;
+      ? [{ role: 'system', content: this.systemPrompt }, ...sanitisedMessages]
+      : sanitisedMessages;
 
     // Resolve tool set based on model capability flags
     const resolvedTools =
@@ -502,6 +519,7 @@ export class BareAiClient {
           toolCalls: message?.tool_calls?.length
             ? message.tool_calls
             : undefined,
+            ...(message?.reasoning_content && { reasoning_content: message.reasoning_content }),  // added for deepseek V4 for tooluse  
         };
       }
 
@@ -616,7 +634,11 @@ export class BareAiClient {
         const result = await this.generateContent(prompt, history);
         history.push(
           { role: 'user', content: prompt },
-          { role: 'assistant', content: result.text },
+          { 
+            role: 'assistant', 
+            content: result.text,
+            ...(result.reasoning_content && { reasoning_content: result.reasoning_content }),
+          },
         );
         return result.text;
       },

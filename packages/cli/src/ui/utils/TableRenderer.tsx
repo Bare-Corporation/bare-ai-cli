@@ -1,14 +1,25 @@
-// @ts-nocheck
+/**
+############################################################
+#    ____ _                  _ _                ____       #
+#   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
+#  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
+#  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
+#   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
+#                                                          #
+############################################################
+*/
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const StyledLine = { empty: (_n: number): any[] => [] };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type StyledLine = any[];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const styledLineToString = (s: any): string => String(s);
+const styledLineToString = (s: any): string => 
+  Array.isArray(s) ? s.map((c: any) => c?.value ?? '').join('') : String(s);
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2026 Cloud Integration Corporation
+ * Copyright 2025 Google LLC (Original Developer)
  * SPDX-License-Identifier: Apache-2.0
  */
 

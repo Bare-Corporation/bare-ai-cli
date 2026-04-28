@@ -123,9 +123,6 @@ export const modelCommand: SlashCommand = {
         case '001': case 'tir-na-ai:latest': targetModel = "tir-na-ai:latest"; break;
         case '011': case 'deepseek-r1:8b': targetModel = "deepseek-r1:8b"; break;
         case '012': case 'deepseek-coder-v2:latest': targetModel = "deepseek-coder-v2:latest"; break;
-        case '041': case 'gemma4:e4b': targetModel = "gemma4:e4b"; break;
-        case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; break;
-        case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; break;
         case '153': case 'o1-preview': targetModel = "o1-preview"; break;
 
         // ---------------------------------------------------------
@@ -135,7 +132,11 @@ export const modelCommand: SlashCommand = {
         case '022': case 'qwen2.5-coder:14b': targetModel = "qwen2.5-coder:14b"; disableTools = false; break;
         case '023': case 'qwen2.5-coder:32b': targetModel = "qwen2.5-coder:32b"; disableTools = false; break;
         case '030': case 'qwen3.5:0.8b': targetModel = "qwen3.5:0.8b"; disableTools = false; break;
-        case '031': case 'qwen3:5.4b': targetModel = "qwen3:5.4b"; disableTools = false; break;
+        case '031': case 'qwen3.5:4b': targetModel = "qwen3.5:4b"; disableTools = false; break;
+        case '032': case 'qwen3.6:27b': targetModel = "qwen3.6:27b"; disableTools = false; break;        
+        case '041': case 'gemma4:e4b': targetModel = "gemma4:e4b"; disableTools = false; break;
+        case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; disableTools = false; break;
+        case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; disableTools = false; break;
         case '051': case 'mistral-nemo:latest': targetModel = "mistral-nemo:latest"; disableTools = false; break;
         case '061': case 'granite4:tiny-h': targetModel = "granite4:tiny-h"; disableTools = false; break;
         case '071': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
@@ -150,8 +151,8 @@ export const modelCommand: SlashCommand = {
         case '151': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
         case '152': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
         case '155': case 'gpt-5.5': targetModel = "gpt-5.5"; disableTools = false; break;    
-        case '201': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
-        case '202': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
+        case '201': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
+        case '202': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
         case '203': case 'claude-opus-4-7': targetModel = "claude-opus-4-7"; disableTools = false; break;
         case '301': case 'deepseek-chat': targetModel = "deepseek-chat"; disableTools = false; break;
         case '302': case 'deepseek-reasoner': targetModel = "deepseek-reasoner"; disableTools = false; break;
