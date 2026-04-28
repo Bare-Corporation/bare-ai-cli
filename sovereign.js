@@ -100,10 +100,10 @@ async function main() {
     if (process.env.BARE_AI_SYSTEM_PROMPT) {
         spawnArgs.push('-i', process.env.BARE_AI_SYSTEM_PROMPT);
     }
-    
+
     // Append any extra arguments the user passed (like --model)
     spawnArgs.push(...process.argv.slice(2));
-
+    
     const cli = spawn('node', spawnArgs, {
       stdio: 'inherit',
       env: secureEnv,
