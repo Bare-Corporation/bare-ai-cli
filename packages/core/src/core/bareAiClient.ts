@@ -67,7 +67,8 @@ export interface ToolCall {
 export interface GenerateResult {
   text: string;
   toolCalls?: ToolCall[];
-  reasoning_content?: string | null;  // added for deepseek V4 for tooluse 
+  reasoning_content?: string | null;  // added for deepseek V4 for tooluse
+  usage?: UsageMetrics;
 }
 
 interface UsageMetrics {
@@ -519,7 +520,8 @@ export class BareAiClient {
           toolCalls: message?.tool_calls?.length
             ? message.tool_calls
             : undefined,
-            ...(message?.reasoning_content && { reasoning_content: message.reasoning_content }),  // added for deepseek V4 for tooluse  
+             ...(message?.reasoning_content && { reasoning_content: message.reasoning_content }), // added for deepseek V4 for tooluse  
+          ...(parsedData.usage && { usage: parsedData.usage }),
         };
       }
 
