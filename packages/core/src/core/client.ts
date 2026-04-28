@@ -1,6 +1,7 @@
 /**
  * @license
- * Copyright 2026 Google LLC
+ * Copyright 2026 Cloud Integration Corporation LLC
+ * Copyright 2026 Google LLC (Original Developer)
  * SPDX-License-Identifier: Apache-2.0
  *
  * @license
@@ -74,6 +75,12 @@ import {
   type LlmRole,
 } from '../telemetry/types.js';
 import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
+import {
+  EVENT_TOOL_CALL,
+  EVENT_API_RESPONSE,
+} from '../telemetry/types.js';
+import type { UiEvent } from '../telemetry/uiTelemetry.js';
+import { ToolCallDecision } from '../telemetry/tool-call-decision.js';
 import type { IdeContext, File } from '../ide/types.js';
 import { handleFallback } from '../fallback/handler.js';
 import type { RoutingContext } from '../routing/routingStrategy.js';
@@ -859,12 +866,26 @@ export class GeminiClient {
         let openAiTools = getCurrentTools();
         const loopHistory = [...this.messageHistory];
 
-        // Initial call
+
+        const apiStartTime = Date.now();
         let currentResult = await this.aiClient.generateContent(
           promptText,
           loopHistory,
           openAiTools,
         );
+        uiTelemetryService.addEvent({
+          'event.name': EVENT_API_RESPONSE,
+          model: modelToUse,
+          duration_ms: Date.now() - apiStartTime,
+          usage: {
+            input_token_count: 0,
+            output_token_count: 0,
+            total_token_count: 0,
+            cached_content_token_count: 0,
+            thoughts_token_count: 0,
+            tool_token_count: 0,
+          },
+        } as UiEvent);
 
         // Track user prompt locally AFTER the call
         loopHistory.push({ role: 'user', content: promptText });
@@ -883,7 +904,8 @@ export class GeminiClient {
             role: 'assistant',
             content: currentResult.text || null,
             tool_calls: currentResult.toolCalls,
-          });
+            ...(currentResult.reasoning_content && { reasoning_content: currentResult.reasoning_content }),
+          });  
 
           for (const toolCall of currentResult.toolCalls) {
             const toolName = toolCall.function.name;
@@ -911,8 +933,9 @@ export class GeminiClient {
               traceId: prompt_id,
             };
 
+            const toolStartTime = Date.now();
             let toolResult = '';
-            try {
+            try {         
               const toolRegistry = this.config.getToolRegistry();
               const tool = toolRegistry.getTool(toolName);
               if (tool) {
@@ -952,12 +975,21 @@ export class GeminiClient {
               value: displayResult + '\n',
               traceId: prompt_id,
             };
-          }
+            uiTelemetryService.addEvent({
+              'event.name': EVENT_TOOL_CALL,
+              function_name: toolName,
+              duration_ms: Date.now() - toolStartTime,
+              success: !toolResult.startsWith('Tool execution error'),
+              decision: ToolCallDecision.AUTO_ACCEPT,
+              metadata: {},
+            } as UiEvent);
+          }  
 
           openAiTools = getCurrentTools();
           const lastHistoryEntry = loopHistory[loopHistory.length - 1];
 
           if (lastHistoryEntry) {
+            const toolApiStartTime = Date.now();
             currentResult = await this.aiClient.sendToolResult(
               loopHistory.slice(0, -1),
               lastHistoryEntry.tool_call_id ?? '',
@@ -965,8 +997,21 @@ export class GeminiClient {
               String(lastHistoryEntry.content ?? ''),
               openAiTools,
             );
+            uiTelemetryService.addEvent({
+              'event.name': EVENT_API_RESPONSE,
+              model: modelToUse,
+              duration_ms: Date.now() - toolApiStartTime,
+              usage: {
+                input_token_count: 0,
+                output_token_count: 0,
+                total_token_count: 0,
+                cached_content_token_count: 0,
+                thoughts_token_count: 0,
+                tool_token_count: 0,
+              },
+            } as UiEvent);
           }
-        }
+        }   
 
         const finalText = currentResult.text || '';
         if (finalText) {
@@ -1325,7 +1370,7 @@ export class GeminiClient {
           .join('\n');
 
         // Call BareAiClient.generateContent
-        const generatedText = await this.aiClient!.generateContent(
+        const generatedResult = await this.aiClient!.generateContent(
           newPrompt,
           this.messageHistory, // Use the adapted messageHistory
         );
@@ -1335,16 +1380,16 @@ export class GeminiClient {
           candidates: [
             {
               content: {
-                role: 'model', // Assuming the response is from the model
-                parts: [{ text: generatedText }],
+                role: 'model',
+                parts: [{ text: generatedResult.text }],  
               },
               // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
               finishReason: 'STOP' as import('@google/genai').FinishReason, // Defaulting finish reason
               safetyRatings: [], // Defaulting safety ratings
             },
           ],
-          // Add other fields if necessary, e.g., usageMetadata
-          // For now, sticking to minimal required structure.
+          // Add other api fields if necessary, e.g., usageMetadata
+          // For now, sticking to minimal required structure for bare-ai-cli FREE plan.
         };
         // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         return response as unknown as GenerateContentResponse;
