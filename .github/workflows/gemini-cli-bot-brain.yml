@@ -38,7 +38,7 @@ jobs:
         run: 'npm run bundle'
 
       - name: 'Download Previous Metrics'
-        uses: 'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093' # ratchet:actions/download-artifact@v4
+        uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' # ratchet:actions/download-artifact@v8.0.1
         with:
           name: 'metrics-before'
           path: 'tools/gemini-cli-bot/history/'
