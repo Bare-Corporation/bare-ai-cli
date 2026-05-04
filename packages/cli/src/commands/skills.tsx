@@ -11,7 +11,7 @@ import { disableCommand } from './skills/disable.js';
 import { installCommand } from './skills/install.js';
 import { linkCommand } from './skills/link.js';
 import { uninstallCommand } from './skills/uninstall.js';
-import { initializeOutputListenersAndFlush } from '../gemini.js';
+import { initializeOutputListenersAndFlush } from '../bare-ai.js';
 import { defer } from '../deferred.js';
 
 export const skillsCommand: CommandModule = {

@@ -5,7 +5,7 @@
  */
 
 import type { CommandModule, Argv } from 'yargs';
-import { initializeOutputListenersAndFlush } from '../gemini.js';
+import { initializeOutputListenersAndFlush } from '../bare-ai.js';
 import { defer } from '../deferred.js';
 import { setupCommand } from './gemma/setup.js';
 import { startCommand } from './gemma/start.js';

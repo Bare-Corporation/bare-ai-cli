@@ -96,7 +96,7 @@ async function main() {
     delete secureEnv.VAULT_SECRET_ID;
 
     // Dynamically inject the system prompt if the bash script provided one
-    const spawnArgs = ['bundle/gemini.js', '--yolo'];
+    const spawnArgs = ['bundle/bare-ai.js', '--yolo'];
     if (process.env.BARE_AI_SYSTEM_PROMPT) {
         spawnArgs.push('-i', process.env.BARE_AI_SYSTEM_PROMPT);
     }

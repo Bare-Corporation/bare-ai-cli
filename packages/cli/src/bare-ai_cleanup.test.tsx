@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { main } from './gemini.js';
+import { main } from './bare-ai.js';
 import { debugLogger } from '@bare-ai/core';
 import { type Config } from '@bare-ai/core';
 

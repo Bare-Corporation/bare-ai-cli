@@ -6,7 +6,7 @@
 
 import type { CommandModule } from 'yargs';
 import { migrateCommand } from './hooks/migrate.js';
-import { initializeOutputListenersAndFlush } from '../gemini.js';
+import { initializeOutputListenersAndFlush } from '../bare-ai.js';
 
 export const hooksCommand: CommandModule = {
   command: 'hooks <command>',
