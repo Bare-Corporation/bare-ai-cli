@@ -478,7 +478,7 @@ executable that enables `npx` usage directly from the GitHub repository.
     - **What happens:** The built JavaScript from both `packages/core/dist` and
       `packages/cli/dist`, along with all third-party JavaScript dependencies,
       are bundled by `esbuild` into a single, executable JavaScript file (for
-      example, `gemini.js`). The `node-pty` library is excluded from this bundle
+      example, `bare-ai.js`). The `node-pty` library is excluded from this bundle
       as it contains native binaries.
     - **Why:** This creates a single, optimized file that contains all the
       necessary application code. It simplifies execution for users who want to
@@ -487,10 +487,10 @@ executable that enables `npx` usage directly from the GitHub repository.
 
 2.  **The `bundle` directory is assembled:**
     - **What happens:** A temporary `bundle` folder is created at the project
-      root. The single `gemini.js` executable is placed inside it, along with
+      root. The single `bare-ai.js` executable is placed inside it, along with
       other essential files.
     - **File movement:**
-      - `gemini.js` (from esbuild) -> `bundle/gemini.js`
+      - `bare-ai.js` (from esbuild) -> `bundle/bare-ai.js`
       - `README.md` -> `bundle/README.md`
       - `LICENSE` -> `bundle/LICENSE`
       - `packages/cli/src/utils/*.sb` (sandbox profiles) -> `bundle/`
@@ -499,7 +499,7 @@ executable that enables `npx` usage directly from the GitHub repository.
 
 3.  **The GitHub release is created:**
     - **What happens:** The contents of the `bundle` directory, including the
-      `gemini.js` executable, are attached as assets to a new GitHub Release.
+      `bare-ai.js` executable, are attached as assets to a new GitHub Release.
     - **Why:** This makes the single-file version of the CLI available for
       direct download and enables the
       `npx https://github.com/google-gemini/gemini-cli` command, which downloads
@@ -510,7 +510,7 @@ executable that enables `npx` usage directly from the GitHub repository.
 - **NPM:** Publishes standard, un-bundled Node.js packages. The primary artifact
   is the code in `packages/cli/dist`, which depends on
   `@google/gemini-cli-core`.
-- **GitHub release:** Publishes a single, bundled `gemini.js` file that contains
+- **GitHub release:** Publishes a single, bundled `bare-ai.js` file that contains
   all dependencies, for easy execution via `npx`.
 
 This dual-artifact process ensures that both traditional `npm` users and those

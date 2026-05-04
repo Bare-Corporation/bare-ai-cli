@@ -193,7 +193,7 @@ jobs:
         run: 'npm run bundle'
 
       - name: 'Smoke test bundle'
-        run: 'node ./bundle/gemini.js --version'
+        run: 'node ./bundle/bare-ai.js --version'
 
       - name: 'Smoke test npx installation'
         run: |
@@ -282,7 +282,7 @@ jobs:
         run: 'npm run bundle'
 
       - name: 'Smoke test bundle'
-        run: 'node ./bundle/gemini.js --version'
+        run: 'node ./bundle/bare-ai.js --version'
 
       - name: 'Smoke test npx installation'
         run: |
@@ -454,7 +454,7 @@ jobs:
         shell: 'pwsh'
 
       - name: 'Smoke test bundle'
-        run: 'node ./bundle/gemini.js --version'
+        run: 'node ./bundle/bare-ai.js --version'
         shell: 'pwsh'
 
       - name: 'Smoke test npx installation'

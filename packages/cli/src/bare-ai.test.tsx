@@ -20,7 +20,7 @@ import {
   validateDnsResolutionOrder,
   startInteractiveUI,
   getNodeMemoryArgs,
-} from './gemini.js';
+} from './bare-ai.js';
 import {
   loadCliConfig,
   parseArguments,
@@ -382,7 +382,7 @@ describe('initializeOutputListenersAndFlush', () => {
 
   it('should flush backlogs and setup listeners if no listeners exist', async () => {
     const { coreEvents } = await import('@bare-ai/core');
-    const { initializeOutputListenersAndFlush } = await import('./gemini.js');
+    const { initializeOutputListenersAndFlush } = await import('./bare-ai.js');
 
     // Mock listenerCount to return 0
     vi.spyOn(coreEvents, 'listenerCount').mockReturnValue(0);

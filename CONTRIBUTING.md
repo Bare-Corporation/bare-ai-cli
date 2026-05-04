@@ -363,7 +363,7 @@ npm run lint
     ```bash
     npm run debug
     ```
-    This command runs `node --inspect-brk dist/gemini.js` within the
+    This command runs `node --inspect-brk dist/bare-ai.js` within the
     `packages/cli` directory, pausing execution until a debugger attaches. You
     can then open `chrome://inspect` in your Chrome browser to connect to the
     debugger.

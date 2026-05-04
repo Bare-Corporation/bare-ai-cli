@@ -53,7 +53,7 @@ describe.skip('ACP Environment and Auth', () => {
         'BARE_AI_API_KEY=test-key-from-env\n',
       );
 
-      const bundlePath = join(import.meta.dirname, '..', 'bundle/gemini.js');
+      const bundlePath = join(import.meta.dirname, '..', 'bundle/bare-ai.js');
 
       child = spawn('node', [bundlePath, '--acp'], {
         cwd: rig.homeDir!,
@@ -118,7 +118,7 @@ describe.skip('ACP Environment and Auth', () => {
     async () => {
       rig.setup('acp-auth-failure');
 
-      const bundlePath = join(import.meta.dirname, '..', 'bundle/gemini.js');
+      const bundlePath = join(import.meta.dirname, '..', 'bundle/bare-ai.js');
 
       child = spawn('node', [bundlePath, '--acp'], {
         cwd: rig.homeDir!,

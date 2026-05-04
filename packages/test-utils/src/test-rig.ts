@@ -20,7 +20,7 @@ import * as os from 'node:os';
 import type { TestMcpConfig } from './test-mcp-server.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const BUNDLE_PATH = join(__dirname, '..', '..', '..', 'bundle/gemini.js');
+const BUNDLE_PATH = join(__dirname, '..', '..', '..', 'bundle/bare-ai.js');
 
 // Get timeout based on environment
 export function getDefaultTimeout() {
@@ -533,7 +533,7 @@ export class TestRig {
 
   /**
    * The command and args to use to invoke Gemini CLI. Allows us to switch
-   * between using the bundled gemini.js (the default) and using the installed
+   * between using the bundled bare-ai.js (the default) and using the installed
    * 'gemini' (used to verify npm bundles).
    */
   private _getCommandAndArgs(extraInitialArgs: string[] = []): {

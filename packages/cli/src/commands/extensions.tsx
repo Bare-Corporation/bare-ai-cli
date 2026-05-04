@@ -15,7 +15,7 @@ import { linkCommand } from './extensions/link.js';
 import { newCommand } from './extensions/new.js';
 import { validateCommand } from './extensions/validate.js';
 import { configureCommand } from './extensions/configure.js';
-import { initializeOutputListenersAndFlush } from '../gemini.js';
+import { initializeOutputListenersAndFlush } from '../bare-ai.js';
 import { defer } from '../deferred.js';
 
 export const extensionsCommand: CommandModule = {
