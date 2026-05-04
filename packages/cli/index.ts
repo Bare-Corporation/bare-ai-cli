@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { main } from './src/gemini.js';
+import { main } from './src/bare-ai.js';
 import { FatalError, writeToStderr } from '@bare-ai/core';
 import { runExitCleanup } from './src/utils/cleanup.js';
 

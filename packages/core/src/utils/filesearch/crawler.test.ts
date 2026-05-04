@@ -60,7 +60,7 @@ describe('crawler', () => {
       '.gitignore': 'dist/',
       [GEMINI_IGNORE_FILE_NAME]: 'build/',
       dist: ['ignored-by-git.js'],
-      build: ['ignored-by-gemini.js'],
+      build: ['ignored-by-bare-ai.js'],
       src: ['not-ignored.js'],
     });
 

@@ -292,7 +292,7 @@ runs:
       shell: 'bash'
       run: |
         rm -f gemini-cli-bundle.zip
-        (cd bundle && chmod +x gemini.js && zip -r ../gemini-cli-bundle.zip .)
+        (cd bundle && chmod +x bare-ai.js && zip -r ../gemini-cli-bundle.zip .)
 
         echo "Testing the generated bundle archive..."
         rm -rf test-bundle
@@ -300,7 +300,7 @@ runs:
         unzip -q gemini-cli-bundle.zip -d test-bundle
 
         # Verify it runs and outputs a version
-        BUNDLE_VERSION=$(node test-bundle/gemini.js --version | xargs)
+        BUNDLE_VERSION=$(node test-bundle/bare-ai.js --version | xargs)
         echo "Bundle version output: ${BUNDLE_VERSION}"
         if [[ -z "${BUNDLE_VERSION}" ]]; then
           echo "Error: Bundle failed to execute or return version."

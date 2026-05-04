@@ -85,7 +85,7 @@
     "zod": "3.25.76"
   },
   "bin": {
-    "gemini": "bundle/gemini.js"
+    "gemini": "bundle/bare-ai.js"
   },
   "files": [
     "bundle/",
