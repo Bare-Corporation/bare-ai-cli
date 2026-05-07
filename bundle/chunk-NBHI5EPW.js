@@ -283833,7 +283833,7 @@ var BareAiClient = class {
     return base;
   }
   // ---------------------------------------------------------------------------
-  // REQUEST BODY BUILDER
+  // Bare-AI-CLI  REQUEST BODY BUILDER
   // Constructs the request body with provider-specific feature flags.
   //
   // stream_options.include_usage:
@@ -283853,6 +283853,9 @@ var BareAiClient = class {
       stream: useStream,
       temperature: 0.1
     };
+    if (provider === "anthropic") {
+      body2.cache_control = { type: "ephemeral" };
+    }
     if (useStream && isOllama) {
       body2["stream_options"] = { include_usage: true };
     }
@@ -283878,7 +283881,7 @@ var BareAiClient = class {
 `);
   }
   // ---------------------------------------------------------------------------
-  // CORE API CALL
+  // Bare-AI-CLI CORE API CALL
   // Routes the request to the active endpoint, handles streaming and static
   // responses, and returns a normalised GenerateResult.
   // ---------------------------------------------------------------------------
