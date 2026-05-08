@@ -333,6 +333,7 @@ export class BareAiClient {
     if (provider === 'anthropic') {
       base['x-api-key'] = apiKey;
       base['anthropic-version'] = '2023-06-01';
+      base['anthropic-beta'] = 'prompt-caching-2024-07-31';
     }
 
     return base;
@@ -377,7 +378,9 @@ export class BareAiClient {
     if (this.isLeanModel() && isOllama) {
       body['options'] = { num_ctx: 8192 };
     }
-
+    if (provider === 'anthropic') {
+      body['cache_control'] = { type: 'ephemeral' };
+    }
     // Attach tools if applicable
     if (resolvedTools) {
       body['tools'] = resolvedTools;

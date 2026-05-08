@@ -149,6 +149,12 @@ export async function parseArguments(
           description:
             'Run in non-interactive (headless) mode with the given prompt. Appended to input on stdin (if any).',
         })
+        .option('prompt-file', {
+          type: 'string',
+          nargs: 1,
+          description:
+            'Read the prompt from a file (for large prompts that exceed command-line limits).',
+        })
         .option('prompt-interactive', {
           alias: 'i',
           type: 'string',
@@ -393,7 +399,20 @@ export async function parseArguments(
       result['prompt'] = q;
     }
   }
-
+  
+    if (result['prompt-file']) {
+    try {
+      const fs = await import('node:fs');
+      result['prompt'] = fs.readFileSync(result['prompt-file'], 'utf-8').trim();
+      delete result['prompt-file'];
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      debugLogger.error(`Failed to read prompt file: ${result['prompt-file']} - ${msg}`);
+      yargsInstance.showHelp();
+      await runExitCleanup();
+      process.exit(1);
+    }
+  }
   // Keep CliArgs.query as a string for downstream typing
   (result as Record<string, unknown>)['query'] = q || undefined;
   (result as Record<string, unknown>)['startupMessages'] = startupMessages;
