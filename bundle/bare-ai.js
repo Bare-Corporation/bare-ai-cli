@@ -262,7 +262,7 @@ import {
   validatePlanPath,
   writeToStderr,
   writeToStdout
-} from "./chunk-FNDSYGCD.js";
+} from "./chunk-NBHI5EPW.js";
 import {
   require_undici
 } from "./chunk-A7S6ORWX.js";
@@ -84501,7 +84501,7 @@ var SubagentHistoryMessage = ({
 ] });
 
 // packages/cli/src/generated/git-commit.ts
-var GIT_COMMIT_INFO = "229d8bf2d";
+var GIT_COMMIT_INFO = "31b36b486";
 
 // packages/cli/src/ui/components/AboutBox.tsx
 var import_jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
@@ -114156,7 +114156,7 @@ Use /mcp auth <server-name> to authenticate.`
         type: "info",
         text: `Starting OAuth authentication for MCP server '${serverName}'...`
       });
-      const { MCPOAuthProvider } = await import("./dist-UAMK3CIK.js");
+      const { MCPOAuthProvider } = await import("./dist-5BSLXWBX.js");
       let oauthConfig = server.oauth;
       if (!oauthConfig) {
         oauthConfig = { enabled: false };
@@ -126792,7 +126792,7 @@ ${queuedText}` : queuedText;
       if (keyMatchers2["app.showErrorDetails" /* SHOW_ERROR_DETAILS */](key)) {
         if (settings.merged.general.devtools) {
           void (async () => {
-            const { toggleDevToolsPanel } = await import("./devtoolsService-JGJBB4HP.js");
+            const { toggleDevToolsPanel } = await import("./devtoolsService-5BXQSIN4.js");
             await toggleDevToolsPanel(
               config,
               showErrorDetails,
@@ -134518,16 +134518,16 @@ async function parseArguments(settings) {
     type: "boolean",
     description: "Run in debug mode (open debug console with F12)",
     default: false
-  }).option("model", {
-    alias: "m",
-    type: "string",
-    nargs: 1,
-    description: "Model to use"
   }).command(
     "$0 [query..]",
     "Launch Bare AI CLI",
     (yargsInstance2) => yargsInstance2.positional("query", {
       description: "Initial prompt. Runs in interactive mode by default; use -p/--prompt for non-interactive."
+    }).option("model", {
+      alias: "m",
+      type: "string",
+      nargs: 1,
+      description: `Model`
     }).option("prompt", {
       alias: "p",
       type: "string",
@@ -134549,7 +134549,7 @@ async function parseArguments(settings) {
     }).option("yolo", {
       alias: "y",
       type: "boolean",
-      description: "Automatically accept all actions (aka YOLO mode, see https://www.youtube.com/watch?v=MIu4js5IrPw for more details)?",
+      description: "Automatically accept all actions (aka YOLO mode, see https://www.youtube.com/watch?v=xvFZjo5PgG0 for more details)?",
       default: false
     }).option("approval-mode", {
       type: "string",
@@ -134708,13 +134708,14 @@ async function parseArguments(settings) {
       result["prompt"] = q2;
     }
   }
-    if (result["prompt-file"]) {
+  if (result["prompt-file"]) {
     try {
-      const fs = require("fs");
-      result["prompt"] = fs.readFileSync(result["prompt-file"], "utf-8").trim();
+      const fs56 = await import("node:fs");
+      result["prompt"] = fs56.readFileSync(result["prompt-file"], "utf-8").trim();
       delete result["prompt-file"];
     } catch (e) {
-      debugLogger.error(`Failed to read prompt file: ${result["prompt-file"]} - ${e.message}`);
+      const msg = e instanceof Error ? e.message : String(e);
+      debugLogger.error(`Failed to read prompt file: ${result["prompt-file"]} - ${msg}`);
       yargsInstance.showHelp();
       await runExitCleanup();
       process43.exit(1);
@@ -136400,7 +136401,7 @@ async function runNonInteractive({
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-JGJBB4HP.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-5BXQSIN4.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -136851,7 +136852,7 @@ async function runNonInteractive2(params) {
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-JGJBB4HP.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-5BXQSIN4.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -141468,7 +141469,7 @@ ${finalArgs[promptIndex + 1]}`;
     await config.storage.initialize();
     adminControlsListner.setConfig(config);
     if (config.isInteractive() && settings.merged.general.devtools) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-JGJBB4HP.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-5BXQSIN4.js");
       await setupInitialActivityLogger(config);
     }
     registerTelemetryConfig(config);

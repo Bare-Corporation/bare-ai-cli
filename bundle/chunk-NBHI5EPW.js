@@ -283805,7 +283805,7 @@ var BareAiClient = class {
     });
   }
   // ---------------------------------------------------------------------------
-  // Bare-AI-CLI HEADER BUILDER
+  // HEADER BUILDER
   // Constructs the correct headers for each provider.
   //
   // Provider matrix:
@@ -283828,12 +283828,11 @@ var BareAiClient = class {
     if (provider === "anthropic") {
       base["x-api-key"] = apiKey;
       base["anthropic-version"] = "2023-06-01";
-      base["anthropic-beta"] = "prompt-caching-2024-07-31"; //Cian: Header only. This is for Claude Prompt Caching Support, may not work as claude docs do not explicity call out open ai api support.
     }
     return base;
   }
   // ---------------------------------------------------------------------------
-  // Bare-AI-CLI  REQUEST BODY BUILDER
+  // REQUEST BODY BUILDER
   // Constructs the request body with provider-specific feature flags.
   //
   // stream_options.include_usage:
@@ -283853,9 +283852,6 @@ var BareAiClient = class {
       stream: useStream,
       temperature: 0.1
     };
-    if (provider === "anthropic") {
-      body2.cache_control = { type: "ephemeral" };
-    }
     if (useStream && isOllama) {
       body2["stream_options"] = { include_usage: true };
     }
@@ -283881,7 +283877,7 @@ var BareAiClient = class {
 `);
   }
   // ---------------------------------------------------------------------------
-  // Bare-AI-CLI CORE API CALL
+  // CORE API CALL
   // Routes the request to the active endpoint, handles streaming and static
   // responses, and returns a normalised GenerateResult.
   // ---------------------------------------------------------------------------
@@ -283903,7 +283899,7 @@ var BareAiClient = class {
       }
       return clean;
     });
-    const allMessages = this.systemPrompt ? [{ role: "system", content: [{ type: "text", text: this.systemPrompt, cache_control: { type: "ephemeral" } }] }, ...sanitisedMessages] : sanitisedMessages;
+    const allMessages = this.systemPrompt ? [{ role: "system", content: this.systemPrompt }, ...sanitisedMessages] : sanitisedMessages;
     const resolvedTools = tools && tools.length > 0 ? this.isNoToolModel() ? void 0 : this.isLeanModel() ? this.stripTools(tools) : tools : void 0;
     const useStream = !resolvedTools;
     const body2 = this.buildRequestBody(provider, activeModel, allMessages, resolvedTools, useStream);
