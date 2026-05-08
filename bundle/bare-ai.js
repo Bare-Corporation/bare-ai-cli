@@ -134518,6 +134518,11 @@ async function parseArguments(settings) {
     type: "boolean",
     description: "Run in debug mode (open debug console with F12)",
     default: false
+  }).option("model", {
+    alias: "m",
+    type: "string",
+    nargs: 1,
+    description: "Model to use"
   }).command(
     "$0 [query..]",
     "Launch Bare AI CLI",
