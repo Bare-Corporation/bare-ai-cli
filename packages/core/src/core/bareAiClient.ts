@@ -361,13 +361,27 @@ export class BareAiClient {
     useStream: boolean,
   ): Record<string, unknown> {
     const isOllama = provider === 'ollama';
+    const isAnthropic = provider === 'anthropic';
 
     const body: Record<string, unknown> = {
       model: activeModel,
-      messages: allMessages,
       stream: useStream,
       temperature: 0.1,
     };
+
+    // Anthropic: extract system prompt into top-level "system" array with
+    // cache_control so the static prefix is frozen for prompt caching.
+    // Other providers: system prompt stays as first message (OpenAI-compat).
+    if (isAnthropic && allMessages.length > 0 && allMessages[0].role === 'system') {
+      const systemContent = allMessages[0].content;
+      body['system'] = [
+        { type: 'text', text: systemContent, cache_control: { type: 'ephemeral' } },
+      ];
+      body['messages'] = allMessages.slice(1);
+      body['max_tokens'] = 4096;
+    } else {
+      body['messages'] = allMessages;
+    }
 
     // stream_options: Ollama only — sends usage metrics on final streaming chunk
     if (useStream && isOllama) {
@@ -378,9 +392,7 @@ export class BareAiClient {
     if (this.isLeanModel() && isOllama) {
       body['options'] = { num_ctx: 8192 };
     }
-    if (provider === 'anthropic') {
-      body['cache_control'] = { type: 'ephemeral' };
-    }
+
     // Attach tools if applicable
     if (resolvedTools) {
       body['tools'] = resolvedTools;
@@ -451,9 +463,20 @@ export class BareAiClient {
       return clean;
     });
 
+    // Append dynamic session context to the LAST user message so the static
+    // system prompt prefix stays byte-identical across calls for caching.
+    const sessionTag = `\n\n[Session: ${new Date().toLocaleDateString()}]`;
+    const enrichedMessages = [...sanitisedMessages];
+    const lastUserIdx = enrichedMessages.map(m => m.role).lastIndexOf('user');
+    if (lastUserIdx >= 0) {
+      enrichedMessages[lastUserIdx] = {
+        ...enrichedMessages[lastUserIdx],
+        content: enrichedMessages[lastUserIdx].content + sessionTag,
+      };
+    }
     const allMessages: Message[] = this.systemPrompt
-      ? [{ role: 'system', content: this.systemPrompt }, ...sanitisedMessages]
-      : sanitisedMessages;
+      ? [{ role: 'system', content: this.systemPrompt }, ...enrichedMessages]
+      : enrichedMessages;
 
     // Resolve tool set based on model capability flags
     const resolvedTools =
