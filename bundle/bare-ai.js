@@ -262,7 +262,7 @@ import {
   validatePlanPath,
   writeToStderr,
   writeToStdout
-} from "./chunk-7ZPXUYO2.js";
+} from "./chunk-3NI3F2G5.js";
 import {
   require_undici
 } from "./chunk-A7S6ORWX.js";
@@ -84501,7 +84501,7 @@ var SubagentHistoryMessage = ({
 ] });
 
 // packages/cli/src/generated/git-commit.ts
-var GIT_COMMIT_INFO = "430daec12";
+var GIT_COMMIT_INFO = "d6fd29499";
 
 // packages/cli/src/ui/components/AboutBox.tsx
 var import_jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
@@ -114156,7 +114156,7 @@ Use /mcp auth <server-name> to authenticate.`
         type: "info",
         text: `Starting OAuth authentication for MCP server '${serverName}'...`
       });
-      const { MCPOAuthProvider } = await import("./dist-AYTMPRT7.js");
+      const { MCPOAuthProvider } = await import("./dist-UYOTRR2T.js");
       let oauthConfig = server.oauth;
       if (!oauthConfig) {
         oauthConfig = { enabled: false };
@@ -126792,7 +126792,7 @@ ${queuedText}` : queuedText;
       if (keyMatchers2["app.showErrorDetails" /* SHOW_ERROR_DETAILS */](key)) {
         if (settings.merged.general.devtools) {
           void (async () => {
-            const { toggleDevToolsPanel } = await import("./devtoolsService-OQECKTYG.js");
+            const { toggleDevToolsPanel } = await import("./devtoolsService-IUZ6YMJY.js");
             await toggleDevToolsPanel(
               config,
               showErrorDetails,
@@ -136401,7 +136401,7 @@ async function runNonInteractive({
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-OQECKTYG.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-IUZ6YMJY.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -136852,7 +136852,7 @@ async function runNonInteractive2(params) {
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-OQECKTYG.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-IUZ6YMJY.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -141469,7 +141469,7 @@ ${finalArgs[promptIndex + 1]}`;
     await config.storage.initialize();
     adminControlsListner.setConfig(config);
     if (config.isInteractive() && settings.merged.general.devtools) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-OQECKTYG.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-IUZ6YMJY.js");
       await setupInitialActivityLogger(config);
     }
     registerTelemetryConfig(config);

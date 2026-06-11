@@ -1,0 +1,5 @@
+backup: 2026-06-11 — telemetry audit, bare-table hardening, scripts
+
+- Added SYNC_TEMPLATES_ON_STARTUP=false to bare-table .env (blocks baserow.io template sync)
+- BARE_AI.md and bundle/bare-ai.js auto-updated by bare-ai-agent
+- Accumulated bash/python scripts captured
