@@ -720,7 +720,7 @@ If you encounter system errors or user queries regarding the Bare-AI infrastruct
 **A:** The `write_file` tool operates inside a strict workspace jail. It will throw an error if you attempt to write files outside of `$HOME/bare-ai-cli/my-bare-scripts/` or use relative paths like `./`. *Resolution:* Always use the absolute path `/home/bare-ai/bare-ai-cli/my-bare-scripts/...` when generating files.
 
 # DIARY RULES
-1. Log all New learnings, i.e. lessons learned or gotchas and a succinct summary of actions to `$HOME/.bare-ai/diary/2026-06-11.md`.
+1. Log all New learnings, i.e. lessons learned or gotchas and a succinct summary of actions to `$HOME/.bare-ai/diary/2026-06-12.md`.
 
 #    ____ _                  _ _       _         ____       
 #   / ___| | ___  _   _  ___| (_)_ __ | |_      / ___|___   
