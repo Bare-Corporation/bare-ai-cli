@@ -70,3 +70,25 @@ temp_agents/
 conductor/
 memory-tests/large-chat-session.json
 memory-tests/large-chat-session.json
+
+# Prevent bare-table scripts from being committed to bare-ai-cli
+my-bare-scripts/bare-bash-scripts/bare-table-*.sh
+my-bare-scripts/bare-python3-scripts/bare-finance-*.py
+my-bare-scripts/bare-python3-scripts/bare-db-*.py
+my-bare-scripts/bare-bash-scripts/backup-bare-*.sh
+my-bare-scripts/bare-bash-scripts/fetch-schemas.sh
+my-bare-scripts/bare-bash-scripts/api-json-export.sh
+my-bare-scripts/bare-bash-scripts/curl-export.sh
+my-bare-scripts/bare-bash-scripts/discover-endpoints.sh
+my-bare-scripts/bare-bash-scripts/refresh-and-export.sh
+my-bare-scripts/bare-bash-scripts/copy-nuxt-files.sh
+my-bare-scripts/bare-bash-scripts/debug-rows.sh
+my-bare-scripts/bare-bash-scripts/final-backup.sh
+my-bare-scripts/bare-python3-scripts/date-audit.py
+my-bare-scripts/bare-python3-scripts/date-standardize.py
+my-bare-scripts/bare-python3-scripts/schema-compare.py
+my-bare-scripts/bare-python3-scripts/steps-6-7.py
+my-bare-scripts/bare-python3-scripts/sync-fields.py
+# Python cache
+__pycache__/
+my-bare-scripts/bare-python3-scripts/__pycache__/
