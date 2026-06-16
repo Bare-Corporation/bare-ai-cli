@@ -151,7 +151,7 @@ export const modelCommand: SlashCommand = {
         case '151': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
         case '152': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
         case '155': case 'gpt-5.5': targetModel = "gpt-5.5"; disableTools = false; break;    
-        case '235': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
+        case '225': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
         case '236': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
         case '246': case 'claude-opus-4-6': targetModel = "claude-opus-4-6"; disableTools = false; break;
         case '247': case 'claude-opus-4-7': targetModel = "claude-opus-4-7"; disableTools = false; break;
