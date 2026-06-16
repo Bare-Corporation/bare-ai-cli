@@ -151,22 +151,30 @@ export const modelCommand: SlashCommand = {
         case '151': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
         case '152': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
         case '155': case 'gpt-5.5': targetModel = "gpt-5.5"; disableTools = false; break;    
-        case '201': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
-        case '202': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
-        case '203': case 'claude-opus-4-7': targetModel = "claude-opus-4-7"; disableTools = false; break;
+        case '235': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
+        case '236': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
+        case '246': case 'claude-opus-4-6': targetModel = "claude-opus-4-6"; disableTools = false; break;
+        case '247': case 'claude-opus-4-7': targetModel = "claude-opus-4-7"; disableTools = false; break;
+        case '248': case 'claude-opus-4-8': targetModel = "claude-opus-4-8"; disableTools = false; break;
+        case '250': case 'claude-fable-5': targetModel = "claude-fable-5"; disableTools = false; break;
         case '301': case 'deepseek-chat': targetModel = "deepseek-chat"; disableTools = false; break;
         case '302': case 'deepseek-reasoner': targetModel = "deepseek-reasoner"; disableTools = false; break;
         case '303': case 'deepseek-v4-flash': targetModel = "deepseek-v4-flash"; disableTools = false; break;
         case '304': case 'deepseek-v4-pro': targetModel = "deepseek-v4-pro"; disableTools = false; break;
-        case '351': case 'Qwen-plus': targetModel = "Qwen-plus"; disableTools = false; break;
-        case '352': case 'Qwen-max': targetModel = "Qwen-max"; disableTools = false; break;
-        case '401': case 'Moonshot-v1-32k': targetModel = "Moonshot-v1-32k"; disableTools = false; break;
-        case '402': case 'Moonshot-v1-200k': targetModel = "Moonshot-v1-200k"; disableTools = false; break;
-        case '403': case 'Kimi-k5': targetModel = "Kimi-k5"; disableTools = false; break;
-        case '501': case 'Codestral-latest': targetModel = "Codestral-latest"; disableTools = false; break;
-        case '502': case 'Mistral-large-latest': targetModel = "Mistral-large-latest"; disableTools = false; break;
+        case '351': case 'qwen-plus': targetModel = "qwen-plus"; disableTools = false; break;
+        case '352': case 'qwen-max': targetModel = "qwen-max"; disableTools = false; break;
+        case '401': case 'moonshot-v1-32k': targetModel = "moonshot-v1-32k"; disableTools = false; break;
+        case '402': case 'moonshot-v1-200k': targetModel = "moonshot-v1-200k"; disableTools = false; break;
+        case '403': case 'kimi-k5': targetModel = "kimi-k5"; disableTools = false; break;
+        case '501': case 'codestral-latest': targetModel = "codestral-latest"; disableTools = false; break;
+        case '502': case 'mistral-large-latest': targetModel = "mistral-large-latest"; disableTools = false; break;
         case '665': case 'grok-4-1-fast-reasoning': targetModel = "grok-4-1-fast-reasoning"; disableTools = false; break;
         case '666': case 'grok-3': targetModel = "grok-3"; disableTools = false; break;
+
+
+
+        
+
         
         default:
           // Fallback: If they typed a raw name not in the switch, assume it's a Doer and try Vault
