@@ -366,7 +366,6 @@ export class BareAiClient {
     const body: Record<string, unknown> = {
       model: activeModel,
       stream: useStream,
-      temperature: 0.1,
     };
 
     // Anthropic: extract system prompt into top-level "system" array with
