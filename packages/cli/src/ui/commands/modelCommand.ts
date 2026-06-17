@@ -141,6 +141,7 @@ export const modelCommand: SlashCommand = {
         case '061': case 'granite4:tiny-h': targetModel = "granite4:tiny-h"; disableTools = false; break;
         case '071': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
         case '081': case 'gpt-oss:20b': targetModel = "gpt-oss:20b"; disableTools = false; break;
+        case '092': case 'glm-5.2:cloud': targetModel = "glm-5.2:cloud"; disableTools = false; break;
 
         // PREMIUM CLOUD DOERS
         case '101': case 'gemini-2.5-flash-lite': targetModel = "gemini-2.5-flash-lite"; disableTools = false; break;
