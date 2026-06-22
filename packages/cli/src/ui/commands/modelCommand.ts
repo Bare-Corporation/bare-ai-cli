@@ -138,6 +138,7 @@ export const modelCommand: SlashCommand = {
         case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; disableTools = false; break;
         case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; disableTools = false; break;
         case '051': case 'mistral-nemo:latest': targetModel = "mistral-nemo:latest"; disableTools = false; break;
+        case '052': case 'codestral:22b': targetModel = "codestral:22b"; disableTools = false; break;
         case '061': case 'granite4:tiny-h': targetModel = "granite4:tiny-h"; disableTools = false; break;
         case '071': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
         case '081': case 'gpt-oss:20b': targetModel = "gpt-oss:20b"; disableTools = false; break;
