@@ -262,7 +262,7 @@ import {
   validatePlanPath,
   writeToStderr,
   writeToStdout
-} from "./chunk-WGR5NQV4.js";
+} from "./chunk-DYPE6PHM.js";
 import {
   require_undici
 } from "./chunk-A7S6ORWX.js";
@@ -84501,7 +84501,7 @@ var SubagentHistoryMessage = ({
 ] });
 
 // packages/cli/src/generated/git-commit.ts
-var GIT_COMMIT_INFO = "1d8f87eb5";
+var GIT_COMMIT_INFO = "afd474b06";
 
 // packages/cli/src/ui/components/AboutBox.tsx
 var import_jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
@@ -114156,7 +114156,7 @@ Use /mcp auth <server-name> to authenticate.`
         type: "info",
         text: `Starting OAuth authentication for MCP server '${serverName}'...`
       });
-      const { MCPOAuthProvider } = await import("./dist-VMZU4JE2.js");
+      const { MCPOAuthProvider } = await import("./dist-4QDD5ZXD.js");
       let oauthConfig = server.oauth;
       if (!oauthConfig) {
         oauthConfig = { enabled: false };
@@ -115471,6 +115471,11 @@ var modelCommand = {
           targetModel = "mistral-nemo:latest";
           disableTools = false;
           break;
+        case "052":
+        case "codestral:22b":
+          targetModel = "codestral:22b";
+          disableTools = false;
+          break;
         case "061":
         case "granite4:tiny-h":
           targetModel = "granite4:tiny-h";
@@ -115484,6 +115489,11 @@ var modelCommand = {
         case "081":
         case "gpt-oss:20b":
           targetModel = "gpt-oss:20b";
+          disableTools = false;
+          break;
+        case "092":
+        case "glm-5.2:cloud":
+          targetModel = "glm-5.2:cloud";
           disableTools = false;
           break;
         // PREMIUM CLOUD DOERS
@@ -126807,7 +126817,7 @@ ${queuedText}` : queuedText;
       if (keyMatchers2["app.showErrorDetails" /* SHOW_ERROR_DETAILS */](key)) {
         if (settings.merged.general.devtools) {
           void (async () => {
-            const { toggleDevToolsPanel } = await import("./devtoolsService-5R2ZQQKN.js");
+            const { toggleDevToolsPanel } = await import("./devtoolsService-XYZVCPB6.js");
             await toggleDevToolsPanel(
               config,
               showErrorDetails,
@@ -134875,7 +134885,6 @@ async function loadCliConfig(settings, sessionId2, argv, options = {}) {
     debugLogger.warn(
       `Approval mode overridden to "default" because the current folder is not trusted.`
     );
-    /* [BARE-AI PATCH] untrusted folder override removed */
   }
   let telemetrySettings;
   try {
@@ -136403,7 +136412,7 @@ async function runNonInteractive({
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-5R2ZQQKN.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-XYZVCPB6.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -136854,7 +136863,7 @@ async function runNonInteractive2(params) {
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-5R2ZQQKN.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-XYZVCPB6.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -141471,7 +141480,7 @@ ${finalArgs[promptIndex + 1]}`;
     await config.storage.initialize();
     adminControlsListner.setConfig(config);
     if (config.isInteractive() && settings.merged.general.devtools) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-5R2ZQQKN.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-XYZVCPB6.js");
       await setupInitialActivityLogger(config);
     }
     registerTelemetryConfig(config);
