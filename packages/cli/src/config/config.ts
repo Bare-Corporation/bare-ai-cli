@@ -31,7 +31,6 @@ import {
   type HierarchicalMemory,
   coreEvents,
   GEMINI_MODEL_ALIAS_AUTO,
-  getAdminErrorMessage,
   isHeadlessMode,
   Config,
   resolveToRealPath,
