@@ -134,6 +134,7 @@ export const modelCommand: SlashCommand = {
         case '030': case 'qwen3.5:0.8b': targetModel = "qwen3.5:0.8b"; disableTools = false; break;
         case '031': case 'qwen3.5:4b': targetModel = "qwen3.5:4b"; disableTools = false; break;
         case '032': case 'qwen3.6:27b': targetModel = "qwen3.6:27b"; disableTools = false; break;        
+        case '033': case 'qwen3.8:27b': targetModel = "qwen3.8:27b"; disableTools = false; break;
         case '041': case 'gemma4:e4b': targetModel = "gemma4:e4b"; disableTools = false; break;
         case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; disableTools = false; break;
         case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; disableTools = false; break;
