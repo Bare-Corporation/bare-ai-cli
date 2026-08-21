@@ -15,7 +15,7 @@
  * Copyright 2026 Cloud Integration Corporation
  * Copyright 2025 Google LLC (The orignal creator of this file but heavily Customised by CIC)
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 import {
   ModelSlashCommandEvent,
   logModelSlashCommand,
@@ -27,40 +27,178 @@ import {
   type SlashCommand,
 } from './types.js';
 import { MessageType } from '../types.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 
+// ── Catalog config ──────────────────────────────────────
+const COUNCIL_API_BASE_URL =
+  process.env['COUNCIL_API_BASE_URL'] || 'https://api.bare-ai.net';
+const CACHE_DIR = path.join(os.homedir(), '.gemini');
+const CACHE_FILE = path.join(CACHE_DIR, 'models.cache.json');
+const LOCAL_FILE = path.join(CACHE_DIR, 'model.local.json');
+
+interface ModelsResponse {
+  models?: CatalogEntry[];
+  count?: number;
+}
+
+interface VaultConfig {
+  api_key?: string;
+  model_name?: string;
+  base_url?: string;
+}
+
+interface VaultResponse {
+  data?: { data: VaultConfig } | VaultConfig;
+}
+
+interface LocalModelsFile {
+  models?: Array<{
+    shortcut?: string;
+    model_id?: string;
+    provider?: string;
+    base_url?: string;
+    tool_capability?: string;
+  }>;
+}
+
+interface CatalogEntry {
+  shortcut: string;
+  model_id: string;
+  display_name?: string;
+  provider: string;
+  is_cloud: boolean;
+  base_url: string;
+  tool_capability: string; // 'thinker' | 'doer'
+  is_free_tier?: boolean;
+}
+
+// Fetch /v1/models fresh, cache to disk, fall back to cache offline.
+async function loadCatalog(): Promise<CatalogEntry[]> {
+  try {
+    const res = await fetch(`${COUNCIL_API_BASE_URL}/v1/models`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`catalog HTTP ${res.status}`);
+    const json = (await res.json()) as ModelsResponse;
+    const models: CatalogEntry[] = json.models ?? [];
+    // atomic cache write: temp + rename
+    try {
+      if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+      const tmp = CACHE_FILE + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify(models));
+      fs.renameSync(tmp, CACHE_FILE);
+    } catch {
+      // caching is best-effort; ignore write errors
+    }
+    return models;
+  } catch {
+    // offline / endpoint down: fall back to cached snapshot
+    try {
+      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) as CatalogEntry[];
+    } catch {
+      return [];
+    }
+  }
+}
+
+// Load user's local Ollama models (optional). Only provider=ollama
+// entries are honored; collisions with the central catalog are dropped
+// (central always wins).
+function loadLocalModels(centralShortcuts: Set<string>, centralIds: Set<string>): CatalogEntry[] {
+  try {
+    if (!fs.existsSync(LOCAL_FILE)) return [];
+    const parsed = JSON.parse(fs.readFileSync(LOCAL_FILE, 'utf8')) as LocalModelsFile;
+    const list = parsed.models ?? [];
+    const out: CatalogEntry[] = [];
+    for (const m of list) {
+      if ((m?.provider || 'ollama') !== 'ollama') continue; // local file is Ollama-only
+      if (!m?.shortcut || !m?.model_id) continue;
+      if (centralShortcuts.has(m.shortcut) || centralIds.has(m.model_id)) continue; // central wins
+      out.push({
+        shortcut: String(m.shortcut),
+        model_id: String(m.model_id),
+        provider: 'ollama',
+        is_cloud: false,
+        base_url: String(m.base_url || 'http://127.0.0.1:11434'),
+        tool_capability: (m.tool_capability === 'thinker') ? 'thinker' : 'doer',
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+// Resolve a shortcut (or exact model_id) against merged catalog+local.
+async function resolveShortcut(id: string): Promise<CatalogEntry | null> {
+  const central = await loadCatalog();
+  const centralShortcuts = new Set(central.map((m) => m.shortcut));
+  const centralIds = new Set(central.map((m) => m.model_id));
+  const local = loadLocalModels(centralShortcuts, centralIds);
+  const all = [...central, ...local];
+  return (
+    all.find((m) => m.shortcut === id) ||
+    all.find((m) => m.model_id === id) ||
+    null
+  );
+}
+
+// Normalize a catalog base_url into a ready-to-POST completions URL.
+// The catalog is NOT guaranteed to ship fully-formed endpoints: Ollama
+// entries carry a bare host:port with no scheme, and some cloud entries
+// (google, bare-ai council) omit the /chat/completions suffix.
+function normalizeEndpoint(entry: CatalogEntry): string {
+  let base = (entry.base_url ?? '').trim();
+  if (!base) {
+    throw new Error('Catalog entry "' + entry.model_id + '" is missing base_url');
+  }
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    base = 'http://' + base;
+  }
+  while (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+  if (base.endsWith('/chat/completions')) {
+    return base;
+  }
+  if (entry.provider === 'ollama' || entry.is_cloud === false) {
+    return base + '/v1/chat/completions';
+  }
+  return base + '/chat/completions';
+}
+
+// Fetch per-model runtime config (api_key + model_name) from the USER's
+// own Vault. Only used for cloud/council models. KV v2 with v1 fallback.
 async function fetchVaultUpdate(modelName: string) {
   const addr = process.env['VAULT_ADDR'];
   const vaultToken = process.env['VAULT_TOKEN'];
   if (!addr || !vaultToken) throw new Error('Sovereign environment not initialized.');
 
-  
-  // Path 1: Try the standard KV v2 path (Matches your bashrc)
   let path = `secret/data/${modelName}/config`;
   let res = await fetch(`${addr}/v1/${path}`, {
     headers: { 'X-Vault-Token': vaultToken },
   });
-  let json: any = await res.json();
+  let json = (await res.json()) as VaultResponse;
 
-  // Path 2: If Path 1 returns 404 or 403, fall back to the KV v1 literal path
   if (res.status === 404 || res.status === 403) {
     path = `secret/${modelName}/config`;
     res = await fetch(`${addr}/v1/${path}`, {
       headers: { 'X-Vault-Token': vaultToken },
     });
-    json = await res.json();
+    json = (await res.json()) as VaultResponse;
   }
 
-  // Support both KV v1 (json.data) and KV v2 (json.data.data) payloads safely
-  const configData = json?.data?.data || json?.data;
-
-  // If it STILL fails, log the exact Vault error to the terminal so we can see it
+  const raw = json?.data;
+  const configData: VaultConfig | undefined =
+    raw && 'data' in raw ? raw.data : raw;
   if (!configData) {
-     console.error(`\n[Vault Debug] Failed Response from Vault:`, JSON.stringify(json));
-     throw new Error(`Model configuration not found at Vault path: ${path}`);
+    console.error(`\n[Vault Debug] Failed Response from Vault:`, JSON.stringify(json));
+    throw new Error(`Model configuration not found at Vault path: ${path}`);
   }
-  
   return configData;
- }   
+}
 
 const setModelCommand: SlashCommand = {
   name: 'set',
@@ -106,109 +244,50 @@ export const modelCommand: SlashCommand = {
   action: async (context: CommandContext, args: string) => {
     const id = args.trim();
 
+    // 3-digit Sovereign ID OR exact model name
+    if (/^\d{3}$/.test(id) || id.includes(':') || id.includes('-')) {
+      context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Translating ID ${id}...` });
 
-    // Pattern Match: 3-digit Sovereign ID OR exact model name
-      if (/^\d{3}$/.test(id) || id.includes(':') || id.includes('-')) {
-        context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Translating ID ${id}...` });
-        
-        let targetModel = "";
-        let disableTools = true; // default  
-
-      switch (id) {
-
-        // ---------------------------------------------------------
-        // THINKERS (No Tools)
-        // ---------------------------------------------------------
-        case '000': case 'tir-na-ai:iGPU': targetModel = "tir-na-ai:iGPU"; break;
-        case '001': case 'tir-na-ai:latest': targetModel = "tir-na-ai:latest"; break;
-        case '011': case 'deepseek-r1:8b': targetModel = "deepseek-r1:8b"; break;
-        case '012': case 'deepseek-coder-v2:latest': targetModel = "deepseek-coder-v2:latest"; break;
-        case '153': case 'o1-preview': targetModel = "o1-preview"; break;
-
-        // ---------------------------------------------------------
-        // DOERS (Tools Enabled)
-        // ---------------------------------------------------------
-        case '021': case 'qwen2.5-coder:7b': targetModel = "qwen2.5-coder:7b"; disableTools = false; break;
-        case '022': case 'qwen2.5-coder:14b': targetModel = "qwen2.5-coder:14b"; disableTools = false; break;
-        case '023': case 'qwen2.5-coder:32b': targetModel = "qwen2.5-coder:32b"; disableTools = false; break;
-        case '030': case 'qwen3.5:0.8b': targetModel = "qwen3.5:0.8b"; disableTools = false; break;
-        case '031': case 'qwen3.5:4b': targetModel = "qwen3.5:4b"; disableTools = false; break;
-        case '032': case 'qwen3.6:27b': targetModel = "qwen3.6:27b"; disableTools = false; break;        
-        case '033': case 'qwen3.8:27b': targetModel = "qwen3.8:27b"; disableTools = false; break;
-        case '041': case 'gemma4:e4b': targetModel = "gemma4:e4b"; disableTools = false; break;
-        case '042': case 'gemma4:26b': targetModel = "gemma4:26b"; disableTools = false; break;
-        case '043': case 'gemma4:31b': targetModel = "gemma4:31b"; disableTools = false; break;
-        case '051': case 'mistral-nemo:latest': targetModel = "mistral-nemo:latest"; disableTools = false; break;
-        case '052': case 'codestral:22b': targetModel = "codestral:22b"; disableTools = false; break;
-        case '061': case 'granite4:tiny-h': targetModel = "granite4:tiny-h"; disableTools = false; break;
-        case '071': case 'llama3.1:8b': targetModel = "llama3.1:8b"; disableTools = false; break;
-        case '081': case 'gpt-oss:20b': targetModel = "gpt-oss:20b"; disableTools = false; break;
-        case '092': case 'glm-5.2:cloud': targetModel = "glm-5.2:cloud"; disableTools = false; break;
-
-        // PREMIUM CLOUD DOERS
-        case '101': case 'gemini-2.5-flash-lite': targetModel = "gemini-2.5-flash-lite"; disableTools = false; break;
-        case '102': case 'gemini-2.5-flash': targetModel = "gemini-2.5-flash"; disableTools = false; break;
-        case '103': case 'gemini-2.5-pro': targetModel = "gemini-2.5-pro"; disableTools = false; break;
-        case '104': case 'gemini-3-flash-preview': targetModel = "gemini-3-flash-preview"; disableTools = false; break;
-        case '105': case 'gemini-3.1-pro-preview': targetModel = "gemini-3.1-pro-preview"; disableTools = false; break;
-        case '151': case 'gpt-4o': targetModel = "gpt-4o"; disableTools = false; break;
-        case '152': case 'gpt-4-turbo': targetModel = "gpt-4-turbo"; disableTools = false; break;
-        case '155': case 'gpt-5.5': targetModel = "gpt-5.5"; disableTools = false; break;    
-        case '225': case 'claude-haiku-4-5-20251001': targetModel = "claude-haiku-4-5-20251001"; disableTools = false; break;
-        case '236': case 'claude-sonnet-4-6': targetModel = "claude-sonnet-4-6"; disableTools = false; break;
-        case '246': case 'claude-opus-4-6': targetModel = "claude-opus-4-6"; disableTools = false; break;
-        case '247': case 'claude-opus-4-7': targetModel = "claude-opus-4-7"; disableTools = false; break;
-        case '248': case 'claude-opus-4-8': targetModel = "claude-opus-4-8"; disableTools = false; break;
-        case '250': case 'claude-fable-5': targetModel = "claude-fable-5"; disableTools = false; break;
-        case '301': case 'deepseek-chat': targetModel = "deepseek-chat"; disableTools = false; break;
-        case '302': case 'deepseek-reasoner': targetModel = "deepseek-reasoner"; disableTools = false; break;
-        case '303': case 'deepseek-v4-flash': targetModel = "deepseek-v4-flash"; disableTools = false; break;
-        case '304': case 'deepseek-v4-pro': targetModel = "deepseek-v4-pro"; disableTools = false; break;
-        case '351': case 'qwen-plus': targetModel = "qwen-plus"; disableTools = false; break;
-        case '352': case 'qwen-max': targetModel = "qwen-max"; disableTools = false; break;
-        case '401': case 'moonshot-v1-32k': targetModel = "moonshot-v1-32k"; disableTools = false; break;
-        case '402': case 'moonshot-v1-200k': targetModel = "moonshot-v1-200k"; disableTools = false; break;
-        case '403': case 'kimi-k5': targetModel = "kimi-k5"; disableTools = false; break;
-        case '501': case 'codestral-latest': targetModel = "codestral-latest"; disableTools = false; break;
-        case '502': case 'mistral-large-latest': targetModel = "mistral-large-latest"; disableTools = false; break;
-        case '665': case 'grok-4-1-fast-reasoning': targetModel = "grok-4-1-fast-reasoning"; disableTools = false; break;
-        case '666': case 'grok-3': targetModel = "grok-3"; disableTools = false; break;
-
-
-
-        
-
-        
-        default:
-          // Fallback: If they typed a raw name not in the switch, assume it's a Doer and try Vault
-          targetModel = id; 
-          disableTools = false; 
-          break;
+      const entry = await resolveShortcut(id);
+      if (!entry) {
+        context.ui.addItem({ type: MessageType.ERROR, text: `[sovereign] Unknown model or shortcut: ${id}` });
+        return;
       }
 
-      context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Swapping to model ${targetModel}...` });
+      context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Swapping to model ${entry.model_id}...` });
 
       try {
-        const config = await fetchVaultUpdate(targetModel);
-        
-        process.env['BARE_AI_ENDPOINT'] = config.base_url.includes('completions') 
-          ? config.base_url.trim() 
-          : `${config.base_url.trim()}/v1/chat/completions`;
-        process.env['BARE_AI_API_KEY'] = (config.api_key || 'none').trim();
-        process.env['BARE_AI_MODEL'] = config.model_name.trim();
+        const noTools = entry.tool_capability === 'thinker';
 
-        // Cure the 400 Tool Crash
-        if (disableTools) {
-          process.env['BARE_AI_NO_TOOLS'] = "true";
-          context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).` });
-        } else {
-          process.env['BARE_AI_NO_TOOLS'] = "false";
+        if (!entry.is_cloud) {
+          // LOCAL OLLAMA: zero network, keyless, normalized endpoint.
+          process.env['BARE_AI_ENDPOINT'] = normalizeEndpoint(entry);
+          process.env['BARE_AI_API_KEY'] = 'none';
+          process.env['BARE_AI_MODEL'] = entry.model_id.trim();
+          process.env['BARE_AI_NO_TOOLS'] = noTools ? 'true' : 'false';
+          if (noTools) {
+            context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).` });
+          }
+          context.services.config?.setModel(entry.model_id.trim(), false);
+          coreEvents.emitModelChanged(entry.model_id.trim());
+          context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Hot-swap successful (local).` });
+          return;
         }
 
-        context.services.config?.setModel(config.model_name.trim(), false);
-        coreEvents.emitModelChanged(config.model_name.trim());
-        context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Hot-swap successful.` });
+        // CLOUD / COUNCIL: key from the user's own Vault; normalized endpoint.
+        const config = await fetchVaultUpdate(entry.model_id);
+        process.env['BARE_AI_ENDPOINT'] = normalizeEndpoint(entry);
+        process.env['BARE_AI_API_KEY'] = (config.api_key || 'none').trim();
+        process.env['BARE_AI_MODEL'] = (config.model_name || entry.model_id).trim();
+        process.env['BARE_AI_NO_TOOLS'] = noTools ? 'true' : 'false';
+        if (noTools) {
+          context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).` });
+        }
 
+        const finalModel = (config.model_name || entry.model_id).trim();
+        context.services.config?.setModel(finalModel, false);
+        coreEvents.emitModelChanged(finalModel);
+        context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Hot-swap successful.` });
       } catch (err: any) {
         context.ui.addItem({ type: MessageType.ERROR, text: `[sovereign] Swap failed: ${err.message}` });
       }
