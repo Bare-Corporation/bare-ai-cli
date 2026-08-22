@@ -118,12 +118,16 @@ async function runCouncil(argv: string[]): Promise<CouncilResult> {
     timeout: COUNCIL_TIMEOUT_MS,
     maxBuffer: 10 * 1024 * 1024,
   });
-  return JSON.parse(stdout) as CouncilResult;
+  const parsed = parseJsonObject(stdout);
+  if (!parsed) {
+    throw new Error('council.py returned unparseable output');
+  }
+  return parsed as CouncilResult;
 }
 
-// Extract the first JSON object from the Composer's free-form output (tolerates
-// markdown fences and surrounding prose).
-function extractPlanJson(text: string): Record<string, unknown> | undefined {
+// Extract the first JSON object from free-form output (tolerates markdown fences
+// and surrounding prose, e.g. council.py's "[council] ..." progress lines).
+function parseJsonObject(text: string): Record<string, unknown> | undefined {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenced ? fenced[1] : text;
   const start = candidate.indexOf('{');
@@ -188,7 +192,7 @@ async function composerPlan(task: string): Promise<CouncilPlan> {
       '--json',
     ]);
     const finalOutput = result.stages?.[0]?.final_output ?? '';
-    return parsePlan(extractPlanJson(finalOutput));
+    return parsePlan(parseJsonObject(finalOutput));
   } catch {
     return { ...DEFAULT_PLAN };
   }
