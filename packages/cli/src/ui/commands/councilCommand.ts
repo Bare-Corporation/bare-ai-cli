@@ -75,6 +75,14 @@ interface ExecError extends Error {
   stderr?: string;
 }
 
+function isExecError(e: unknown): e is ExecError {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    ('stderr' in e || 'code' in e || 'message' in e)
+  );
+}
+
 // Split the free-form input into a task plus optional --models / --roles / --rounds flags.
 function parseCouncilArgs(input: string): CouncilArgs {
   const tokens = input.trim().split(/\s+/).filter(Boolean);
@@ -198,6 +206,50 @@ async function composerPlan(task: string): Promise<CouncilPlan> {
   }
 }
 
+// Render a Council result into the multi-line text shown to the user.
+function formatCouncilResult(result: CouncilResult): string {
+  const stages = result.stages ?? [];
+  const lines: string[] = [
+    `BARE-AI COUNCIL RESULT - job ${result.job_id}`,
+    `Agreed: ${result.agreed ? 'yes' : 'no'} | duration ${result.duration_seconds ?? '?'}s | cost ${result.cost_usd ?? '?'} USD`,
+  ];
+  for (const stage of stages) {
+    lines.push('');
+    lines.push(
+      `${stage.agreed ? 'AGREED' : 'DISAGREED'} - ${stage.stage} (rounds ${stage.rounds})`,
+    );
+    lines.push(String(stage.final_output ?? '(no output)'));
+  }
+  return lines.join(NL);
+}
+
+// Filter a composed plan down to the models an account is allowed to run.
+// Keeps role<->model alignment. Returns null if nothing usable remains.
+function filterPlanToAllowed(
+  plan: { models: string[]; roles: string[]; rounds: number },
+  allowed: string[],
+): { models: string[]; roles: string[]; rounds: number } | null {
+  const allowedSet = new Set(allowed);
+  const models: string[] = [];
+  const roles: string[] = [];
+  plan.models.forEach((m, i) => {
+    if (allowedSet.has(m)) {
+      models.push(m);
+      roles.push(plan.roles[i] ?? 'contributor');
+    }
+  });
+  if (models.length === 0) {
+    for (const m of allowed) {
+      models.push(m);
+      roles.push('contributor');
+    }
+  }
+  if (models.length === 0) {
+    return null;
+  }
+  return { models, roles, rounds: plan.rounds };
+}
+
 export const councilCommand: SlashCommand = {
   name: 'council',
   description:
@@ -259,21 +311,51 @@ export const councilCommand: SlashCommand = {
         '--json',
       ]);
 
-      const stages = result.stages ?? [];
-      const lines: string[] = [
-        `BARE-AI COUNCIL RESULT - job ${result.job_id}`,
-        `Agreed: ${result.agreed ? 'yes' : 'no'} | duration ${result.duration_seconds ?? '?'}s | cost ${result.cost_usd ?? '?'} USD`,
-      ];
-      for (const stage of stages) {
-        lines.push('');
-        lines.push(
-          `${stage.agreed ? 'AGREED' : 'DISAGREED'} - ${stage.stage} (rounds ${stage.rounds})`,
-        );
-        lines.push(String(stage.final_output ?? '(no output)'));
-      }
-      context.ui.addItem({ type: MessageType.INFO, text: lines.join(NL) });
+      context.ui.addItem({ type: MessageType.INFO, text: formatCouncilResult(result) });
     } catch (err) {
       const e = err as ExecError;
+      // Credit gate: if the Council rejected premium models for a no-credit
+      // account, re-run on the allowed (free-tier) models and tell the user.
+      const stderrText = String(e.stderr || '');
+      const gate = parseJsonObject(stderrText);
+      const requiresTopup = gate?.['requires_topup'];
+      const allowedModels = gate?.['allowed_models'];
+      if (
+        requiresTopup === true &&
+        Array.isArray(allowedModels) &&
+        allowedModels.length > 0
+      ) {
+        const filtered = filterPlanToAllowed(
+          { models, roles, rounds },
+          allowedModels.filter((x): x is string => typeof x === 'string'),
+        );
+        if (filtered) {
+          const skipped = models.filter((m) => !filtered.models.includes(m));
+          context.ui.addItem({
+            type: MessageType.INFO,
+            text: `Premium models unavailable on your plan${skipped.length ? ' (' + skipped.join(', ') + ')' : ''} — running the Council on your free-tier models. Add credits to unlock premium models.`,
+          });
+          try {
+            const retryResult = await runCouncil([
+              parsed.task,
+              '--models',
+              ...filtered.models,
+              '--roles',
+              ...filtered.roles,
+              '--rounds',
+              String(filtered.rounds),
+              '--json',
+            ]);
+            context.ui.addItem({ type: MessageType.INFO, text: formatCouncilResult(retryResult) });
+            return;
+          } catch (re) {
+            const reErr: ExecError = isExecError(re) ? re : new Error(String(re));
+            const rd = reErr.stderr || reErr.message;
+            context.ui.addItem({ type: MessageType.ERROR, text: `Council retry failed: ${rd}` });
+            return;
+          }
+        }
+      }
       const detail = e.stderr || e.message;
       context.ui.addItem({ type: MessageType.ERROR, text: `[council] failed: ${detail}` });
     }
