@@ -66,6 +66,12 @@ const DIRECTOR_KINDS: TaskKind[] = [
   'general',
 ];
 
+// The director is opt-in. Live testing (granite4:tiny-h vs the keyword heuristic,
+// 10/12 vs 12/12) showed the tiny director misclassifies "reasoning" tasks, so the
+// keyword heuristic remains the default. Set BARE_COUNCIL_DIRECTOR_ENABLED=1 to
+// use the director as the primary classifier.
+const directorEnabled = process.env['BARE_COUNCIL_DIRECTOR_ENABLED'] === '1';
+
 interface CouncilArgs {
   task: string;
   models?: string[];
@@ -182,7 +188,9 @@ export const councilCommand: SlashCommand = {
       return;
     }
 
-    const kind = (await directorClassify(parsed.task)) ?? classifyTask(parsed.task);
+    const kind = directorEnabled
+      ? ((await directorClassify(parsed.task)) ?? classifyTask(parsed.task))
+      : classifyTask(parsed.task);
     const preset = COUNCIL_PRESETS[kind];
     const models = parsed.models ?? preset.models;
     const roles = parsed.roles ?? preset.roles;
