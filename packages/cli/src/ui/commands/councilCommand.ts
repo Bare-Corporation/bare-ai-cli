@@ -13,10 +13,41 @@ import { MessageType } from '../types.js';
 const execFileAsync = promisify(execFile);
 
 const COUNCIL_BIN = process.env['BARE_COUNCIL_BIN'] || 'council.py';
-const DEFAULT_MODELS = ['claude-sonnet-4-6', 'deepseek-v4-pro'];
-const DEFAULT_ROLES = ['Senior Engineer', 'Critical Reviewer'];
 const COUNCIL_TIMEOUT_MS = 15 * 60 * 1000;
 const NL = String.fromCharCode(10);
+
+type TaskKind = 'code' | 'review' | 'reasoning' | 'writing' | 'general';
+
+interface CouncilPreset {
+  models: string[];
+  roles: string[];
+}
+
+// Curated multi-model "council roster" by task kind. The Council orchestrates
+// cloud models via the user's Vault keys, so these are the well-rounded default
+// pairs. A user can always override with explicit --models/--roles.
+const COUNCIL_PRESETS: Record<TaskKind, CouncilPreset> = {
+  code: {
+    models: ['claude-sonnet-4-6', 'deepseek-v4-pro'],
+    roles: ['Senior Software Engineer', 'Security-focused Code Reviewer'],
+  },
+  review: {
+    models: ['claude-sonnet-4-6', 'gemini-2.5-pro'],
+    roles: ['Principal Reviewer', 'Critical Sceptic'],
+  },
+  reasoning: {
+    models: ['deepseek-reasoner', 'claude-sonnet-4-6'],
+    roles: ['Analytical Reasoner', 'Evidence-checking Reviewer'],
+  },
+  writing: {
+    models: ['claude-sonnet-4-6', 'gemini-2.5-pro'],
+    roles: ['Lead Writer', 'Critical Editor'],
+  },
+  general: {
+    models: ['claude-sonnet-4-6', 'deepseek-v4-pro'],
+    roles: ['Senior Engineer', 'Critical Reviewer'],
+  },
+};
 
 interface CouncilArgs {
   task: string;
@@ -58,9 +89,32 @@ function parseCouncilArgs(input: string): CouncilArgs {
   };
 }
 
+// Keyword heuristic: map a free-form task to the best council preset.
+function classifyTask(task: string): TaskKind {
+  const t = task.toLowerCase();
+  const has = (words: string[]) => words.some((w) => t.includes(w));
+  if (has(['review', 'audit', 'critique', 'refactor', 'debug', 'bug', 'security'])) {
+    return 'review';
+  }
+  if (has(['code', 'implement', 'function', 'api', 'program', 'script', 'fix', 'build'])) {
+    return 'code';
+  }
+  if (has(['analy', 'reason', 'evaluate', 'research', 'compare', 'why', 'explain', 'prove'])) {
+    return 'reasoning';
+  }
+  if (has(['write', 'document', 'summarize', 'article', 'report', 'email', 'blog'])) {
+    return 'writing';
+  }
+  return 'general';
+}
+
+function selectTeam(task: string): CouncilPreset {
+  return COUNCIL_PRESETS[classifyTask(task)];
+}
+
 export const councilCommand: SlashCommand = {
   name: 'council',
-  description: 'Ask the multi-model Council to deliberate on a task',
+  description: 'Ask the multi-model Council (auto-selects models for the task)',
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: async (context, args) => {
@@ -73,8 +127,9 @@ export const councilCommand: SlashCommand = {
       return;
     }
 
-    const models = parsed.models ?? DEFAULT_MODELS;
-    const roles = parsed.roles ?? DEFAULT_ROLES;
+    const preset = selectTeam(parsed.task);
+    const models = parsed.models ?? preset.models;
+    const roles = parsed.roles ?? preset.roles;
     if (models.length !== roles.length) {
       context.ui.addItem({
         type: MessageType.ERROR,
