@@ -49,6 +49,23 @@ const COUNCIL_PRESETS: Record<TaskKind, CouncilPreset> = {
   },
 };
 
+// Local "director" model that interprets the request before a council roster is
+// picked. Granite is tiny and keyless (local Ollama), so this is cheap and
+// offline-capable. Falls back to the keyword heuristic if the director is down
+// or returns an unrecognised label.
+const DIRECTOR_BASE_URL =
+  process.env['BARE_COUNCIL_DIRECTOR_URL'] || 'http://127.0.0.1:11434';
+const DIRECTOR_MODEL =
+  process.env['BARE_COUNCIL_DIRECTOR_MODEL'] || 'granite4:tiny-h';
+const DIRECTOR_TIMEOUT_MS = 30 * 1000;
+const DIRECTOR_KINDS: TaskKind[] = [
+  'code',
+  'review',
+  'reasoning',
+  'writing',
+  'general',
+];
+
 interface CouncilArgs {
   task: string;
   models?: string[];
@@ -59,6 +76,10 @@ interface ExecError extends Error {
   code?: number;
   stdout?: string;
   stderr?: string;
+}
+
+interface OllamaGenerateResponse {
+  response?: string;
 }
 
 // Split the free-form input into a task plus optional --models / --roles flags.
@@ -89,7 +110,7 @@ function parseCouncilArgs(input: string): CouncilArgs {
   };
 }
 
-// Keyword heuristic: map a free-form task to the best council preset.
+// Keyword heuristic fallback: map a free-form task to a task kind.
 function classifyTask(task: string): TaskKind {
   const t = task.toLowerCase();
   const has = (words: string[]) => words.some((w) => t.includes(w));
@@ -108,8 +129,42 @@ function classifyTask(task: string): TaskKind {
   return 'general';
 }
 
-function selectTeam(task: string): CouncilPreset {
-  return COUNCIL_PRESETS[classifyTask(task)];
+// Ask the local director model to classify the request. Returns undefined on
+// any failure so the caller can fall back to the keyword heuristic.
+async function directorClassify(task: string): Promise<TaskKind | undefined> {
+  const prompt = [
+    'Classify the request into exactly one category: code, review, reasoning, writing, or general.',
+    'Reply with only that single word.',
+    '',
+    'Request: ' + task,
+  ].join(NL);
+
+  try {
+    const res = await fetch(`${DIRECTOR_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: DIRECTOR_MODEL,
+        prompt,
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(DIRECTOR_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      return undefined;
+    }
+    const data = (await res.json()) as OllamaGenerateResponse;
+    const raw = String(data.response ?? '').trim().toLowerCase();
+    const word = raw.split(/\s+/)[0];
+    for (const kind of DIRECTOR_KINDS) {
+      if (kind === word) {
+        return kind;
+      }
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export const councilCommand: SlashCommand = {
@@ -127,7 +182,8 @@ export const councilCommand: SlashCommand = {
       return;
     }
 
-    const preset = selectTeam(parsed.task);
+    const kind = (await directorClassify(parsed.task)) ?? classifyTask(parsed.task);
+    const preset = COUNCIL_PRESETS[kind];
     const models = parsed.models ?? preset.models;
     const roles = parsed.roles ?? preset.roles;
     if (models.length !== roles.length) {
