@@ -49,14 +49,14 @@ const COUNCIL_PRESETS: Record<TaskKind, CouncilPreset> = {
   },
 };
 
-// Local "director" model that interprets the request before a council roster is
-// picked. Granite is tiny and keyless (local Ollama), so this is cheap and
-// offline-capable. Falls back to the keyword heuristic if the director is down
-// or returns an unrecognised label.
+// "Director" model that interprets the request before a council roster is picked.
+// Uses a cloud model (deepseek-v4-flash) so it matches the rest of the paid
+// Council service. Falls back to the keyword heuristic if the director is
+// unreachable, has no key provisioned, or returns an unrecognised label.
 const DIRECTOR_BASE_URL =
-  process.env['BARE_COUNCIL_DIRECTOR_URL'] || 'http://127.0.0.1:11434';
+  process.env['BARE_COUNCIL_DIRECTOR_URL'] || 'https://api.deepseek.com';
 const DIRECTOR_MODEL =
-  process.env['BARE_COUNCIL_DIRECTOR_MODEL'] || 'granite4:tiny-h';
+  process.env['BARE_COUNCIL_DIRECTOR_MODEL'] || 'deepseek-v4-flash';
 const DIRECTOR_TIMEOUT_MS = 30 * 1000;
 const DIRECTOR_KINDS: TaskKind[] = [
   'code',
@@ -65,12 +65,6 @@ const DIRECTOR_KINDS: TaskKind[] = [
   'writing',
   'general',
 ];
-
-// The director is opt-in. Live testing (granite4:tiny-h vs the keyword heuristic,
-// 10/12 vs 12/12) showed the tiny director misclassifies "reasoning" tasks, so the
-// keyword heuristic remains the default. Set BARE_COUNCIL_DIRECTOR_ENABLED=1 to
-// use the director as the primary classifier.
-const directorEnabled = process.env['BARE_COUNCIL_DIRECTOR_ENABLED'] === '1';
 
 interface CouncilArgs {
   task: string;
@@ -84,8 +78,8 @@ interface ExecError extends Error {
   stderr?: string;
 }
 
-interface OllamaGenerateResponse {
-  response?: string;
+interface ChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string } }>;
 }
 
 // Split the free-form input into a task plus optional --models / --roles flags.
@@ -135,9 +129,14 @@ function classifyTask(task: string): TaskKind {
   return 'general';
 }
 
-// Ask the local director model to classify the request. Returns undefined on
-// any failure so the caller can fall back to the keyword heuristic.
+// Ask the director model to classify the request. Returns undefined on any
+// failure (including no key provisioned) so the caller falls back to the
+// keyword heuristic.
 async function directorClassify(task: string): Promise<TaskKind | undefined> {
+  const apiKey = process.env['BARE_COUNCIL_DIRECTOR_API_KEY'];
+  if (!apiKey) {
+    return undefined;
+  }
   const prompt = [
     'Classify the request into exactly one category: code, review, reasoning, writing, or general.',
     'Reply with only that single word.',
@@ -146,21 +145,38 @@ async function directorClassify(task: string): Promise<TaskKind | undefined> {
   ].join(NL);
 
   try {
-    const res = await fetch(`${DIRECTOR_BASE_URL}/api/generate`, {
+    const res = await fetch(`${DIRECTOR_BASE_URL}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
         model: DIRECTOR_MODEL,
-        prompt,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a request classifier. Reply with exactly one word: code, review, reasoning, writing, or general.',
+          },
+          { role: 'user', content: prompt },
+        ],
         stream: false,
+        temperature: 0,
+        // deepseek-v4-flash is a reasoning model: it emits reasoning_content
+        // first, so a small max_tokens makes it hit "length" with empty content.
+        // Give it room to finish and emit the single-word answer.
+        max_tokens: 256,
       }),
       signal: AbortSignal.timeout(DIRECTOR_TIMEOUT_MS),
     });
     if (!res.ok) {
       return undefined;
     }
-    const data = (await res.json()) as OllamaGenerateResponse;
-    const raw = String(data.response ?? '').trim().toLowerCase();
+    const data = (await res.json()) as ChatCompletionResponse;
+    const raw = String(data.choices?.[0]?.message?.content ?? '')
+      .trim()
+      .toLowerCase();
     const word = raw.split(/\s+/)[0];
     for (const kind of DIRECTOR_KINDS) {
       if (kind === word) {
@@ -188,9 +204,7 @@ export const councilCommand: SlashCommand = {
       return;
     }
 
-    const kind = directorEnabled
-      ? ((await directorClassify(parsed.task)) ?? classifyTask(parsed.task))
-      : classifyTask(parsed.task);
+    const kind = (await directorClassify(parsed.task)) ?? classifyTask(parsed.task);
     const preset = COUNCIL_PRESETS[kind];
     const models = parsed.models ?? preset.models;
     const roles = parsed.roles ?? preset.roles;
