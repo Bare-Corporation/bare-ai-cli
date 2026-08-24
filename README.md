@@ -1,134 +1,91 @@
-![Bare AI Interface](assets/demo.png)
+# Bare AI CLI
 
-# 🛡️ Bare AI CLI
-
-**A Fully Sovereign, Local, Agentic Terminal Assistant**
-
-Bare AI CLI is an aggressively re-engineered fork of the Google Gemini CLI. It
-strips out the hardcoded cloud dependencies and replaces them with a sovereign,
-local-first agentic engine.
-
-Designed to run in secure datacenter/homelab environments (like Proxmox) and
-route through local inference engines (like Ollama), Bare AI CLI transforms a
-standard conversational TUI into an autonomous Linux sysadmin capable of
-executing shell commands, reading files, and diagnosing system issues in
-real-time.
+Bare AI CLI is a fork of the Google Gemini CLI that replaces the hardcoded cloud
+dependencies with a local-first, agentic engine. It is designed for secure
+datacenter and homelab environments (such as Proxmox) and routes through local
+inference servers (such as Ollama). The CLI exposes a terminal interface capable
+of executing shell commands, reading files, and diagnosing system state through
+tool use.
 
 ---
 
-## ✨ Core Features
+## Architecture
 
-- **🔌 Universal OpenAI Compatibility:** A complete drop-in replacement
-  (`BareAiClient`) for the Gemini backend, allowing the CLI to speak to any
-  standard `/v1/chat/completions` endpoint (Ollama, vLLM, LM Studio, etc.).
-- **🤖 Autonomous Agentic Loop:** The model isn't just a chatbot; it has active
-  access to your system. It can autonomously use tools like `run_shell_command`,
-  `read_file`, `write_file`, and `list_directory` to perform tasks, recover from
-  its own errors, and summarize results.
-- **🪶 Dynamic "Lean Mode" for Tiny Models:** Automatically detects models under
-  8B parameters (e.g., `granite4:tiny-h`) and aggressively prunes tool schemas,
-  drops optional parameters, and injects expanded `num_ctx` to prevent context
-  window exhaustion.
-- **📜 Constitution-Driven:** Agent identity and prime directives are loaded
-  dynamically from a local markdown file (`~/.bare-ai/constitution.md`),
-  ensuring the model stays in character and prioritizes tool execution.
-- **🔐 Enterprise Security:** Out-of-the-box support for HashiCorp Vault
-  (AppRole) to dynamically inject endpoint URLs, models, and API keys without
-  leaving traces in bash history.
-- **🐛 Persistent Diagnostic Tracing:** Bypasses TUI screen-clearing by writing
-  raw JSON payloads, context token usage, and system states to a persistent
-  `bare-ai-trace.log` file.
-- **🔍 Sovereign Web Search:** Built-in web search via a self-hosted
-  [SearXNG](https://searxng.github.io/searxng/) instance. Set
-  `BARE_AI_SEARCH_URL` to route all searches through your own infrastructure
-  with zero data leaving your network. Falls back to Google Search via Gemini
-  API when unset.
+Bare AI CLI intercepts the Google SDK calls in the CLI's routing layer:
 
----
-
-## 🏗️ Architecture
-
-Bare AI CLI works by intercepting the standard Google SDK calls within the CLI's
-routing layer.
-
-1. **The Intercept:** `BareAiClient` captures the prompt and active tool
+1. **Intercept** — `BareAiClient` captures the prompt and the active tool
    registry.
-2. **The Translation:** It translates Google's `FunctionDeclarations` into
-   standard OpenAI tool schemas, stripping bloat if "Lean Mode" is active.
-3. **The Execution:** It POSTs to the local Ollama instance. If the model
-   responds with `tool_calls`, the client executes the local bash/filesystem
-   tool, captures the `stdout`/`stderr`, and feeds it back to the model.
-4. **The Yield:** Once the model completes its reasoning loop, the final
-   plain-text summary is yielded back to the beautiful Terminal UI.
+2. **Translate** — Google `FunctionDeclarations` are converted to OpenAI tool
+   schemas, with schema pruning when "Lean Mode" is active.
+3. **Execute** — requests are posted to the configured `/v1/chat/completions`
+   endpoint. When the model returns `tool_calls`, the client runs the
+   corresponding local shell or filesystem tool and feeds the result back.
+4. **Yield** — the final plain-text summary is returned to the terminal UI.
 
 ---
 
-## 🚀 Installation & Build
+## Features
 
-1. Prerequisites
+- **OpenAI-compatible client** — `BareAiClient` is a drop-in replacement for the
+  Gemini backend and targets any `/v1/chat/completions` endpoint (Ollama, vLLM,
+  LM Studio, and others).
+- **Agentic loop** — the model uses tools (`run_shell_command`, `read_file`,
+  `write_file`, `list_directory`) to perform tasks, recover from errors, and
+  summarize results.
+- **Lean Mode** — models under 8B parameters are detected automatically and tool
+  schemas are pruned to avoid context-window exhaustion.
+- **Constitution-driven** — agent identity and directives are loaded from a
+  local markdown file (`~/.bare-ai/constitution.md`).
+- **Vault / OpenBao integration** — endpoint URLs, model names, and API keys are
+  injected at runtime via AppRole and are not written to shell history.
+- **Diagnostic tracing** — raw request payloads, token usage, and system state
+  are written to a persistent `bare-ai-trace.log`.
+- **Sovereign web search** — routes search through a self-hosted SearXNG
+  instance (`BARE_AI_SEARCH_URL`), falling back to Google Search when unset.
 
-- **Node.js**: v20.0 or higher
-- **npm**: v10.0 or higher _(If you are on an older OS, you may need to upgrade
-  Node using `nvm` or the `n` package manager before installing)._
+---
 
-## IMPORTANT NOTE:
+## Installation
 
-> 💡 **Highly Recommended: Use the Bare AI Agent Installer** Instead of
-> installing the CLI manually, we recommend installing the
-> [Bare AI Agent](https://github.com/Cian-CloudIntCorp/bare-ai-agent) first. Its
-> automated worker script will verify your environment, seamlessly upgrade older
-> NPM versions, and automatically build this CLI for you. `bare-ai-cli` and
-> `bare-ai-agent` are designed to be used together for the full autonomous
-> experience.
+Prerequisites:
 
-2. Clone the repository\*\*
+- **Node.js** v20.0 or higher
+- **npm** v10.0 or higher
+
+The [Bare AI Agent](https://github.com/Bare-Corporation/bare-ai-agent) installer
+can build and configure the CLI automatically and is the recommended path for a
+full deployment.
+
+To build manually:
 
 ```bash
-git clone https://github.com/Cian-CloudIntCorp/bare-ai-cli.git
-```
-
-3. Navigate and install dependencies
-
-```bash
+git clone https://github.com/Bare-Corporation/bare-ai-cli.git
 cd bare-ai-cli
 npm install
-```
-
-4. Build the monorepo packages
-
-```bash
 npm run build && npm run bundle
-```
-
-5. Link the package globally (Note: As a fork, this safely overwrites legacy
-   'gemini' binaries)
-
-```bash
 sudo npm link --force
 ```
 
-## ⚙️ Configuration
+`npm link --force` overwrites any legacy `gemini` binaries installed by the
+original CLI.
 
-Bare AI CLI is highly configurable via Environment Variables. These can be set
-manually, loaded via a .env file, or injected via the included sovereign.js
-Vault wrapper.
+---
 
-Core Variables BARE_AI_ENDPOINT - The chat completions URL (Default:
-http://localhost:11434/v1/chat/completions)
+## Configuration
 
-BARE_AI_MODEL - The model string (e.g., granite4:tiny-h, llama3:8b)
+Configuration is provided through environment variables, a `.env` file, or the
+`sovereign.js` Vault/OpenBao wrapper.
 
-BARE_AI_API_KEY - Optional bearer token (Default: none)
+| Variable               | Purpose                                 | Default                                      |
+| ---------------------- | --------------------------------------- | -------------------------------------------- |
+| `BARE_AI_ENDPOINT`     | Chat completions URL                    | `http://localhost:11434/v1/chat/completions` |
+| `BARE_AI_MODEL`        | Model string (e.g., `granite4:tiny-h`)  | —                                            |
+| `BARE_AI_API_KEY`      | Optional bearer token                   | none                                         |
+| `BARE_AI_CONSTITUTION` | Path to the system prompt markdown file | —                                            |
+| `BARE_AI_LEAN_TOOLS`   | Force tool pruning on/off               | auto-detected                                |
+| `DEBUG_BARE_AI`        | Verbose tracing                         | false                                        |
 
-BARE_AI_CONSTITUTION - Absolute path to your system prompt markdown file.
-
-BARE_AI_LEAN_TOOLS - Set to true to force strict tool pruning, or false to
-disable. (Auto-detects based on model name by default).
-
-DEBUG_BARE_AI - Set to true to enable verbose output in bare-ai-trace.log.
-
-Vault Integration (sovereign.js) If using HashiCorp Vault to secure your
-datacenter endpoints, run this to export your credentials:
+Vault/OpenBao credentials:
 
 ```bash
 export VAULT_ROLE_ID="your-approle-role-id"
@@ -136,50 +93,33 @@ export VAULT_SECRET_ID="your-approle-secret-id"
 export VAULT_SECRET_PATH="secret/data/granite/config"
 ```
 
-## 💻 Usage
+---
 
-Agentic Mode (Recommended) Best used with capable local models like IBM Granite
-4 (tiny-h) or Llama 3 (8B). The agent will execute shell commands and read files
-autonomously.
+## Usage
 
-1. Export your constitution path
+Agentic mode:
 
 ```bash
 export BARE_AI_CONSTITUTION="/home/user/.bare-ai/constitution.md"
-```
-
-2. Launch the agent
-
-```bash
 node sovereign.js
 ```
 
-Example Prompts:
+Example prompts:
 
-"Ping 8.8.8.8 four times and report the latency."
+- "Ping 8.8.8.8 four times and report the latency."
+- "Check the systemd journal for the last hour and explain why the container
+  crashed."
+- "Scan the subnet and list active hosts."
 
-"Check the systemd journal for the last hour and tell me why my Docker container
-crashed."
-
-"Run a full network scan on my subnet and list active IPs."
-
-Headless / Automation Mode You can run the CLI in non-interactive mode using the
---prompt (-p) flag, making it perfect for cron jobs and autonomous daily
-reporting.
+Headless mode (`--prompt` / `-p`), suitable for cron jobs:
 
 ```bash
 node sovereign.js -p "Check disk space and CPU temperatures, then write a summary to ~/daily_report.md"
 ```
 
-📝 License This project is licensed under the Apache License 2.0. Originally
-forked from the Google Gemini CLI, modified and rewritten for local sovereignty
+---
 
-## by the Cloud Integration Corporation
+## License
 
-```text
-    ____ _                  _ _       _         ____
-   / ___| | ___  _   _  ___| (_)_ __ | |_      / ___|___
-  | |   | |/ _ \| | | |/ __| | | '_ \| __|     | |   / _ \
-  | |___| | (_) | |_| | (__| | | | | | |_      | |__| (_) |
-   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|      \____\___/
-```
+Apache-2.0. This project is a derivative work of the Google Gemini CLI, modified
+for local, sovereign operation.
