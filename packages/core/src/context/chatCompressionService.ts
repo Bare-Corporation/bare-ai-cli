@@ -287,7 +287,14 @@ export class ChatCompressionService {
     const trigger = force ? PreCompressTrigger.Manual : PreCompressTrigger.Auto;
     await config.getHookSystem()?.firePreCompressEvent(trigger);
 
-    const originalTokenCount = chat.getLastPromptTokenCount();
+    const fullOriginalHistory = await getInitialChatHistory(config, [
+      ...curatedHistory,
+    ]);
+    const originalTokenCount = await calculateRequestTokenCount(
+      fullOriginalHistory.flatMap((c) => c.parts || []),
+      config.getContentGenerator(),
+      model,
+    );
 
     // Don't compress if not forced and we are under the limit.
     if (!force) {

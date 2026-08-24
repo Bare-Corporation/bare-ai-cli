@@ -262,7 +262,7 @@ import {
   validatePlanPath,
   writeToStderr,
   writeToStdout
-} from "./chunk-XF2KAQMB.js";
+} from "./chunk-BQMRT4OS.js";
 import {
   require_undici
 } from "./chunk-A7S6ORWX.js";
@@ -84501,7 +84501,7 @@ var SubagentHistoryMessage = ({
 ] });
 
 // packages/cli/src/generated/git-commit.ts
-var GIT_COMMIT_INFO = "f337f1507";
+var GIT_COMMIT_INFO = "5ce9a03ee";
 
 // packages/cli/src/ui/components/AboutBox.tsx
 var import_jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
@@ -109192,6 +109192,9 @@ var DEFAULT_PLAN = {
   roles: ["Senior Engineer", "Critical Reviewer"],
   rounds: 1
 };
+function isExecError(e) {
+  return typeof e === "object" && e !== null && ("stderr" in e || "code" in e || "message" in e);
+}
 function parseCouncilArgs(input) {
   const tokens = input.trim().split(/\s+/).filter(Boolean);
   const task = [];
@@ -109232,9 +109235,13 @@ async function runCouncil(argv) {
     timeout: COUNCIL_TIMEOUT_MS,
     maxBuffer: 10 * 1024 * 1024
   });
-  return JSON.parse(stdout);
+  const parsed = parseJsonObject(stdout);
+  if (!parsed) {
+    throw new Error("council.py returned unparseable output");
+  }
+  return parsed;
 }
-function extractPlanJson(text) {
+function parseJsonObject(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenced ? fenced[1] : text;
   const start = candidate.indexOf("{");
@@ -109284,10 +109291,46 @@ async function composerPlan(task) {
       "--json"
     ]);
     const finalOutput = result.stages?.[0]?.final_output ?? "";
-    return parsePlan(extractPlanJson(finalOutput));
+    return parsePlan(parseJsonObject(finalOutput));
   } catch {
     return { ...DEFAULT_PLAN };
   }
+}
+function formatCouncilResult(result) {
+  const stages = result.stages ?? [];
+  const lines = [
+    `BARE-AI COUNCIL RESULT - job ${result.job_id}`,
+    `Agreed: ${result.agreed ? "yes" : "no"} | duration ${result.duration_seconds ?? "?"}s | cost ${result.cost_usd ?? "?"} USD`
+  ];
+  for (const stage of stages) {
+    lines.push("");
+    lines.push(
+      `${stage.agreed ? "AGREED" : "DISAGREED"} - ${stage.stage} (rounds ${stage.rounds})`
+    );
+    lines.push(String(stage.final_output ?? "(no output)"));
+  }
+  return lines.join(NL);
+}
+function filterPlanToAllowed(plan, allowed) {
+  const allowedSet = new Set(allowed);
+  const models = [];
+  const roles = [];
+  plan.models.forEach((m2, i) => {
+    if (allowedSet.has(m2)) {
+      models.push(m2);
+      roles.push(plan.roles[i] ?? "contributor");
+    }
+  });
+  if (models.length === 0) {
+    for (const m2 of allowed) {
+      models.push(m2);
+      roles.push("contributor");
+    }
+  }
+  if (models.length === 0) {
+    return null;
+  }
+  return { models, roles, rounds: plan.rounds };
 }
 var councilCommand = {
   name: "council",
@@ -109342,21 +109385,45 @@ var councilCommand = {
         String(rounds),
         "--json"
       ]);
-      const stages = result.stages ?? [];
-      const lines = [
-        `BARE-AI COUNCIL RESULT - job ${result.job_id}`,
-        `Agreed: ${result.agreed ? "yes" : "no"} | duration ${result.duration_seconds ?? "?"}s | cost ${result.cost_usd ?? "?"} USD`
-      ];
-      for (const stage of stages) {
-        lines.push("");
-        lines.push(
-          `${stage.agreed ? "AGREED" : "DISAGREED"} - ${stage.stage} (rounds ${stage.rounds})`
-        );
-        lines.push(String(stage.final_output ?? "(no output)"));
-      }
-      context.ui.addItem({ type: "info" /* INFO */, text: lines.join(NL) });
+      context.ui.addItem({ type: "info" /* INFO */, text: formatCouncilResult(result) });
     } catch (err) {
       const e = err;
+      const stderrText = String(e.stderr || "");
+      const gate = parseJsonObject(stderrText);
+      const requiresTopup = gate?.["requires_topup"];
+      const allowedModels = gate?.["allowed_models"];
+      if (requiresTopup === true && Array.isArray(allowedModels) && allowedModels.length > 0) {
+        const filtered = filterPlanToAllowed(
+          { models, roles, rounds },
+          allowedModels.filter((x) => typeof x === "string")
+        );
+        if (filtered) {
+          const skipped = models.filter((m2) => !filtered.models.includes(m2));
+          context.ui.addItem({
+            type: "info" /* INFO */,
+            text: `Premium models unavailable on your plan${skipped.length ? " (" + skipped.join(", ") + ")" : ""} \u2014 running the Council on your free-tier models. Add credits to unlock premium models.`
+          });
+          try {
+            const retryResult = await runCouncil([
+              parsed.task,
+              "--models",
+              ...filtered.models,
+              "--roles",
+              ...filtered.roles,
+              "--rounds",
+              String(filtered.rounds),
+              "--json"
+            ]);
+            context.ui.addItem({ type: "info" /* INFO */, text: formatCouncilResult(retryResult) });
+            return;
+          } catch (re2) {
+            const reErr = isExecError(re2) ? re2 : new Error(String(re2));
+            const rd = reErr.stderr || reErr.message;
+            context.ui.addItem({ type: "error" /* ERROR */, text: `Council retry failed: ${rd}` });
+            return;
+          }
+        }
+      }
       const detail = e.stderr || e.message;
       context.ui.addItem({ type: "error" /* ERROR */, text: `[council] failed: ${detail}` });
     }
@@ -114348,7 +114415,7 @@ Use /mcp auth <server-name> to authenticate.`
         type: "info",
         text: `Starting OAuth authentication for MCP server '${serverName}'...`
       });
-      const { MCPOAuthProvider } = await import("./dist-Z2YZW4XR.js");
+      const { MCPOAuthProvider } = await import("./dist-YEJZZRH4.js");
       let oauthConfig = server.oauth;
       if (!oauthConfig) {
         oauthConfig = { enabled: false };
@@ -126866,7 +126933,7 @@ ${queuedText}` : queuedText;
       if (keyMatchers2["app.showErrorDetails" /* SHOW_ERROR_DETAILS */](key)) {
         if (settings.merged.general.devtools) {
           void (async () => {
-            const { toggleDevToolsPanel } = await import("./devtoolsService-KZNRL67S.js");
+            const { toggleDevToolsPanel } = await import("./devtoolsService-CARRZUUC.js");
             await toggleDevToolsPanel(
               config,
               showErrorDetails,
@@ -136461,7 +136528,7 @@ async function runNonInteractive({
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-KZNRL67S.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-CARRZUUC.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -136912,7 +136979,7 @@ async function runNonInteractive2(params) {
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-KZNRL67S.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-CARRZUUC.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -141529,7 +141596,7 @@ ${finalArgs[promptIndex + 1]}`;
     await config.storage.initialize();
     adminControlsListner.setConfig(config);
     if (config.isInteractive() && settings.merged.general.devtools) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-KZNRL67S.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-CARRZUUC.js");
       await setupInitialActivityLogger(config);
     }
     registerTelemetryConfig(config);
