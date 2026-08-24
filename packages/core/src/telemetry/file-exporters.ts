@@ -64,6 +64,10 @@ export class FileLogExporter extends FileExporter implements LogRecordExporter {
       });
     });
   }
+
+  async forceFlush(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 export class FileMetricExporter
