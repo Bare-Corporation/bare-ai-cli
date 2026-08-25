@@ -16,6 +16,9 @@ const COUNCIL_BIN = process.env['BARE_COUNCIL_BIN'] || 'council.py';
 const COUNCIL_TIMEOUT_MS = 15 * 60 * 1000;
 const NL = String.fromCharCode(10);
 
+// Where users top up credits or subscribe to a plan (Pro/Business).
+const BILLING_URL = 'https://bare-ai.net/dashboard/workspaces/default/cost';
+
 // The "Composer" is a single-model Council pass (deepseek-v4-flash, one round)
 // that reads the user's plain-text request and writes out the plan — which
 // models, which roles, and how many debate rounds — for the real multi-model
@@ -135,6 +138,10 @@ async function runCouncil(argv: string[]): Promise<CouncilResult> {
 
 // Extract the first JSON object from free-form output (tolerates markdown fences
 // and surrounding prose, e.g. council.py's "[council] ..." progress lines).
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function parseJsonObject(text: string): Record<string, unknown> | undefined {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenced ? fenced[1] : text;
@@ -144,7 +151,8 @@ function parseJsonObject(text: string): Record<string, unknown> | undefined {
     return undefined;
   }
   try {
-    return JSON.parse(candidate.slice(start, end + 1));
+    const parsed: unknown = JSON.parse(candidate.slice(start, end + 1));
+    return isRecord(parsed) ? parsed : undefined;
   } catch {
     return undefined;
   }
@@ -163,11 +171,17 @@ function parsePlan(raw: Record<string, unknown> | undefined): CouncilPlan {
     ? rawRoles.filter((r): r is string => typeof r === 'string')
     : [];
   const rounds =
-    typeof rawRounds === 'number' && Number.isInteger(rawRounds) && rawRounds >= 1
+    typeof rawRounds === 'number' &&
+    Number.isInteger(rawRounds) &&
+    rawRounds >= 1
       ? rawRounds
       : DEFAULT_PLAN.rounds;
 
-  if (models.length === 0 || roles.length === 0 || models.length !== roles.length) {
+  if (
+    models.length === 0 ||
+    roles.length === 0 ||
+    models.length !== roles.length
+  ) {
     return { ...DEFAULT_PLAN };
   }
   return { models, roles, rounds };
@@ -311,9 +325,12 @@ export const councilCommand: SlashCommand = {
         '--json',
       ]);
 
-      context.ui.addItem({ type: MessageType.INFO, text: formatCouncilResult(result) });
+      context.ui.addItem({
+        type: MessageType.INFO,
+        text: formatCouncilResult(result),
+      });
     } catch (err) {
-      const e = err as ExecError;
+      const e: ExecError = isExecError(err) ? err : new Error(String(err));
       // Credit gate: if the Council rejected premium models for a no-credit
       // account, re-run on the allowed (free-tier) models and tell the user.
       const stderrText = String(e.stderr || '');
@@ -333,7 +350,7 @@ export const councilCommand: SlashCommand = {
           const skipped = models.filter((m) => !filtered.models.includes(m));
           context.ui.addItem({
             type: MessageType.INFO,
-            text: `Premium models unavailable on your plan${skipped.length ? ' (' + skipped.join(', ') + ')' : ''} — running the Council on your free-tier models. Add credits to unlock premium models.`,
+            text: `Premium models unavailable on your plan${skipped.length ? ' (' + skipped.join(', ') + ')' : ''} — running the Council on your free-tier models now. To unlock premium models, add credits or subscribe at ${BILLING_URL}, then re-run your command.`,
           });
           try {
             const retryResult = await runCouncil([
@@ -346,18 +363,29 @@ export const councilCommand: SlashCommand = {
               String(filtered.rounds),
               '--json',
             ]);
-            context.ui.addItem({ type: MessageType.INFO, text: formatCouncilResult(retryResult) });
+            context.ui.addItem({
+              type: MessageType.INFO,
+              text: formatCouncilResult(retryResult),
+            });
             return;
           } catch (re) {
-            const reErr: ExecError = isExecError(re) ? re : new Error(String(re));
+            const reErr: ExecError = isExecError(re)
+              ? re
+              : new Error(String(re));
             const rd = reErr.stderr || reErr.message;
-            context.ui.addItem({ type: MessageType.ERROR, text: `Council retry failed: ${rd}` });
+            context.ui.addItem({
+              type: MessageType.ERROR,
+              text: `Council retry failed: ${rd}${String.fromCharCode(10)}If you're out of credit, add credits or subscribe at ${BILLING_URL}, then re-run.`,
+            });
             return;
           }
         }
       }
       const detail = e.stderr || e.message;
-      context.ui.addItem({ type: MessageType.ERROR, text: `[council] failed: ${detail}` });
+      context.ui.addItem({
+        type: MessageType.ERROR,
+        text: `[council] failed: ${detail}`,
+      });
     }
   },
 };
