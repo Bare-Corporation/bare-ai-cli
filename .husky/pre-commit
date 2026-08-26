@@ -1,3 +1,12 @@
+# Guard: refuse to commit a non-blank BARE_AI.md (prevents leaking live role data)
+if ! git diff --cached --quiet -- BARE_AI.md; then
+  if [ -s BARE_AI.md ]; then
+    echo 'BLOCKED: BARE_AI.md must be blank when committed.'
+    echo 'Live role data belongs in ~/.bare-ai/role.md (or ~/.gemini/BARE_AI.md), not in the repo.'
+    exit 1
+  fi
+fi
+
 npm run pre-commit || {
   echo ''
   echo '===================================================='
