@@ -262,7 +262,7 @@ import {
   validatePlanPath,
   writeToStderr,
   writeToStdout
-} from "./chunk-DDD7PLUZ.js";
+} from "./chunk-LIQASNRR.js";
 import {
   ACTIVATE_SKILL_TOOL_NAME,
   ASK_USER_TOOL_NAME,
@@ -84501,7 +84501,7 @@ var SubagentHistoryMessage = ({
 ] });
 
 // packages/cli/src/generated/git-commit.ts
-var GIT_COMMIT_INFO = "6e28621d0";
+var GIT_COMMIT_INFO = "2c4787708";
 
 // packages/cli/src/ui/components/AboutBox.tsx
 var import_jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
@@ -109248,6 +109248,7 @@ var execFileAsync2 = promisify5(execFile3);
 var COUNCIL_BIN = process.env["BARE_COUNCIL_BIN"] || "council.py";
 var COUNCIL_TIMEOUT_MS = 15 * 60 * 1e3;
 var NL = String.fromCharCode(10);
+var BILLING_URL = "https://bare-ai.net/dashboard/workspaces/default/cost";
 var COMPOSER_MODEL = "deepseek-v4-flash";
 var COMPOSER_ROLE = "Bare-AI Council Composer";
 var COMPOSER_ROUNDS = 1;
@@ -109311,6 +109312,9 @@ async function runCouncil(argv) {
   }
   return parsed;
 }
+function isRecord2(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 function parseJsonObject(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenced ? fenced[1] : text;
@@ -109320,7 +109324,8 @@ function parseJsonObject(text) {
     return void 0;
   }
   try {
-    return JSON.parse(candidate.slice(start, end + 1));
+    const parsed = JSON.parse(candidate.slice(start, end + 1));
+    return isRecord2(parsed) ? parsed : void 0;
   } catch {
     return void 0;
   }
@@ -109455,9 +109460,12 @@ var councilCommand = {
         String(rounds),
         "--json"
       ]);
-      context.ui.addItem({ type: "info" /* INFO */, text: formatCouncilResult(result) });
+      context.ui.addItem({
+        type: "info" /* INFO */,
+        text: formatCouncilResult(result)
+      });
     } catch (err) {
-      const e = err;
+      const e = isExecError(err) ? err : new Error(String(err));
       const stderrText = String(e.stderr || "");
       const gate = parseJsonObject(stderrText);
       const requiresTopup = gate?.["requires_topup"];
@@ -109471,7 +109479,7 @@ var councilCommand = {
           const skipped = models.filter((m2) => !filtered.models.includes(m2));
           context.ui.addItem({
             type: "info" /* INFO */,
-            text: `Premium models unavailable on your plan${skipped.length ? " (" + skipped.join(", ") + ")" : ""} \u2014 running the Council on your free-tier models. Add credits to unlock premium models.`
+            text: `Premium models unavailable on your plan${skipped.length ? " (" + skipped.join(", ") + ")" : ""} \u2014 running the Council on your free-tier models now. To unlock premium models, add credits or subscribe at ${BILLING_URL}, then re-run your command.`
           });
           try {
             const retryResult = await runCouncil([
@@ -109484,18 +109492,27 @@ var councilCommand = {
               String(filtered.rounds),
               "--json"
             ]);
-            context.ui.addItem({ type: "info" /* INFO */, text: formatCouncilResult(retryResult) });
+            context.ui.addItem({
+              type: "info" /* INFO */,
+              text: formatCouncilResult(retryResult)
+            });
             return;
           } catch (re2) {
             const reErr = isExecError(re2) ? re2 : new Error(String(re2));
             const rd = reErr.stderr || reErr.message;
-            context.ui.addItem({ type: "error" /* ERROR */, text: `Council retry failed: ${rd}` });
+            context.ui.addItem({
+              type: "error" /* ERROR */,
+              text: `Council retry failed: ${rd}${String.fromCharCode(10)}If you're out of credit, add credits or subscribe at ${BILLING_URL}, then re-run.`
+            });
             return;
           }
         }
       }
       const detail = e.stderr || e.message;
-      context.ui.addItem({ type: "error" /* ERROR */, text: `[council] failed: ${detail}` });
+      context.ui.addItem({
+        type: "error" /* ERROR */,
+        text: `[council] failed: ${detail}`
+      });
     }
   }
 };
@@ -114485,7 +114502,7 @@ Use /mcp auth <server-name> to authenticate.`
         type: "info",
         text: `Starting OAuth authentication for MCP server '${serverName}'...`
       });
-      const { MCPOAuthProvider } = await import("./dist-SIAJ5KEL.js");
+      const { MCPOAuthProvider } = await import("./dist-MLBLX22D.js");
       let oauthConfig = server.oauth;
       if (!oauthConfig) {
         oauthConfig = { enabled: false };
@@ -127003,7 +127020,7 @@ ${queuedText}` : queuedText;
       if (keyMatchers2["app.showErrorDetails" /* SHOW_ERROR_DETAILS */](key)) {
         if (settings.merged.general.devtools) {
           void (async () => {
-            const { toggleDevToolsPanel } = await import("./devtoolsService-TTVGR2UV.js");
+            const { toggleDevToolsPanel } = await import("./devtoolsService-RZSKHBXP.js");
             await toggleDevToolsPanel(
               config,
               showErrorDetails,
@@ -136598,7 +136615,7 @@ async function runNonInteractive({
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-TTVGR2UV.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-RZSKHBXP.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -137049,7 +137066,7 @@ async function runNonInteractive2(params) {
       }
     });
     if (process.env["GEMINI_CLI_ACTIVITY_LOG_TARGET"]) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-TTVGR2UV.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-RZSKHBXP.js");
       setupInitialActivityLogger(config);
     }
     const { stdout: workingStdout } = createWorkingStdio();
@@ -141666,7 +141683,7 @@ ${finalArgs[promptIndex + 1]}`;
     await config.storage.initialize();
     adminControlsListner.setConfig(config);
     if (config.isInteractive() && settings.merged.general.devtools) {
-      const { setupInitialActivityLogger } = await import("./devtoolsService-TTVGR2UV.js");
+      const { setupInitialActivityLogger } = await import("./devtoolsService-RZSKHBXP.js");
       await setupInitialActivityLogger(config);
     }
     registerTelemetryConfig(config);
