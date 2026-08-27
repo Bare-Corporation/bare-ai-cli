@@ -28,7 +28,7 @@ export class PrivateIpError extends Error {
   }
 }
 
-let defaultTimeout = 300000; // 5 minutes
+let defaultTimeout = 600000; // 10 minutes
 let currentProxy: string | undefined = undefined;
 
 // Configure default global dispatcher with higher timeouts
