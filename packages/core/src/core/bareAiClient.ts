@@ -504,7 +504,7 @@ export class BareAiClient {
     logDebug(`Model: ${activeModel} | Stream: ${useStream}`);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180_000);
+    const timeoutId = setTimeout(() => controller.abort(), 600_000);
 
     try {
       const response = await fetch(activeEndpoint, {
