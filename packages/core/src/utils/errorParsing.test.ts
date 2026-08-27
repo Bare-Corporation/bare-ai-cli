@@ -114,4 +114,32 @@ describe('parseAndFormatApiError', () => {
     const expected = '[API Error: An unknown error occurred.]';
     expect(parseAndFormatApiError(error)).toBe(expected);
   });
+
+  it('should append the /compress hint for a context-length StructuredError', () => {
+    const error: StructuredError = {
+      message:
+        'BareAiClient request failed (400): {"error":{"message":"This model\'s maximum context length is 1048576 tokens. However, you requested 1052805 tokens.","type":"invalid_request_error","param":null,"code":"invalid_request_error"}}',
+      status: 400,
+    };
+    const result = parseAndFormatApiError(error);
+    expect(result).toContain('[API Error: BareAiClient request failed');
+    expect(result).toContain(
+      'Try the command: /compress to reduce the context window and try again. If this does not work, you may need to start a new session.',
+    );
+  });
+
+  it('should append the /compress hint for a context-length JSON API error', () => {
+    const errorMessage =
+      'got status: 400. {"error":{"code":400,"message":"This model\'s maximum context length is 1048576 tokens. However, you requested 1052805 tokens.","status":"INVALID_ARGUMENT"}}';
+    const result = parseAndFormatApiError(errorMessage);
+    expect(result).toContain('maximum context length');
+    expect(result).toContain('Try the command: /compress');
+  });
+
+  it('should append the /compress hint for a plain context-length string', () => {
+    const errorMessage = "This model's maximum context length has been exceeded.";
+    const result = parseAndFormatApiError(errorMessage);
+    expect(result).toContain('maximum context length');
+    expect(result).toContain('Try the command: /compress');
+  });
 });
