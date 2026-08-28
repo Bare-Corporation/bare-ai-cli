@@ -20,7 +20,7 @@ type TokenCount = number;
 
 export const DEFAULT_TOKEN_LIMIT = 1_048_576;
 export const GEMMA_4_TOKEN_LIMIT = 256_000;
-export const QWEN_3_8_FLASH_NEXT_TOKEN_LIMIT = 8192;
+export const QWEN_3_8_FLASH_NEXT_TOKEN_LIMIT = 131072; // matches .13 llama.cpp server n_ctx (128K)
 
 export function tokenLimit(model: Model): TokenCount {
   // Add other models as they become relevant or if specified by config
