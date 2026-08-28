@@ -101,6 +101,18 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         model: 'gemma-4-26b-a4b-it',
       },
     },
+    'Qwen3.8-Flash-Next': {
+      extends: 'chat-base',
+      modelConfig: {
+        model: 'Qwen3.8-Flash-Next',
+      },
+    },
+    'qwen-flash': {
+      extends: 'Qwen3.8-Flash-Next',
+      modelConfig: {
+        model: 'Qwen3.8-Flash-Next',
+      },
+    },
 
     // Bases for the internal model configs.
     'gemini-2.5-flash-base': {
@@ -346,6 +358,21 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
       isVisible: true,
       features: { thinking: true, multimodalToolUse: false },
     },
+    'Qwen3.8-Flash-Next': {
+      displayName: 'Qwen3.8-Flash-Next',
+      tier: 'custom',
+      family: 'qwen',
+      isPreview: false,
+      isVisible: true,
+      features: { thinking: true, multimodalToolUse: false },
+    },
+    'qwen-flash': {
+      displayName: 'Qwen3.8-Flash-Next',
+      tier: 'custom',
+      isPreview: false,
+      isVisible: false,
+      features: { thinking: true, multimodalToolUse: false },
+    },
 
     // Aliases
     auto: {
@@ -397,6 +424,12 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     },
     'gemma-4-26b-a4b-it': {
       default: 'gemma-4-26b-a4b-it',
+    },
+    'Qwen3.8-Flash-Next': {
+      default: 'Qwen3.8-Flash-Next',
+    },
+    'qwen-flash': {
+      default: 'Qwen3.8-Flash-Next',
     },
 
     'gemini-3.1-pro-preview': {
