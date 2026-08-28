@@ -465,3 +465,7 @@ export function isActiveModel(
 // Gemma 4 models (batch 15)
 export const GEMMA_4_31B_IT_MODEL = 'gemma-4-31b-it';
 export const GEMMA_4_26B_A4B_IT_MODEL = 'gemma-4-26b-a4b-it';
+
+// Qwen sovereign engine models (served by bare-ai-cpu-engine .13:8081)
+export const QWEN_3_8_FLASH_NEXT_MODEL = 'Qwen3.8-Flash-Next';
+export const QWEN_MODEL_ALIAS_FLASH = 'qwen-flash';

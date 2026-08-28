@@ -29,13 +29,14 @@ export class PrivateIpError extends Error {
 }
 
 let defaultTimeout = 600000; // 10 minutes
+let defaultBodyTimeout = 2700_000; // 45 minutes - headroom for long local CPU prefill
 let currentProxy: string | undefined = undefined;
 
 // Configure default global dispatcher with higher timeouts
 setGlobalDispatcher(
   new Agent({
     headersTimeout: defaultTimeout,
-    bodyTimeout: defaultTimeout,
+    bodyTimeout: defaultBodyTimeout,
   }),
 );
 
@@ -52,7 +53,7 @@ export function updateGlobalFetchTimeouts(timeoutMs: number) {
     setGlobalDispatcher(
       new Agent({
         headersTimeout: defaultTimeout,
-        bodyTimeout: defaultTimeout,
+        bodyTimeout: defaultBodyTimeout,
       }),
     );
   }
@@ -215,7 +216,7 @@ export function setGlobalProxy(proxy: string) {
     new ProxyAgent({
       uri: proxy,
       headersTimeout: defaultTimeout,
-      bodyTimeout: defaultTimeout,
+      bodyTimeout: defaultBodyTimeout,
     }),
   );
 }

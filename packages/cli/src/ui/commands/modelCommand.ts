@@ -74,6 +74,24 @@ interface CatalogEntry {
   is_free_tier?: boolean;
 }
 
+// Baked fallback: minimal local sovereign entries used when the central
+// catalog is unreachable OR has not yet published the model. Central and
+// model.local.json entries always win; this only fills resolution gaps so
+// `/model qwen-flash` / `/model Qwen3.8-Flash-Next` still hot-swap to the
+// .13 sovereign engine (OpenAI-compatible llama.cpp server).
+const BAKED_LOCAL_MODELS: CatalogEntry[] = [
+  {
+    shortcut: 'qwen-flash',
+    model_id: 'Qwen3.8-Flash-Next',
+    display_name: 'Qwen3.8-Flash-Next (sovereign .13)',
+    provider: 'ollama',
+    is_cloud: false,
+    base_url: 'http://100.64.0.13:8081',
+    tool_capability: 'thinker',
+    is_free_tier: true,
+  },
+];
+
 // Fetch /v1/models fresh, cache to disk, fall back to cache offline.
 async function loadCatalog(): Promise<CatalogEntry[]> {
   try {
@@ -131,7 +149,8 @@ function loadLocalModels(centralShortcuts: Set<string>, centralIds: Set<string>)
   }
 }
 
-// Resolve a shortcut (or exact model_id) against merged catalog+local.
+// Resolve a shortcut (or exact model_id) against merged catalog+local,
+// then the baked fallback (last resort, so central/local always win).
 async function resolveShortcut(id: string): Promise<CatalogEntry | null> {
   const central = await loadCatalog();
   const centralShortcuts = new Set(central.map((m) => m.shortcut));
@@ -141,6 +160,8 @@ async function resolveShortcut(id: string): Promise<CatalogEntry | null> {
   return (
     all.find((m) => m.shortcut === id) ||
     all.find((m) => m.model_id === id) ||
+    BAKED_LOCAL_MODELS.find((m) => m.shortcut === id) ||
+    BAKED_LOCAL_MODELS.find((m) => m.model_id === id) ||
     null
   );
 }
