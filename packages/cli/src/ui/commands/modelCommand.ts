@@ -280,35 +280,43 @@ export const modelCommand: SlashCommand = {
       try {
         const noTools = entry.tool_capability === 'thinker';
 
-        if (!entry.is_cloud) {
-          // LOCAL OLLAMA: zero network, keyless, normalized endpoint.
-          process.env['BARE_AI_ENDPOINT'] = normalizeEndpoint(entry);
-          process.env['BARE_AI_API_KEY'] = 'none';
-          process.env['BARE_AI_MODEL'] = entry.model_id.trim();
-          process.env['BARE_AI_NO_TOOLS'] = noTools ? 'true' : 'false';
-          if (noTools) {
-            context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).` });
-          }
-          context.services.config?.setModel(entry.model_id.trim(), false);
-          coreEvents.emitModelChanged(entry.model_id.trim());
-          context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Hot-swap successful (local).` });
-          return;
+        // Prefer the user's own Vault runtime config when available (mirrors
+        // sovereign.js): a Vault base_url wins for the endpoint, otherwise the
+        // catalog entry is used. Vault unavailability (no VAULT_ADDR/VAULT_TOKEN,
+        // fetch error, or missing base_url) is not fatal — fall back to catalog.
+        let config: VaultConfig | undefined;
+        try {
+          config = await fetchVaultUpdate(entry.model_id);
+        } catch {
+          config = undefined; // Vault unavailable -> catalog fallback
         }
 
-        // CLOUD / COUNCIL: key from the user's own Vault; normalized endpoint.
-        const config = await fetchVaultUpdate(entry.model_id);
-        process.env['BARE_AI_ENDPOINT'] = normalizeEndpoint(entry);
-        process.env['BARE_AI_API_KEY'] = (config.api_key || 'none').trim();
-        process.env['BARE_AI_MODEL'] = (config.model_name || entry.model_id).trim();
+        if (config?.base_url) {
+          const vaultBase = config.base_url.trim();
+          // Same rule sovereign.js uses: keep fully-formed endpoints, else
+          // append the OpenAI-compatible completions path.
+          process.env['BARE_AI_ENDPOINT'] =
+            vaultBase.includes('completions') || vaultBase.includes('messages')
+              ? vaultBase
+              : `${vaultBase}/v1/chat/completions`;
+        } else {
+          process.env['BARE_AI_ENDPOINT'] = normalizeEndpoint(entry);
+        }
+
+        process.env['BARE_AI_API_KEY'] = (config?.api_key || 'none').trim();
+        process.env['BARE_AI_MODEL'] = (config?.model_name || entry.model_id).trim();
         process.env['BARE_AI_NO_TOOLS'] = noTools ? 'true' : 'false';
         if (noTools) {
           context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).` });
         }
 
-        const finalModel = (config.model_name || entry.model_id).trim();
+        const finalModel = (config?.model_name || entry.model_id).trim();
         context.services.config?.setModel(finalModel, false);
         coreEvents.emitModelChanged(finalModel);
-        context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Hot-swap successful.` });
+        context.ui.addItem({
+          type: MessageType.INFO,
+          text: `[sovereign] Hot-swap successful${entry.is_cloud ? '' : ' (local)'}.`,
+        });
       } catch (err: any) {
         context.ui.addItem({ type: MessageType.ERROR, text: `[sovereign] Swap failed: ${err.message}` });
       }
