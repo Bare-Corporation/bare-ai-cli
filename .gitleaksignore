@@ -1,0 +1,11 @@
+# gitleaks baseline (generated 2026-08-30, gitleaks v8.30.1, origin/main only)
+# All entries are benign test fixtures that intentionally embed fake secrets
+# to exercise sanitization/mocking paths. Do NOT add new entries here for
+# real findings - fix the leak instead.
+9d37ec877003f46e7d829baa511a208639c10ac4:packages/core/src/services/memoryService.test.ts:curl-auth-header:1201
+9d37ec877003f46e7d829baa511a208639c10ac4:packages/core/src/services/sessionSummaryUtils.test.ts:curl-auth-header:785
+3f29ee38f49a174d76cce46d9a9365c49c083460:packages/core/src/agents/browser/browserAgentInvocation.test.ts:generic-api-key:510
+e8f4f5f59a116bcecb8600a62c964c09f2f5be40:packages/core/src/tools/mcp-client.test.ts:generic-api-key:1725
+86a1a5d2df7da8068788db4193f9607e731f01a6:packages/core/src/services/environmentSanitization.test.ts:generic-api-key:108
+86a1a5d2df7da8068788db4193f9607e731f01a6:packages/core/src/services/environmentSanitization.test.ts:private-key:81
+30775ab24b6cfa488acf49e2c6ddb445cf0bcd9f:packages/core/src/telemetry/sanitize.test.ts:curl-auth-header:440
