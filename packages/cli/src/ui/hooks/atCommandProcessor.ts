@@ -638,7 +638,7 @@ function reportIgnoredFiles(
     messages.push(`Git-ignored: ${ignoredByReason['git'].join(', ')}`);
   }
   if (ignoredByReason['gemini'].length) {
-    messages.push(`Gemini-ignored: ${ignoredByReason['gemini'].join(', ')}`);
+    messages.push(`Bare-AI-ignored: ${ignoredByReason['gemini'].join(', ')}`);
   }
   if (ignoredByReason['both'].length) {
     messages.push(`Ignored by both: ${ignoredByReason['both'].join(', ')}`);

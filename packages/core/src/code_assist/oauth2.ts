@@ -230,7 +230,7 @@ async function initOauthClient(
     if (!config.isInteractive()) {
       throw new FatalAuthenticationError(
         'Manual authorization is required but the current session is non-interactive. ' +
-          'Please run the Gemini CLI in an interactive terminal to log in, ' +
+          'Please run the Bare-AI CLI in an interactive terminal to log in, ' +
           'provide a BARE_AI_API_KEY, or ensure Application Default Credentials are configured.',
       );
     }

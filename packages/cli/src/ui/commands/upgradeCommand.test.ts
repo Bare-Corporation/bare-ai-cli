@@ -16,8 +16,7 @@ import {
 } from '@bare-ai/core';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     openBrowserSecurely: vi.fn(),
@@ -48,7 +47,7 @@ describe('upgradeCommand', () => {
   it('should have the correct name and description', () => {
     expect(upgradeCommand.name).toBe('upgrade');
     expect(upgradeCommand.description).toBe(
-      'Upgrade your Gemini Code Assist tier for higher limits',
+      'Upgrade your Bare-AI tier for higher limits',
     );
   });
 

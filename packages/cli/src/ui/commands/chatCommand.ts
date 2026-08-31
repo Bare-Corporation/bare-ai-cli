@@ -35,7 +35,9 @@ const getSavedChatTags = async (
   context: CommandContext,
   mtSortDesc: boolean,
 ): Promise<ChatDetail[]> => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
   const cfg = context.services.agentContext?.config;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
   const geminiDir = cfg?.storage?.getProjectTempDir();
   if (!geminiDir) {
     return [];
@@ -105,6 +107,7 @@ const saveCommand: SlashCommand = {
     }
 
     const { logger } = context.services;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const config = context.services.agentContext?.config;
     await logger.initialize();
 
@@ -127,6 +130,7 @@ const saveCommand: SlashCommand = {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const chat = context.services.agentContext?.geminiClient?.getChat();
     if (!chat) {
       return {
@@ -136,9 +140,12 @@ const saveCommand: SlashCommand = {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const history = chat.getHistory();
     if (history.length > INITIAL_HISTORY_LENGTH) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
       const authType = config?.getContentGeneratorConfig()?.authType;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
       await logger.saveCheckpoint({ history, authType }, tag);
       return {
         type: 'message',
@@ -175,6 +182,7 @@ const resumeCheckpointCommand: SlashCommand = {
     }
 
     const { logger } = context.services;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const config = context.services.agentContext?.config;
     await logger.initialize();
     const checkpoint = await logger.loadCheckpoint(tag);
@@ -188,6 +196,7 @@ const resumeCheckpointCommand: SlashCommand = {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const currentAuthType = config?.getContentGeneratorConfig()?.authType;
     if (
       checkpoint.authType &&
@@ -288,7 +297,7 @@ const shareCommand: SlashCommand = {
   action: async (context, args): Promise<MessageActionReturn> => {
     let filePathArg = args.trim();
     if (!filePathArg) {
-      filePathArg = `gemini-conversation-${Date.now()}.json`;
+      filePathArg = `bare-ai-conversation-${Date.now()}.json`;
     }
 
     const filePath = path.resolve(filePathArg);
@@ -301,6 +310,7 @@ const shareCommand: SlashCommand = {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const chat = context.services.agentContext?.geminiClient?.getChat();
     if (!chat) {
       return {
@@ -310,6 +320,7 @@ const shareCommand: SlashCommand = {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const history = chat.getHistory();
 
     // An empty conversation has a hidden message that sets up the context for
@@ -324,6 +335,7 @@ const shareCommand: SlashCommand = {
     }
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
       await exportHistoryToFile({ history, filePath });
       return {
         type: 'message',
@@ -347,6 +359,7 @@ export const debugCommand: SlashCommand = {
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: async (context): Promise<MessageActionReturn> => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- pre-existing upstream debt (agentContext untyped)
     const req = context.services.agentContext?.config.getLatestApiRequest();
     if (!req) {
       return {
