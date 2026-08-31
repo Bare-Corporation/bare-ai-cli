@@ -92,3 +92,7 @@ my-bare-scripts/bare-python3-scripts/sync-fields.py
 # Python cache
 __pycache__/
 my-bare-scripts/bare-python3-scripts/__pycache__/
+
+# Runtime logs (never commit live session/trace data)
+*.log
+bare-ai-trace.log
