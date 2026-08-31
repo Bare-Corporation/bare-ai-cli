@@ -460,7 +460,7 @@ describe('chatCommand', () => {
       const result = await shareCommand?.action?.(mockContext, '');
       const expectedPath = path.join(
         process.cwd(),
-        'gemini-conversation-1234567890.json',
+        'bare-ai-conversation-1234567890.json',
       );
       expect(mockExport).toHaveBeenCalledWith({
         history: mockHistory,
@@ -700,8 +700,8 @@ Hi there!`;
       beforeEach(() => {
         mockGetLatestApiRequest = vi.fn();
         if (!mockContext.services.agentContext!.config) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (mockContext.services.agentContext!.config as any) = {};
+           
+          (mockContext.services.agentContext!.config) = {};
         }
         mockContext.services.agentContext!.config.getLatestApiRequest =
           mockGetLatestApiRequest;

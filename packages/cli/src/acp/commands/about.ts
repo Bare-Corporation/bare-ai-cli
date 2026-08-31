@@ -4,11 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  IdeClient,
-  UserAccountManager,
-  getVersion,
-} from '@bare-ai/core';
+import { IdeClient, UserAccountManager, getVersion } from '@bare-ai/core';
 import type {
   Command,
   CommandContext,
@@ -60,7 +56,7 @@ export class AboutCommand implements Command {
 
     return {
       name: this.name,
-      data: `Gemini CLI Info:\n${info}`,
+      data: `Bare-AI CLI Info:\n${info}`,
     };
   }
 }

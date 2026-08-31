@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AgentLoopContext } from '@bare-ai/core';
 import {
+  type AgentLoopContext,
   type Config,
   type GeminiChat,
   type ToolResult,
@@ -125,7 +125,7 @@ export class GeminiAgent {
       {
         id: AuthType.USE_GEMINI,
         name: 'Bare AI API key',
-        description: 'Use an API key with Gemini Developer API',
+        description: 'Use an API key with Bare-AI',
         _meta: {
           'api-key': {
             provider: 'google',
@@ -348,7 +348,7 @@ export class GeminiAgent {
       cwd,
       mcpServers,
     );
-
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, @typescript-eslint/no-explicit-any -- pre-existing upstream debt (SessionSelector storage cast)
     const sessionSelector = new SessionSelector(config.storage as any);
     const { sessionData, sessionPath } =
       await sessionSelector.resolveSession(sessionId);
@@ -809,7 +809,9 @@ export class Session {
     parts: Part[],
   ): Promise<boolean> {
     const gitService = await this.config.getGitService();
-    const commandContext = { agentContext: this.config as unknown as AgentLoopContext,
+    /* eslint-disable @typescript-eslint/no-unsafe-type-assertion -- pre-existing upstream debt (agentContext bridge cast) */
+    const commandContext = {
+      agentContext: this.config as unknown as AgentLoopContext,
       config: this.config,
       settings: this.settings,
       git: gitService,
@@ -820,6 +822,7 @@ export class Session {
         });
       },
     };
+    /* eslint-enable @typescript-eslint/no-unsafe-type-assertion */
 
     return this.commandHandler.handleCommand(commandText, commandContext);
   }
