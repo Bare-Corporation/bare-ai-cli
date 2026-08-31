@@ -11,7 +11,7 @@
   "private": "true",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Cian-CloudIntCorp/bare-ai-cli.git"
+    "url": "git+https://github.com/Bare-Corporation/bare-ai-cli.git"
   },
   "config": {
     "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.1.0-bare-ai"
@@ -85,7 +85,7 @@
     "zod": "3.25.76"
   },
   "bin": {
-    "gemini": "bundle/bare-ai.js"
+    "bare-ai": "bundle/bare-ai.js"
   },
   "files": [
     "bundle/",
