@@ -13,9 +13,7 @@ import {
 } from '@bare-ai/core/src/ide/detect-ide.js';
 
 vi.mock('@bare-ai/core/src/ide/detect-ide.js', async () => {
-  const actual = await vi.importActual(
-    '@bare-ai/core/src/ide/detect-ide.js',
-  );
+  const actual = await vi.importActual('@bare-ai/core/src/ide/detect-ide.js');
   return {
     ...actual,
     detectIdeFromEnv: vi.fn(() => IDE_DEFINITIONS.vscode),
@@ -113,7 +111,7 @@ describe('activate', () => {
     } as vscode.Extension<unknown>);
     await activate(context);
     expect(showInformationMessageMock).toHaveBeenCalledWith(
-      'Gemini CLI Companion extension successfully installed.',
+      'Bare-AI CLI Companion extension successfully installed.',
     );
   });
 
@@ -141,7 +139,7 @@ describe('activate', () => {
     } as vscode.Extension<unknown>);
     await activate(context);
     expect(showInformationMessageMock).toHaveBeenCalledWith(
-      'Gemini CLI Companion extension successfully installed.',
+      'Bare-AI CLI Companion extension successfully installed.',
     );
   });
 
@@ -174,7 +172,7 @@ describe('activate', () => {
       await activate(context);
 
       expect(showInformationMessageMock).toHaveBeenCalledWith(
-        'A new version (1.2.0) of the Gemini CLI Companion extension is available.',
+        'A new version (1.2.0) of the Bare-AI CLI Companion extension is available.',
         'Update to latest version',
       );
     });

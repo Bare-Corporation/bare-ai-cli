@@ -193,7 +193,7 @@ describe('GitService', () => {
       await service.setupShadowGitRepository();
 
       const expectedConfigContent =
-        '[user]\n  name = Gemini CLI\n  email = bare-ai-cli@google.com\n[commit]\n  gpgsign = false\n';
+        '[user]\n  name = Bare-AI\n  email = hello@bare-ai.net\n[commit]\n  gpgsign = false\n';
       const actualConfigContent = await fs.readFile(gitConfigPath, 'utf-8');
       expect(actualConfigContent).toBe(expectedConfigContent);
     });
