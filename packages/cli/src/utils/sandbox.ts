@@ -43,6 +43,41 @@ import {
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 
+// ---------------------------------------------------------------------------
+// Secret-safe sandbox env injection.
+// Sandbox backends (docker/podman/lxc) accept environment variables via CLI
+// args, but a literal `--env KEY=value` argument exposes the value in `ps`
+// output on the host. Instead we write the secret to a 0600 temp file and
+// hand the runtime a path to it. The files are cleaned up on process exit.
+// ---------------------------------------------------------------------------
+const sandboxEnvFiles = new Set<string>();
+
+function writeSandboxEnvFile(entries: Record<string, string>): string {
+  const filePath = path.join(
+    os.tmpdir(),
+    `bare-ai-sandbox-env-${randomBytes(8).toString('hex')}`,
+  );
+  const contents = Object.entries(entries)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n');
+  fs.writeFileSync(filePath, contents, { mode: 0o600 });
+  sandboxEnvFiles.add(filePath);
+  return filePath;
+}
+
+function cleanupSandboxEnvFiles(): void {
+  for (const filePath of sandboxEnvFiles) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      // Best-effort cleanup; the file is 0600 and time-limited regardless.
+    }
+  }
+  sandboxEnvFiles.clear();
+}
+
+process.on('exit', cleanupSandboxEnvFiles);
+
 export async function start_sandbox(
   config: SandboxConfig,
   nodeArgs: string[] = [],
@@ -181,10 +216,10 @@ export async function start_sandbox(
         // proxyProcess.stdout?.on('data', (data) => {
         //   console.info(data.toString());
         // });
-        (proxyProcess)?.stderr?.on('data', (data) => {
+        proxyProcess?.stderr?.on('data', (data) => {
           debugLogger.debug(`[PROXY STDERR]: ${data.toString().trim()}`);
         });
-        proxyProcess!.on('close', (code, signal) => {
+        proxyProcess.on('close', (code, signal) => {
           if (sandboxProcess?.pid) {
             process.kill(-sandboxProcess.pid, 'SIGTERM');
           }
@@ -474,12 +509,13 @@ export async function start_sandbox(
       );
     }
 
-    // copy BARE_AI_API_KEY(s)
+    // copy BARE_AI_API_KEY via a 0600 env file so the value never appears in
+    // `ps` output (a literal `--env KEY=value` arg would be visible).
     if (process.env['BARE_AI_API_KEY']) {
-      args.push('--env', `BARE_AI_API_KEY=${process.env['BARE_AI_API_KEY']}`);
-    }
-    if (process.env['BARE_AI_API_KEY']) {
-      args.push('--env', `BARE_AI_API_KEY=${process.env['BARE_AI_API_KEY']}`);
+      const envFile = writeSandboxEnvFile({
+        BARE_AI_API_KEY: process.env['BARE_AI_API_KEY'],
+      });
+      args.push('--env-file', envFile);
     }
 
     // copy GOOGLE_GEMINI_BASE_URL and GOOGLE_VERTEX_BASE_URL
@@ -714,12 +750,12 @@ export async function start_sandbox(
       // proxyProcess.stdout?.on('data', (data) => {
       //   console.info(data.toString());
       // });
-      (proxyProcess)?.stderr?.on('data', (data) => {
+      proxyProcess?.stderr?.on('data', (data) => {
         debugLogger.debug(`[PROXY STDERR]: ${data.toString().trim()}`);
       });
-      proxyProcess!.on('close', (code, signal) => {
+      proxyProcess.on('close', (code, signal) => {
         if (sandboxProcess?.pid) {
-          process.kill(-sandboxProcess!.pid, 'SIGTERM');
+          process.kill(-sandboxProcess.pid, 'SIGTERM');
         }
         throw new FatalSandboxError(
           `Proxy container command '${command} ${proxyContainerArgs.join(' ')}' exited with code ${code}, signal ${signal}`,
@@ -743,7 +779,7 @@ export async function start_sandbox(
     });
 
     return await new Promise<number>((resolve, reject) => {
-      sandboxProcess!.on('error', (err) => {
+      sandboxProcess.on('error', (err) => {
         coreEvents.emitFeedback('error', 'Sandbox process error', err);
         reject(err);
       });
@@ -873,9 +909,11 @@ async function start_lxc_sandbox(
   process.on('exit', removeDevice);
 
   // Build the environment variable arguments for `lxc exec`.
+  // BARE_AI_API_KEY is intentionally NOT in this list: it is injected via a
+  // 0600 env file pushed into the container (see below) so the value never
+  // appears in `ps` output.
   const envArgs: string[] = [];
   const envVarsToForward: Record<string, string | undefined> = {
-    BARE_AI_API_KEY: process.env['BARE_AI_API_KEY'],
     GOOGLE_GEMINI_BASE_URL: process.env['GOOGLE_GEMINI_BASE_URL'],
     GOOGLE_VERTEX_BASE_URL: process.env['GOOGLE_VERTEX_BASE_URL'],
     GOOGLE_GENAI_USE_VERTEXAI: process.env['GOOGLE_GENAI_USE_VERTEXAI'],
@@ -926,6 +964,38 @@ async function start_lxc_sandbox(
   // Build the command entrypoint (same logic as Docker path).
   const finalEntrypoint = entrypoint(workdir, cliArgs);
 
+  // BARE_AI_API_KEY: `lxc exec --env KEY=value` would put the secret in the
+  // host process argv (visible in `ps`). Instead, push a 0600 env file into
+  // the container and source it via a sh wrapper that `exec`s the real
+  // entrypoint. If the push fails, fall back to running without the key
+  // (the sandboxed CLI will report its own auth error).
+  const remoteEnvFile = '/tmp/bare-ai-sandbox-env';
+  let envSourcePrefix: string[] = [];
+  if (process.env['BARE_AI_API_KEY']) {
+    const envFile = writeSandboxEnvFile({
+      BARE_AI_API_KEY: process.env['BARE_AI_API_KEY'],
+    });
+    try {
+      execFileSync(
+        'lxc',
+        ['file', 'push', envFile, `${containerName}${remoteEnvFile}`],
+        { timeout: 10000, stdio: 'ignore' },
+      );
+      envSourcePrefix = [
+        'sh',
+        '-c',
+        'set -a; [ -f /tmp/bare-ai-sandbox-env ] && . /tmp/bare-ai-sandbox-env; set +a; exec "$@"',
+        'bare-ai-sandbox-entry',
+      ];
+    } catch (err) {
+      debugLogger.warn(
+        `Failed to push sandbox env file into LXC container: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+
   // Build the full lxc exec command args.
   const args = [
     'exec',
@@ -934,6 +1004,7 @@ async function start_lxc_sandbox(
     workdir,
     ...envArgs,
     '--',
+    ...envSourcePrefix,
     ...finalEntrypoint,
   ];
 
