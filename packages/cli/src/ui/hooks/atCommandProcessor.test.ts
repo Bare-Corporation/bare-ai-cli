@@ -725,7 +725,7 @@ describe('handleAtCommand', () => {
         `Path ${geminiIgnoredFile} is gemini-ignored and will be skipped.`,
       );
       expect(mockOnDebugMessage).toHaveBeenCalledWith(
-        `Ignored 1 files:\nGemini-ignored: ${geminiIgnoredFile}`,
+        `Ignored 1 files:\nBare-AI-ignored: ${geminiIgnoredFile}`,
       );
     });
   });
@@ -797,7 +797,7 @@ describe('handleAtCommand', () => {
       `Path ${geminiIgnoredFile} is gemini-ignored and will be skipped.`,
     );
     expect(mockOnDebugMessage).toHaveBeenCalledWith(
-      `Ignored 1 files:\nGemini-ignored: ${geminiIgnoredFile}`,
+      `Ignored 1 files:\nBare-AI-ignored: ${geminiIgnoredFile}`,
     );
   });
 
