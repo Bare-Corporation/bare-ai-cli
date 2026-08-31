@@ -1,11 +1,11 @@
 {
   "name": "@bare-ai/core",
   "version": "0.1.0-bare-ai",
-  "description": "Gemini CLI Core",
+  "description": "Bare AI CLI Core",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Cian-CloudIntCorp/bare-ai-cli.git"
+    "url": "git+https://github.com/Bare-Corporation/bare-ai-cli.git"
   },
   "type": "module",
   "main": "dist/index.js",

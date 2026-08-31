@@ -1,13 +1,13 @@
 {
   "name": "bare-ai-cli-vscode-ide-companion",
-  "displayName": "Gemini CLI Companion",
-  "description": "Enable Gemini CLI with direct access to your IDE workspace.",
+  "displayName": "Bare AI CLI Companion",
+  "description": "Enable Bare AI CLI with direct access to your IDE workspace.",
   "version": "0.1.0-bare-ai",
   "publisher": "google",
   "icon": "assets/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/google-gemini/gemini-cli.git",
+    "url": "https://github.com/Bare-Corporation/bare-ai-cli.git",
     "directory": "packages/vscode-ide-companion"
   },
   "engines": {
@@ -32,12 +32,12 @@
   ],
   "contributes": {
     "configuration": {
-      "title": "Gemini CLI",
+      "title": "Bare AI CLI",
       "properties": {
         "gemini-cli.debug.logging.enabled": {
           "type": "boolean",
           "default": false,
-          "description": "Enable detailed logging for debugging the Gemini CLI Companion."
+          "description": "Enable detailed logging for debugging the Bare AI CLI Companion."
         }
       }
     },
@@ -49,12 +49,12 @@
     "commands": [
       {
         "command": "gemini.diff.accept",
-        "title": "Gemini CLI: Accept Diff",
+        "title": "Bare AI CLI: Accept Diff",
         "icon": "$(check)"
       },
       {
         "command": "gemini.diff.cancel",
-        "title": "Gemini CLI: Close Diff Editor",
+        "title": "Bare AI CLI: Close Diff Editor",
         "icon": "$(close)"
       },
       {
