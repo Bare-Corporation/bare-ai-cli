@@ -40,7 +40,7 @@ import * as os from 'node:os';
 export interface Message {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string | null;
-  reasoning_content?: string | null;  // added for deepseek V4 for tooluse 
+  reasoning_content?: string | null; // added for deepseek V4 for tooluse
   tool_calls?: ToolCall[];
   tool_call_id?: string;
   name?: string;
@@ -67,7 +67,7 @@ export interface ToolCall {
 export interface GenerateResult {
   text: string;
   toolCalls?: ToolCall[];
-  reasoning_content?: string | null;  // added for deepseek V4 for tooluse
+  reasoning_content?: string | null; // added for deepseek V4 for tooluse
   usage?: UsageMetrics;
 }
 
@@ -75,13 +75,18 @@ interface UsageMetrics {
   prompt_tokens?: number;
   completion_tokens?: number;
   total_tokens?: number;
+  // Cache buckets (Anthropic native usage: cache_read_input_tokens /
+  // cache_creation_input_tokens). Optional so OpenAI-shaped providers that do
+  // not report cache breakdowns simply omit them.
+  cachedRead?: number;
+  cachedWrite?: number;
 }
 
 interface OllamaResponse {
   choices?: Array<{
     message?: {
       content?: string | null;
-      reasoning_content?: string | null;  // added for deepseek V4 for tooluse 
+      reasoning_content?: string | null; // added for deepseek V4 for tooluse
       tool_calls?: ToolCall[];
     };
   }>;
@@ -95,6 +100,37 @@ interface StreamChunk {
     };
   }>;
   usage?: UsageMetrics;
+}
+
+// =============================================================================
+// ANTHROPIC NATIVE MESSAGES TYPES
+// Shapes returned by POST .../v1/messages and its SSE stream.
+// =============================================================================
+
+interface NativeUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+}
+
+interface NativeContentBlock {
+  type?: string;
+  text?: string;
+}
+
+interface NativeMessageResponse {
+  content?: NativeContentBlock[] | string;
+  usage?: NativeUsage;
+  error?: unknown;
+}
+
+interface NativeStreamEvent {
+  type?: string;
+  message?: { usage?: NativeUsage };
+  delta?: { type?: string; text?: string };
+  usage?: NativeUsage;
+  error?: unknown;
 }
 
 // =============================================================================
@@ -127,6 +163,20 @@ function detectProvider(endpoint: string): EndpointProvider {
   return 'generic';
 }
 
+/**
+ * True when the active endpoint is the Anthropic NATIVE Messages API
+ * (POST .../v1/messages). Only then do we build native request bodies,
+ * send prompt-caching headers, and parse native responses/streams.
+ *
+ * All other Anthropic traffic (…/v1/chat/completions) stays on the
+ * OpenAI chat-completions dialect, which Anthropic's OpenAI-compat layer
+ * expects.
+ */
+function isNativeAnthropicEndpoint(endpoint: string): boolean {
+  const url = endpoint.toLowerCase();
+  return url.includes('/v1/messages');
+}
+
 // =============================================================================
 // TYPE GUARDS
 // =============================================================================
@@ -141,6 +191,14 @@ function isStreamChunk(obj: unknown): obj is StreamChunk {
 
 function isRecordObj(val: unknown): val is Record<string, unknown> {
   return typeof val === 'object' && val !== null && !Array.isArray(val);
+}
+
+function isNativeMessageResponse(obj: unknown): obj is NativeMessageResponse {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function isNativeStreamEvent(obj: unknown): obj is NativeStreamEvent {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
 // =============================================================================
@@ -166,7 +224,7 @@ const writeTrace = (prefix: string, ...args: unknown[]): void => {
   try {
     fs.mkdirSync(path.dirname(TRACE_LOG), { recursive: true });
     fs.appendFileSync(TRACE_LOG, `[${timestamp}] ${prefix} ${output}\n`);
-  } catch (_e) {
+  } catch {
     // Intentionally silent — never interfere with the TUI
   }
 };
@@ -192,7 +250,7 @@ export class BareAiClient {
     try {
       fs.mkdirSync(path.dirname(TRACE_LOG), { recursive: true });
       fs.writeFileSync(TRACE_LOG, '--- STARTING BARE-AI SESSION ---\n');
-    } catch (_e) {
+    } catch {
       /* ignore */
     }
     this.systemPrompt = this.loadConstitution();
@@ -324,6 +382,7 @@ export class BareAiClient {
   private buildHeaders(
     provider: EndpointProvider,
     apiKey: string,
+    isNative: boolean,
   ): Record<string, string> {
     const base: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -333,7 +392,11 @@ export class BareAiClient {
     if (provider === 'anthropic') {
       base['x-api-key'] = apiKey;
       base['anthropic-version'] = '2023-06-01';
-      base['anthropic-beta'] = 'prompt-caching-2024-07-31';
+      // Prompt-caching beta is only meaningful on the native Messages API.
+      // Do not send it on the OpenAI-compat layer.
+      if (isNative) {
+        base['anthropic-beta'] = 'prompt-caching-2024-07-31';
+      }
     }
 
     return base;
@@ -359,26 +422,48 @@ export class BareAiClient {
     allMessages: Message[],
     resolvedTools: OpenAITool[] | undefined,
     useStream: boolean,
+    isNative: boolean,
   ): Record<string, unknown> {
     const isOllama = provider === 'ollama';
-    const isAnthropic = provider === 'anthropic';
 
     const body: Record<string, unknown> = {
       model: activeModel,
       stream: useStream,
     };
 
-    // Anthropic: extract system prompt into top-level "system" array with
-    // cache_control so the static prefix is frozen for prompt caching.
-    // Other providers: system prompt stays as first message (OpenAI-compat).
-    if (isAnthropic && allMessages.length > 0 && allMessages[0].role === 'system') {
-      const systemContent = allMessages[0].content;
-      body['system'] = [
-        { type: 'text', text: systemContent, cache_control: { type: 'ephemeral' } },
-      ];
-      body['messages'] = allMessages.slice(1);
+    if (isNative) {
+      // NATIVE ANTHROPIC MESSAGES DIALECT
+      // Extract the system prompt into a top-level "system" array and mark it
+      // with cache_control so the static prefix is frozen for prompt caching.
+      const systemContent =
+        allMessages.length > 0 && allMessages[0].role === 'system'
+          ? allMessages[0].content
+          : null;
+      let nativeMessages = allMessages;
+      if (systemContent !== null) {
+        body['system'] = [
+          {
+            type: 'text',
+            text: systemContent,
+            cache_control: { type: 'ephemeral' },
+          },
+        ];
+        nativeMessages = allMessages.slice(1);
+      }
+      // Native Messages accepts roles user/assistant only. Phase 1 supports
+      // text flows (council runs are tool-free); fail loudly rather than
+      // silently dropping tool turns.
+      for (const m of nativeMessages) {
+        if (m.role === 'tool') {
+          throw new Error(
+            'Native Anthropic Messages mode does not yet support tool-call turns (Phase 1: text only)',
+          );
+        }
+      }
+      body['messages'] = nativeMessages;
       body['max_tokens'] = 4096;
     } else {
+      // OPENAI CHAT-COMPLETIONS DIALECT (all providers incl. Anthropic compat)
       body['messages'] = allMessages;
     }
 
@@ -399,6 +484,7 @@ export class BareAiClient {
 
     logDebug(
       `Request body built for provider [${provider}]`,
+      `| native=${isNative}`,
       `| stream=${useStream}`,
       `| stream_options=${isOllama && useStream ? 'yes' : 'no'}`,
       `| tools=${resolvedTools ? resolvedTools.length : 0}`,
@@ -422,11 +508,17 @@ export class BareAiClient {
       prompt_tokens = 0,
       completion_tokens = 0,
       total_tokens,
+      cachedRead,
+      cachedWrite,
     } = metrics;
     const total = total_tokens ?? prompt_tokens + completion_tokens;
+    const cacheSuffix =
+      cachedRead !== undefined
+        ? ` CachedRead: ${cachedRead} CacheWrite: ${cachedWrite ?? 0}`
+        : '';
     process.stdout.write(
       `\n\x1b[90m[Telemetry | Engine: ${activeModel} | Mode: ${mode}] ` +
-        `Tokens: ${total} (Prompt: ${prompt_tokens}, Completion: ${completion_tokens})\x1b[0m\n`,
+        `Tokens: ${total} (Prompt: ${prompt_tokens}, Completion: ${completion_tokens})${cacheSuffix}\x1b[0m\n`,
     );
   }
 
@@ -448,9 +540,12 @@ export class BareAiClient {
 
     // Detect provider from endpoint URL for header/feature branching
     const provider = detectProvider(activeEndpoint);
+    // Native Anthropic Messages dialect when the endpoint is .../v1/messages
+    const isNative =
+      provider === 'anthropic' && isNativeAnthropicEndpoint(activeEndpoint);
 
     // Sanitise history for provider compatibility during model switching
-    const sanitisedMessages = messages.map(msg => {
+    const sanitisedMessages = messages.map((msg) => {
       const clean: Message = { role: msg.role, content: msg.content };
       if (msg.tool_calls) clean.tool_calls = msg.tool_calls;
       if (msg.tool_call_id) clean.tool_call_id = msg.tool_call_id;
@@ -466,7 +561,7 @@ export class BareAiClient {
     // system prompt prefix stays byte-identical across calls for caching.
     const sessionTag = `\n\n[Session: ${new Date().toLocaleDateString()}]`;
     const enrichedMessages = [...sanitisedMessages];
-    const lastUserIdx = enrichedMessages.map(m => m.role).lastIndexOf('user');
+    const lastUserIdx = enrichedMessages.map((m) => m.role).lastIndexOf('user');
     if (lastUserIdx >= 0) {
       enrichedMessages[lastUserIdx] = {
         ...enrichedMessages[lastUserIdx],
@@ -490,15 +585,21 @@ export class BareAiClient {
     // Tools require a non-streaming call (Doer models — Granite, Qwen Coder)
     const useStream = !resolvedTools;
 
+    // Native Anthropic Messages mode is text-only in Phase 1: drop tool
+    // definitions instead of crashing. Council/plan runs never execute tools;
+    // tool-role turns in history are still rejected loudly in buildRequestBody.
+    const effectiveTools = isNative ? undefined : resolvedTools;
+
     const body = this.buildRequestBody(
       provider,
       activeModel,
       allMessages,
-      resolvedTools,
+      effectiveTools,
       useStream,
+      isNative,
     );
 
-    const headers = this.buildHeaders(provider, activeApiKey);
+    const headers = this.buildHeaders(provider, activeApiKey, isNative);
 
     logDebug(`Routing to [${provider}] at: ${activeEndpoint}`);
     logDebug(`Model: ${activeModel} | Stream: ${useStream}`);
@@ -531,6 +632,42 @@ export class BareAiClient {
       if (!useStream) {
         const parsedData: unknown = await response.json();
 
+        if (isNative) {
+          // NATIVE ANTHROPIC MESSAGES RESPONSE (non-stream)
+          if (!isNativeMessageResponse(parsedData)) {
+            throw new Error('Invalid native Anthropic response format');
+          }
+          const d = parsedData;
+          if (d.error) {
+            throw new Error('Anthropic API error: ' + JSON.stringify(d.error));
+          }
+          const contentBlocks = Array.isArray(d.content) ? d.content : [];
+          const text = contentBlocks
+            .filter(
+              (b): b is { type: 'text'; text: string } =>
+                b.type === 'text' && typeof b.text === 'string',
+            )
+            .map((b) => b.text)
+            .join('');
+          const u = d.usage ?? {};
+          const metrics: UsageMetrics = {
+            prompt_tokens: u.input_tokens ?? 0,
+            completion_tokens: u.output_tokens ?? 0,
+            total_tokens: (u.input_tokens ?? 0) + (u.output_tokens ?? 0),
+            cachedRead: u.cache_read_input_tokens ?? 0,
+            cachedWrite: u.cache_creation_input_tokens ?? 0,
+          };
+          this.writeTelemetry(activeModel, 'Static', metrics);
+          return {
+            text,
+            usage: {
+              prompt_tokens: metrics.prompt_tokens,
+              completion_tokens: metrics.completion_tokens,
+              total_tokens: metrics.total_tokens,
+            },
+          };
+        }
+
         if (!isOllamaResponse(parsedData)) {
           throw new Error('Invalid response format from API');
         }
@@ -545,7 +682,9 @@ export class BareAiClient {
           toolCalls: message?.tool_calls?.length
             ? message.tool_calls
             : undefined,
-             ...(message?.reasoning_content && { reasoning_content: message.reasoning_content }), // added for deepseek V4 for tooluse  
+          ...(message?.reasoning_content && {
+            reasoning_content: message.reasoning_content,
+          }), // added for deepseek V4 for tooluse
           ...(parsedData.usage && { usage: parsedData.usage }),
         };
       }
@@ -562,6 +701,66 @@ export class BareAiClient {
       const decoder = new TextDecoder('utf-8');
       let fullText = '';
       let finalMetrics: UsageMetrics | null = null;
+
+      if (isNative) {
+        // NATIVE ANTHROPIC STREAM
+        // Anthropic SSE: event:/data: pairs. Usage arrives in message_start
+        // (input + cache buckets) and message_delta (output_tokens).
+        let startUsage: NativeUsage | null = null;
+        let deltaUsage: NativeUsage | null = null;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('event:')) continue;
+            if (!trimmed.startsWith('data:')) continue;
+            const dataStr = trimmed.slice(5).trim();
+            if (!dataStr || dataStr === '[DONE]') continue;
+            let parsed: NativeStreamEvent | null = null;
+            try {
+              const raw: unknown = JSON.parse(dataStr);
+              if (isNativeStreamEvent(raw)) parsed = raw;
+            } catch {
+              logDebug('Failed to parse native streaming chunk:', dataStr);
+              continue;
+            }
+            if (!parsed) continue;
+            if (parsed.type === 'message_start' && parsed.message?.usage) {
+              startUsage = parsed.message.usage;
+            } else if (
+              parsed.type === 'content_block_delta' &&
+              parsed.delta?.type === 'text_delta' &&
+              parsed.delta.text
+            ) {
+              fullText += parsed.delta.text;
+              process.stdout.write(parsed.delta.text);
+            } else if (parsed.type === 'message_delta' && parsed.usage) {
+              deltaUsage = parsed.usage;
+            } else if (parsed.type === 'error') {
+              throw new Error(
+                `Anthropic stream error: ${JSON.stringify(parsed.error ?? parsed)}`,
+              );
+            }
+          }
+        }
+        const inputTokens = startUsage?.input_tokens ?? 0;
+        const outputTokens = deltaUsage?.output_tokens ?? 0;
+        const cachedRead = startUsage?.cache_read_input_tokens ?? 0;
+        const cachedWrite = startUsage?.cache_creation_input_tokens ?? 0;
+        finalMetrics = {
+          prompt_tokens: inputTokens,
+          completion_tokens: outputTokens,
+          total_tokens: inputTokens + outputTokens,
+          cachedRead,
+          cachedWrite,
+        };
+        this.writeTelemetry(activeModel, 'Stream', finalMetrics);
+        logSuccess('Streaming response completed successfully (native)');
+        return { text: fullText };
+      }
 
       while (true) {
         const { done, value } = await reader.read();
@@ -593,7 +792,7 @@ export class BareAiClient {
             if (parsed.usage) {
               finalMetrics = parsed.usage;
             }
-          } catch (_e) {
+          } catch {
             logDebug('Failed to parse streaming chunk:', dataStr);
           }
         }
@@ -625,10 +824,7 @@ export class BareAiClient {
     history: Message[] = [],
     tools?: OpenAITool[],
   ): Promise<GenerateResult> {
-    const messages: Message[] = [
-      ...history,
-      { role: 'user', content: prompt },
-    ];
+    const messages: Message[] = [...history, { role: 'user', content: prompt }];
     return this.callApi(messages, tools);
   }
 
@@ -661,10 +857,12 @@ export class BareAiClient {
         const result = await this.generateContent(prompt, history);
         history.push(
           { role: 'user', content: prompt },
-          { 
-            role: 'assistant', 
+          {
+            role: 'assistant',
             content: result.text,
-            ...(result.reasoning_content && { reasoning_content: result.reasoning_content }),
+            ...(result.reasoning_content && {
+              reasoning_content: result.reasoning_content,
+            }),
           },
         );
         return result.text;
