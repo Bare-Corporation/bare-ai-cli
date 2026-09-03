@@ -30,6 +30,7 @@ describe('<FooterConfigDialog />', () => {
       { settings },
     );
 
+    await renderResult.waitUntilReady();
     expect(renderResult.lastFrame()).toMatchSnapshot();
     await expect(renderResult).toMatchSvgSnapshot();
   });
@@ -60,12 +61,14 @@ describe('<FooterConfigDialog />', () => {
 
   it('reorders items with arrow keys', async () => {
     const settings = createMockSettings();
-    const { lastFrame, stdin } = await renderWithProviders(
+    const renderResult = await renderWithProviders(
       <FooterConfigDialog onClose={mockOnClose} />,
       { settings },
     );
+    const { lastFrame, stdin } = renderResult;
 
     // Initial order: workspace, git-branch, ...
+    await renderResult.waitUntilReady();
     const output = lastFrame();
     const cwdIdx = output.indexOf('] workspace');
     const branchIdx = output.indexOf('] git-branch');
@@ -105,7 +108,15 @@ describe('<FooterConfigDialog />', () => {
   });
 
   it('highlights the active item in the preview', async () => {
-    const settings = createMockSettings();
+    // Use a compact, explicit footer item set so the diff column fits in the
+    // preview regardless of the global default footer items.
+    const settings = createMockSettings({
+      ui: {
+        footer: {
+          items: ['workspace', 'git-branch', 'sandbox', 'model-name', 'quota'],
+        },
+      },
+    });
     const renderResult = await renderWithProviders(
       <FooterConfigDialog onClose={mockOnClose} />,
       { settings },
@@ -113,9 +124,13 @@ describe('<FooterConfigDialog />', () => {
 
     const { lastFrame, stdin } = renderResult;
 
+    await renderResult.waitUntilReady();
     expect(lastFrame()).toContain('~/project/path');
 
-    // Move focus down to 'code-changes' (which has colored elements)
+    // Move focus down to 'code-changes' (which has colored elements).
+    // List order: workspace, git-branch, sandbox, model-name, quota,
+    // context-used, memory-usage, session-id, auth, code-changes — so
+    // code-changes is 9 steps below workspace.
     for (let i = 0; i < 9; i++) {
       act(() => {
         stdin.write('\u001b[B'); // Down arrow
@@ -217,9 +232,10 @@ describe('<FooterConfigDialog />', () => {
     const { lastFrame, stdin } = renderResult;
 
     // By default labels are on
-    expect(lastFrame()).toContain('workspace (/directory)');
-    expect(lastFrame()).toContain('sandbox');
+    await renderResult.waitUntilReady();
     expect(lastFrame()).toContain('/model');
+    expect(lastFrame()).toContain('~/project/path');
+    expect(lastFrame()).toContain('docker');
 
     // Move to "Show footer labels" (which is the second to last item)
     for (let i = 0; i < ALL_ITEMS.length; i++) {
@@ -256,7 +272,7 @@ describe('<FooterConfigDialog />', () => {
       expect(nextLine).toContain('·');
       expect(nextLine).toContain('~/project/path');
       expect(nextLine).toContain('docker');
-      expect(nextLine).toContain('42% used');
+      expect(nextLine).toContain('42%');
     });
 
     await expect(renderResult).toMatchSvgSnapshot();

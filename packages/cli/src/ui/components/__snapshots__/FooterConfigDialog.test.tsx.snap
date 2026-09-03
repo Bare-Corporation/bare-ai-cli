@@ -60,10 +60,12 @@ exports[`<FooterConfigDialog /> > renders correctly with default settings 1`] = 
 │     Sandbox type and trust indicator                                                             │
 │    [✓] model-name                                                                                │
 │     Current model identifier                                                                     │
+│    [✓] context-used                                                                              │
+│     Percentage of context window used                                                            │
 │    [✓] quota                                                                                     │
 │     Percentage of daily limit used (not shown when unavailable)                                  │
-│    [ ] context-used                                                                              │
-│     Percentage of context window used                                                            │
+│    [✓] token-count                                                                               │
+│     Total tokens used in the session (not shown when zero)                                       │
 │    [ ] memory-usage                                                                              │
 │     Memory used by the application                                                               │
 │    [ ] session-id                                                                                │
@@ -72,8 +74,6 @@ exports[`<FooterConfigDialog /> > renders correctly with default settings 1`] = 
 │     Current authentication info                                                                  │
 │    [ ] code-changes                                                                              │
 │     Lines added/removed in the session (not shown when zero)                                     │
-│    [ ] token-count                                                                               │
-│     Total tokens used in the session (not shown when zero)                                       │
 │    [✓] Show footer labels                                                                        │
 │                                                                                                  │
 │    Reset to default footer                                                                       │
@@ -83,8 +83,8 @@ exports[`<FooterConfigDialog /> > renders correctly with default settings 1`] = 
 │                                                                                                  │
 │  ┌────────────────────────────────────────────────────────────────────────────────────────────┐  │
 │  │ Preview:                                                                                   │  │
-│  │ workspace (/directory)        branch         sandbox        /model                quota    │  │
-│  │ ~/project/path                main           docker         gemini-2.5-pro        42% used │  │
+│  │ workspace               branc    sandbo   /model          context    quota      tokens     │  │
+│  │ ~/project/path          main     docker   gemini-2.5-pr   85%        42%        1.5k       │  │
 │  └────────────────────────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
@@ -106,10 +106,12 @@ exports[`<FooterConfigDialog /> > renders correctly with default settings 2`] = 
 │     Sandbox type and trust indicator                                                             │
 │    [✓] model-name                                                                                │
 │     Current model identifier                                                                     │
+│    [✓] context-used                                                                              │
+│     Percentage of context window used                                                            │
 │    [✓] quota                                                                                     │
 │     Percentage of daily limit used (not shown when unavailable)                                  │
-│    [ ] context-used                                                                              │
-│     Percentage of context window used                                                            │
+│    [✓] token-count                                                                               │
+│     Total tokens used in the session (not shown when zero)                                       │
 │    [ ] memory-usage                                                                              │
 │     Memory used by the application                                                               │
 │    [ ] session-id                                                                                │
@@ -118,8 +120,6 @@ exports[`<FooterConfigDialog /> > renders correctly with default settings 2`] = 
 │     Current authentication info                                                                  │
 │    [ ] code-changes                                                                              │
 │     Lines added/removed in the session (not shown when zero)                                     │
-│    [ ] token-count                                                                               │
-│     Total tokens used in the session (not shown when zero)                                       │
 │    [✓] Show footer labels                                                                        │
 │                                                                                                  │
 │    Reset to default footer                                                                       │
@@ -129,8 +129,8 @@ exports[`<FooterConfigDialog /> > renders correctly with default settings 2`] = 
 │                                                                                                  │
 │  ┌────────────────────────────────────────────────────────────────────────────────────────────┐  │
 │  │ Preview:                                                                                   │  │
-│  │ workspace (/directory)        branch         sandbox        /model                quota    │  │
-│  │ ~/project/path                main           docker         gemini-2.5-pro        42% used │  │
+│  │ workspace               branc    sandbo   /model          context    quota      tokens     │  │
+│  │ ~/project/path          main     docker   gemini-2.5-pr   85%        42%        1.5k       │  │
 │  └────────────────────────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯"
@@ -151,10 +151,12 @@ exports[`<FooterConfigDialog /> > updates the preview when Show footer labels is
 │     Sandbox type and trust indicator                                                             │
 │    [✓] model-name                                                                                │
 │     Current model identifier                                                                     │
+│    [✓] context-used                                                                              │
+│     Percentage of context window used                                                            │
 │    [✓] quota                                                                                     │
 │     Percentage of daily limit used (not shown when unavailable)                                  │
-│    [ ] context-used                                                                              │
-│     Percentage of context window used                                                            │
+│    [✓] token-count                                                                               │
+│     Total tokens used in the session (not shown when zero)                                       │
 │    [ ] memory-usage                                                                              │
 │     Memory used by the application                                                               │
 │    [ ] session-id                                                                                │
@@ -163,8 +165,6 @@ exports[`<FooterConfigDialog /> > updates the preview when Show footer labels is
 │     Current authentication info                                                                  │
 │    [ ] code-changes                                                                              │
 │     Lines added/removed in the session (not shown when zero)                                     │
-│    [ ] token-count                                                                               │
-│     Total tokens used in the session (not shown when zero)                                       │
 │  > [ ] Show footer labels                                                                        │
 │                                                                                                  │
 │    Reset to default footer                                                                       │
@@ -174,7 +174,7 @@ exports[`<FooterConfigDialog /> > updates the preview when Show footer labels is
 │                                                                                                  │
 │  ┌────────────────────────────────────────────────────────────────────────────────────────────┐  │
 │  │ Preview:                                                                                   │  │
-│  │ ~/project/path     ·     main     ·     docker     ·     gemini-2.5-pro     ·     42% used │  │
+│  │ ~/project/path ·  main ·  docker ·   gemini-2.5-pro ·  85% used ·  42% used ·  1.5k tokens │  │
 │  └────────────────────────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯"

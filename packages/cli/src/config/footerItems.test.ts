@@ -15,6 +15,22 @@ describe('footerItems', () => {
   describe('deriveItemsFromLegacySettings', () => {
     it('returns defaults when no legacy settings are customized', () => {
       const settings = createMockSettings({
+        ui: { footer: { hideContextPercentage: false } },
+      }).merged;
+      const items = deriveItemsFromLegacySettings(settings);
+      expect(items).toEqual([
+        'workspace',
+        'git-branch',
+        'sandbox',
+        'model-name',
+        'context-used',
+        'quota',
+        'token-count',
+      ]);
+    });
+
+    it('includes token-count by default even when hideContextPercentage is true (explicit legacy opt-out)', () => {
+      const settings = createMockSettings({
         ui: { footer: { hideContextPercentage: true } },
       }).merged;
       const items = deriveItemsFromLegacySettings(settings);
@@ -24,6 +40,7 @@ describe('footerItems', () => {
         'sandbox',
         'model-name',
         'quota',
+        'token-count',
       ]);
     });
 
@@ -92,6 +109,7 @@ describe('footerItems', () => {
         'sandbox',
         'context-used',
         'memory-usage',
+        'token-count',
       ]);
     });
   });
@@ -168,7 +186,7 @@ describe('footerItems', () => {
       expect(state.orderedIds).toContain('context-used');
     });
 
-    it('does not include context-used in selectedIds when hideContextPercentage is true (default)', () => {
+    it('does not include context-used in selectedIds when hideContextPercentage is explicitly true (legacy opt-out)', () => {
       const settings = createMockSettings({
         ui: {
           footer: {
@@ -181,6 +199,20 @@ describe('footerItems', () => {
       expect(state.selectedIds.has('context-used')).toBe(false);
       // context-used should still be in orderedIds (as unselected)
       expect(state.orderedIds).toContain('context-used');
+    });
+
+    it('includes context-used and token-count in selectedIds by default when items is undefined', () => {
+      const settings = createMockSettings({
+        ui: {
+          footer: {
+            hideContextPercentage: false,
+          },
+        },
+      }).merged;
+
+      const state = resolveFooterState(settings);
+      expect(state.selectedIds.has('context-used')).toBe(true);
+      expect(state.selectedIds.has('token-count')).toBe(true);
     });
 
     it('persisted items array takes precedence over hideContextPercentage', () => {
