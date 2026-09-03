@@ -192,12 +192,44 @@ function normalizeEndpoint(entry: CatalogEntry): string {
 
 // Fetch per-model runtime config (api_key + model_name) from the USER's
 // own Vault. Only used for cloud/council models. KV v2 with v1 fallback.
-async function fetchVaultUpdate(modelName: string) {
+// Provider -> per-provider Vault path key (mirrors sovereign.js / council
+// python PROVIDER_VAULT_ROUTES; case-insensitive because the catalog stores
+// display casing like DeepSeek/Anthropic/Google).
+const VAULT_PROVIDER_KEY: Record<string, string> = {
+  openai: 'openai',
+  google: 'gemini',
+  anthropic: 'claude',
+  deepseek: 'deepseek',
+  'z.ai': 'z.ai',
+  zai: 'zai',
+  'Alibaba-cn-beijing': 'Alibaba-cn-beijing',
+  'Alibaba-eu-central-1': 'Alibaba-eu-central-1',
+  'Alibaba-ap-southeast-1': 'Alibaba-ap-southeast-1',
+  'Alibaba-us-east-1': 'Alibaba-us-east-1',
+  ollama: 'ollama',
+};
+
+function vaultKeyForProvider(provider?: string): string | null {
+  if (!provider) return null;
+  const low = provider.toLowerCase();
+  for (const key of Object.keys(VAULT_PROVIDER_KEY)) {
+    if (key.toLowerCase() === low) return VAULT_PROVIDER_KEY[key];
+  }
+  return null;
+}
+
+// Fetch runtime config (api_key + model_name) from the USER's own Vault.
+// Cloud/council models use the per-PROVIDER path (one secret per provider,
+// since 2026-09-01). Legacy per-model paths remain only as a last resort.
+async function fetchVaultUpdate(modelName: string, provider?: string) {
   const addr = process.env['VAULT_ADDR'];
   const vaultToken = process.env['VAULT_TOKEN'];
   if (!addr || !vaultToken) throw new Error('Sovereign environment not initialized.');
 
-  let path = `secret/data/${modelName}/config`;
+  const routeKey = vaultKeyForProvider(provider);
+  let path = routeKey
+    ? `secret/data/${routeKey}/config`
+    : `secret/data/${modelName}/config`;
   let res = await fetch(`${addr}/v1/${path}`, {
     headers: { 'X-Vault-Token': vaultToken },
   });
@@ -286,7 +318,7 @@ export const modelCommand: SlashCommand = {
         // fetch error, or missing base_url) is not fatal — fall back to catalog.
         let config: VaultConfig | undefined;
         try {
-          config = await fetchVaultUpdate(entry.model_id);
+          config = await fetchVaultUpdate(entry.model_id, entry.provider);
         } catch {
           config = undefined; // Vault unavailable -> catalog fallback
         }
