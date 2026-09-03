@@ -114,6 +114,10 @@ export function deriveItemsFromLegacySettings(
   }
   if (settings.ui.showMemoryUsage) items.push('memory-usage');
 
+  // token-count has no legacy boolean toggle; include it by default so fresh
+  // configs and /footer resets show the session token count.
+  items.push('token-count');
+
   return items;
 }
 
