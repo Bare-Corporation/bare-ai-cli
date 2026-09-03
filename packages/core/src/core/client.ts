@@ -873,6 +873,10 @@ export class GeminiClient {
           loopHistory,
           openAiTools,
         );
+        const initialPromptTokens = currentResult.usage?.prompt_tokens;
+        if (initialPromptTokens !== undefined) {
+          uiTelemetryService.setLastPromptTokenCount(initialPromptTokens);
+        }
         uiTelemetryService.addEvent({
           'event.name': EVENT_API_RESPONSE,
           model: modelToUse,
@@ -996,6 +1000,10 @@ export class GeminiClient {
               String(lastHistoryEntry.content ?? ''),
               openAiTools,
             );
+            const toolPromptTokens = currentResult.usage?.prompt_tokens;
+            if (toolPromptTokens !== undefined) {
+              uiTelemetryService.setLastPromptTokenCount(toolPromptTokens);
+            }
             uiTelemetryService.addEvent({
               'event.name': EVENT_API_RESPONSE,
               model: modelToUse,
