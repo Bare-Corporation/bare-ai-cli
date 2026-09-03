@@ -759,7 +759,10 @@ export class BareAiClient {
         };
         this.writeTelemetry(activeModel, 'Stream', finalMetrics);
         logSuccess('Streaming response completed successfully (native)');
-        return { text: fullText };
+        return {
+          text: fullText,
+          ...(finalMetrics ? { usage: finalMetrics } : {}),
+        };
       }
 
       while (true) {
@@ -807,7 +810,10 @@ export class BareAiClient {
       }
 
       logSuccess('Streaming response completed successfully');
-      return { text: fullText };
+      return {
+        text: fullText,
+        ...(finalMetrics ? { usage: finalMetrics } : {}),
+      };
     } catch (error: unknown) {
       clearTimeout(timeoutId);
       logError('Critical API Failure:', error);
