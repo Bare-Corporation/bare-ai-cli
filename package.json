@@ -85,12 +85,14 @@
     "zod": "3.25.76"
   },
   "bin": {
-    "bare-ai": "bundle/bare-ai.js"
+    "bare-ai": "bundle/bare-ai.js",
+    "bare-role": "bare-role.js"
   },
   "files": [
     "bundle/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "bare-role.js"
   ],
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.16.1",
