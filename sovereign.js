@@ -108,6 +108,20 @@ function modelFromArgs(argv) {
   return null;
 }
 
+// Optional usage tracking: per-install AGENT_ID (written by
+// setup_bare-ai-worker.sh). Resolution order: process.env.AGENT_ID, then
+// ~/.bare-ai/config/agent.env. Absent/empty -> send no header; never throws.
+function getAgentId() {
+  const fromEnv = (process.env.AGENT_ID || '').trim();
+  if (fromEnv) return fromEnv;
+  try {
+    const txt = readFileSync(join(homedir(), '.bare-ai/config/agent.env'), 'utf8');
+    const m = txt.match(/^\s*export\s+AGENT_ID\s*=\s*["']?([^"'\s]+)/m);
+    if (m && m[1]) return m[1].trim();
+  } catch (_) { /* agent.env missing/unreadable -> send no header */ }
+  return undefined;
+}
+
 // Read catalog cache if fresh; else fetch from Council API (in-memory only).
 async function loadCatalog() {
   try {
@@ -118,8 +132,11 @@ async function loadCatalog() {
     }
   } catch (_) { /* cache missing or stale -> fetch */ }
   try {
+    const headers = { Accept: 'application/json' };
+    const agentId = getAgentId();
+    if (agentId) headers['X-Agent-Id'] = agentId;
     const res = await fetch(`${COUNCIL_API_BASE_URL}/v1/models`, {
-      headers: { Accept: 'application/json' },
+      headers,
       signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {

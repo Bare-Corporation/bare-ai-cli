@@ -92,10 +92,33 @@ const BAKED_LOCAL_MODELS: CatalogEntry[] = [
   },
 ];
 
+// Optional usage tracking: per-install AGENT_ID (written by
+// setup_bare-ai-worker.sh). Resolution order: process.env.AGENT_ID, then
+// ~/.bare-ai/config/agent.env. Absent/empty -> send no header; never throws.
+function getAgentId(): string | undefined {
+  const fromEnv = (process.env['AGENT_ID'] || '').trim();
+  if (fromEnv) return fromEnv;
+  try {
+    const txt = fs.readFileSync(
+      path.join(os.homedir(), '.bare-ai/config/agent.env'),
+      'utf8',
+    );
+    const m = txt.match(/^\s*export\s+AGENT_ID\s*=\s*["']?([^"'\s]+)/m);
+    if (m && m[1]) return m[1].trim();
+  } catch {
+    // agent.env missing/unreadable -> send no header
+  }
+  return undefined;
+}
+
 // Fetch /v1/models fresh, cache to disk, fall back to cache offline.
 async function loadCatalog(): Promise<CatalogEntry[]> {
   try {
+    const headers: Record<string, string> = {};
+    const agentId = getAgentId();
+    if (agentId) headers['X-Agent-Id'] = agentId;
     const res = await fetch(`${COUNCIL_API_BASE_URL}/v1/models`, {
+      headers,
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`catalog HTTP ${res.status}`);
