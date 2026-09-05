@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-undef, @typescript-eslint/no-unused-vars */
 /**
 ############################################################
 #    ____ _                 _ _       ____        #
@@ -51,47 +50,12 @@ if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
 
 // Provider -> per-provider Vault path key (one secret per provider).
 const PROVIDER_VAULT_KEY = {
-  openai: 'openai',
+  openai: 'gpt',
   google: 'gemini',
   anthropic: 'claude',
+  'z.ai': 'z',
   deepseek: 'deepseek',
-  'z.ai': 'z.ai',
-  zai: 'zai',
-  'Alibaba-cn-beijing': 'Alibaba-cn-beijing',
-  'Alibaba-eu-central-1': 'Alibaba-eu-central-1',
-  'Alibaba-ap-southeast-1': 'Alibaba-ap-southeast-1',
-  'Alibaba-us-east-1': 'Alibaba-us-east-1',
-  ollama: 'ollama',
 };
-
-// Council stores provider display casing (DeepSeek, Anthropic, Google,
-// Alibaba-*), while the map above is keyed lowercase + exact Alibaba DC names.
-// Look up case-insensitively so a casing change never breaks key resolution.
-function vaultKeyForProvider(provider) {
-  if (!provider) return null;
-  const low = String(provider).toLowerCase();
-  for (const key of Object.keys(PROVIDER_VAULT_KEY)) {
-    if (String(key).toLowerCase() === low) return PROVIDER_VAULT_KEY[key];
-  }
-  return null;
-}
-
-// Offline fallback: if the catalog is unreachable/cached-miss, still route
-// well-known cloud model prefixes to the correct per-provider Vault secret and
-// a built-in endpoint. Provider secrets only carry api_key (since 2026-09-01).
-const PREFIX_ROUTE = {
-  'deepseek-': { key: 'deepseek', baseUrl: 'https://api.deepseek.com/v1/chat/completions' },
-  'claude-': { key: 'claude', baseUrl: 'https://api.anthropic.com/v1/messages' },
-  'gemini-': { key: 'gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-  'gpt-': { key: 'openai', baseUrl: 'https://api.openai.com/v1/chat/completions' },
-};
-function modelPrefixRoute(modelId) {
-  const low = String(modelId || '').toLowerCase();
-  for (const prefix of Object.keys(PREFIX_ROUTE)) {
-    if (low.startsWith(prefix)) return PREFIX_ROUTE[prefix];
-  }
-  return null;
-}
 
 const CATALOG_CACHE = process.env.CATALOG_CACHE || join(homedir(), '.bare-ai/model-catalog.json');
 const COUNCIL_API_BASE_URL = process.env.COUNCIL_API_BASE_URL || 'https://api.bare-ai.net';
@@ -158,29 +122,15 @@ async function resolveTarget(modelId) {
     const rows = await loadCatalog();
     if (rows) {
       const row = rows.find(r => r.model_id === modelId);
-      const key = row ? vaultKeyForProvider(row.provider) : null;
-      if (row && key && row.is_cloud) {
+      if (row && row.provider && PROVIDER_VAULT_KEY[row.provider] && row.is_cloud) {
         return {
-          vaultPath: `secret/data/${key}/config`,
+          vaultPath: `secret/data/${PROVIDER_VAULT_KEY[row.provider]}/config`,
           baseUrl: (row.base_url || '').trim(),
           modelName: (row.model_id || modelId).trim(),
           cloud: true,
         };
       }
     }
-    // Catalog loaded but model not found as a cloud row -> no provider route.
-  } else {
-    return { vaultPath: VAULT_SECRET_PATH, baseUrl: null, modelName: null, cloud: false };
-  }
-  // Offline / prefix fallback for well-known cloud models.
-  const pref = modelPrefixRoute(modelId);
-  if (pref) {
-    return {
-      vaultPath: `secret/data/${pref.key}/config`,
-      baseUrl: pref.baseUrl,
-      modelName: modelId,
-      cloud: true,
-    };
   }
   return { vaultPath: VAULT_SECRET_PATH, baseUrl: null, modelName: null, cloud: false };
 }
