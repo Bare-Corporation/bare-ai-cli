@@ -54,11 +54,11 @@ if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
 
 // Provider -> per-provider Vault path key (one secret per provider).
 const PROVIDER_VAULT_KEY = {
-  openai: 'gpt',
+  openai: 'openai',
   google: 'gemini',
   anthropic: 'claude',
   deepseek: 'deepseek',
-  'z.ai': 'z',
+  'z.ai': 'z.ai',
   zai: 'zai',
   'Alibaba-cn-beijing': 'Alibaba-cn-beijing',
   'Alibaba-eu-central-1': 'Alibaba-eu-central-1',
