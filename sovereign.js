@@ -60,6 +60,7 @@ const PROVIDER_VAULT_KEY = {
   deepseek: 'deepseek',
   'z.ai': 'z.ai',
   zai: 'zai',
+  xai: 'xai',
   'Alibaba-cn-beijing': 'Alibaba-cn-beijing',
   'Alibaba-eu-central-1': 'Alibaba-eu-central-1',
   'Alibaba-ap-southeast-1': 'Alibaba-ap-southeast-1',
