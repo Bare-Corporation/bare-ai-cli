@@ -31,8 +31,11 @@ import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-// Internal routing bypass for self-signed Vault/Tailscale certs
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification bypass REMOVED 2026-09-13 (liege directive). The self-signed
+// Vault certificate was reissued with a valid IP SAN and installed into the system
+// trust store, so strict certificate validation now succeeds. Verified by running
+// the job executor with the bypass absent: no certificate error, Vault read OK,
+// model call OK. Do not reintroduce this line - fix the certificate instead.
 
 // Global Config from Environment
 const {
