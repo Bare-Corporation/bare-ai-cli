@@ -195,14 +195,46 @@ async function resolveTarget(modelId) {
  * Returns both the configuration data and the temporary session token
  */
 async function getVaultContext(vaultPath) {
-  // 1. AppRole Login
-  const loginRes = await fetch(`${VAULT_ADDR}/v1/auth/approle/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }),
-  });
-  const loginData = await loginRes.json();
-  if (!loginData.auth) throw new Error(`Vault login failed: ${JSON.stringify(loginData)}`);
+  // 1. AppRole Login - bounded 3-attempt retry on TRANSIENT failure (2026-09-13).
+  // The AppRole secret_id is rotatable, so a login can be refused while a rotation
+  // propagates. A single un-retried fetch turned that transient refusal into an
+  // immediate hard crash at startup. Mirrors taskbus-agent-job.py: retry on
+  // 403/429/500/502/503 and on network errors; break at once on any OTHER status
+  // (a malformed role_id or a 400 will not fix itself by waiting); 3 attempts max;
+  // then rethrow, so a genuinely broken credential is still loud and fails closed.
+  const VAULT_LOGIN_RETRY_CODES = [403, 429, 500, 502, 503];
+  let loginData = null;
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let retryable = true;
+    try {
+      const loginRes = await fetch(VAULT_ADDR + '/v1/auth/approle/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }),
+      });
+      const body = await loginRes.json().catch(() => null);
+      if (loginRes.ok && body && body.auth && body.auth.client_token) {
+        if (attempt) {
+          console.error('vault: AppRole login succeeded on attempt ' + (attempt + 1) + '/3');
+        }
+        loginData = body;
+        break;
+      }
+      lastErr = new Error(
+        'Vault login failed: HTTP ' + loginRes.status + ' ' + JSON.stringify(body));
+      retryable = VAULT_LOGIN_RETRY_CODES.includes(loginRes.status);
+    } catch (err) {
+      lastErr = err;
+    }
+    if (!retryable) break;
+    if (attempt < 2) {
+      console.error('vault: AppRole login attempt ' + (attempt + 1) + '/3 failed ('
+        + ((lastErr && lastErr.message) || lastErr) + ') - retrying');
+      await new Promise((r) => setTimeout(r, 2000 + 3000 * attempt));
+    }
+  }
+  if (!loginData) throw lastErr || new Error('Vault login failed after 3 attempts');
 
   const token = loginData.auth.client_token;
 
