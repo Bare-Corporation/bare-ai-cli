@@ -53,6 +53,7 @@ if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
 }
 
 // Provider -> per-provider Vault path key (one secret per provider).
+// Vault is the authority: openai/zai/xai; do not remap.
 const PROVIDER_VAULT_KEY = {
   openai: 'openai',
   google: 'gemini',
