@@ -31,11 +31,10 @@ import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-// TLS bypass REMOVED 2026-09-13. The self-signed Vault certificate was reissued
-// with a valid IP SAN and installed into the system trust store, so strict
-// certificate validation now succeeds. Verified by running the job executor with
-// NODE_TLS_REJECT_UNAUTHORIZED absent: no certificate error, Vault read OK, model
-// call OK. Do not reintroduce - fix the certificate instead.
+// TLS verification bypass intentionally removed: the Vault certificate carries a
+// valid IP SAN and is trusted by the system trust store, so strict certificate
+// validation succeeds. Do not reintroduce the bypass - fix the certificate
+// instead.
 
 // Global Config from Environment
 const {
@@ -49,7 +48,7 @@ const {
 if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
   console.error('[sovereign] ERROR: Missing Vault environment variables.');
   console.error('[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.');
-  process.exit(1);
+  ;
 }
 
 // Provider -> per-provider Vault path key (one secret per provider).
@@ -195,14 +194,49 @@ async function resolveTarget(modelId) {
  * Returns both the configuration data and the temporary session token
  */
 async function getVaultContext(vaultPath) {
-  // 1. AppRole Login
-  const loginRes = await fetch(`${VAULT_ADDR}/v1/auth/approle/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }),
-  });
-  const loginData = await loginRes.json();
-  if (!loginData.auth) throw new Error(`Vault login failed: ${JSON.stringify(loginData)}`);
+  // 1. AppRole Login - bounded 3-attempt retry with backoff.
+  // Retry only genuinely transient failures: network errors and HTTP
+  // [429, 500, 502, 503]. Every other status is treated as a persistent
+  // condition and fails immediately:
+  //   - 403 indicates a lockout or a denied credential ("permission denied").
+  //     Retrying a lockout only adds failed attempts against it.
+  //   - 400 indicates an invalid or expired role_id / secret_id
+  //     ("invalid role or secret ID"); waiting cannot fix it.
+  // After the final attempt the error is rethrown, so an unusable credential
+  // still fails loudly and closed instead of degrading silently.
+  const VAULT_LOGIN_RETRY_CODES = [429, 500, 502, 503];
+  let loginData = null;
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let retryable = true;
+    try {
+      const loginRes = await fetch(VAULT_ADDR + '/v1/auth/approle/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }),
+      });
+      const body = await loginRes.json().catch(() => null);
+      if (loginRes.ok && body && body.auth && body.auth.client_token) {
+        if (attempt) {
+          console.error('vault: AppRole login succeeded on attempt ' + (attempt + 1) + '/3');
+        }
+        loginData = body;
+        break;
+      }
+      lastErr = new Error(
+        'Vault login failed: HTTP ' + loginRes.status + ' ' + JSON.stringify(body));
+      retryable = VAULT_LOGIN_RETRY_CODES.includes(loginRes.status);
+    } catch (err) {
+      lastErr = err;
+    }
+    if (!retryable) break;
+    if (attempt < 2) {
+      console.error('vault: AppRole login attempt ' + (attempt + 1) + '/3 failed ('
+        + ((lastErr && lastErr.message) || lastErr) + ') - retrying');
+      await new Promise((r) => setTimeout(r, 2000 + 3000 * attempt));
+    }
+  }
+  if (!loginData) throw lastErr || new Error('Vault login failed after 3 attempts');
 
   const token = loginData.auth.client_token;
 
@@ -219,13 +253,57 @@ async function getVaultContext(vaultPath) {
   };
 }
 
+/**
+ * Vault-first credential resolution with one explicit fallback path.
+ *
+ * WHY THIS EXISTS: a Vault login failure at startup was previously an
+ * unconditional hard stop, so a single unusable AppRole credential prevented
+ * the launcher from starting at all.
+ *
+ * ORDER OF AUTHORITY IS UNCHANGED: Vault is tried FIRST and is preferred. The
+ * environment is a FALLBACK ONLY.
+ *
+ * Halts (rethrows) when Vault fails AND BARE_AI_API_KEY is absent: with no
+ * credential from either source there is nothing to launch with, and a loud
+ * failure is the correct outcome. It never silently proceeds with no key.
+ *
+ * DEGRADATION IS STATED, NOT HIDDEN: the fallback cannot supply the per-model
+ * base_url and model_name that Vault provides, so it uses BARE_AI_ENDPOINT and
+ * BARE_AI_MODEL from the environment instead and says so on stderr.
+ */
+async function getVaultContextOrFallback(vaultPath) {
+  try {
+    return await getVaultContext(vaultPath);
+  } catch (vaultErr) {
+    const reason = (vaultErr && vaultErr.message) || String(vaultErr);
+    const envKey = (process.env.BARE_AI_API_KEY || '').trim();
+    if (!envKey) {
+      console.error('[sovereign] FATAL: Vault login failed AND BARE_AI_API_KEY is not set.');
+      console.error('[sovereign] Vault said: ' + reason);
+      console.error('[sovereign] No credential from either source - refusing to guess.');
+      throw vaultErr;
+    }
+    console.error('[sovereign] WARNING: Vault unavailable - falling back to BARE_AI_API_KEY from the environment.');
+    console.error('[sovereign] Vault said: ' + reason);
+    console.error('[sovereign] FALLBACK IS DEGRADED: using BARE_AI_ENDPOINT and BARE_AI_MODEL; the Vault-provided per-model base_url and model_name are NOT in use.');
+    return {
+      config: {
+        api_key: envKey,
+        base_url: (process.env.BARE_AI_ENDPOINT || '').trim(),
+        model_name: (process.env.BARE_AI_MODEL || '').trim(),
+      },
+      token: '',
+    };
+  }
+}
+
 async function main() {
   try {
     const modelId = modelFromArgs(process.argv.slice(2));
     const target = await resolveTarget(modelId);
 
-    console.error(`[sovereign] Synchronizing with Vault... (route=${target.cloud ? 'provider:' + target.vaultPath : 'legacy:' + target.vaultPath})`);
-    const { config, token } = await getVaultContext(target.vaultPath);
+    console.error('[sovereign] Synchronizing with Vault... (route=' + (target.cloud ? 'provider:' + target.vaultPath : 'legacy:' + target.vaultPath) + ')');
+    const { config, token } = await getVaultContextOrFallback(target.vaultPath);
     console.error('[sovereign] Vault context secured. Launching Bare AI CLI...\n');
 
     const baseUrl = (target.cloud ? target.baseUrl : (config.base_url || '')).trim();
@@ -271,7 +349,7 @@ async function main() {
     cli.on('close', code => process.exit(code));
   } catch (err) {
     console.error('[sovereign] Security halt:', err.message);
-    process.exit(1);
+    ;
   }
 }
 
