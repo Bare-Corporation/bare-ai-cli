@@ -202,7 +202,13 @@ async function getVaultContext(vaultPath) {
   // 403/429/500/502/503 and on network errors; break at once on any OTHER status
   // (a malformed role_id or a 400 will not fix itself by waiting); 3 attempts max;
   // then rethrow, so a genuinely broken credential is still loud and fails closed.
-  const VAULT_LOGIN_RETRY_CODES = [403, 429, 500, 502, 503];
+  // 403 REMOVED 2026-09-14. An AppRole login 403 is not a transient credential
+  // blip: Vault's user lockout answers with 403 "permission denied", while a wrong
+  // or expired secret_id answers 400 "invalid role or secret ID". Retrying a
+  // lockout ADDS failed attempts and deepens it - a 4-minute retry loop turned a
+  // brief lockout into a permanent fleet-wide one (proven 2026-09-14). Only
+  // genuinely transient codes are retried now. Do not add 403 back.
+  const VAULT_LOGIN_RETRY_CODES = [429, 500, 502, 503];
   let loginData = null;
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
