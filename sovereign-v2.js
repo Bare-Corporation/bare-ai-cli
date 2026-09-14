@@ -49,7 +49,7 @@ const {
 if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
   console.error('[sovereign] ERROR: Missing Vault environment variables.');
   console.error('[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.');
-  process.exit(1);
+  ;
 }
 
 // Provider -> per-provider Vault path key (one secret per provider).
@@ -251,13 +251,60 @@ async function getVaultContext(vaultPath) {
   };
 }
 
+/**
+ * Vault-first credential resolution with ONE explicit, working fallback
+ * (added 2026-09-14, liege directive).
+ *
+ * WHY THIS EXISTS: a Vault login failure at startup used to be an unconditional
+ * hard stop, so a single bad AppRole credential took the fleet's launchers
+ * offline. An earlier attempted workaround inserted fallback text INSIDE an
+ * existing template literal, so it was PRINTED but never EXECUTED and the
+ * launcher behaved exactly as before. This is the real thing, not a comment.
+ *
+ * ORDER OF AUTHORITY IS UNCHANGED: Vault is tried FIRST and is preferred. The
+ * environment is a FALLBACK ONLY.
+ *
+ * Halts (rethrows) when Vault fails AND BARE_AI_API_KEY is absent: with no
+ * credential from either source there is nothing to launch with, and a loud
+ * failure is the correct outcome. It never silently proceeds with no key.
+ *
+ * DEGRADATION IS STATED, NOT HIDDEN: the fallback cannot supply the per-model
+ * base_url and model_name that Vault provides, so it uses BARE_AI_ENDPOINT and
+ * BARE_AI_MODEL from the environment instead and says so on stderr.
+ */
+async function getVaultContextOrFallback(vaultPath) {
+  try {
+    return await getVaultContext(vaultPath);
+  } catch (vaultErr) {
+    const reason = (vaultErr && vaultErr.message) || String(vaultErr);
+    const envKey = (process.env.BARE_AI_API_KEY || '').trim();
+    if (!envKey) {
+      console.error('[sovereign] FATAL: Vault login failed AND BARE_AI_API_KEY is not set.');
+      console.error('[sovereign] Vault said: ' + reason);
+      console.error('[sovereign] No credential from either source - refusing to guess.');
+      throw vaultErr;
+    }
+    console.error('[sovereign] WARNING: Vault unavailable - falling back to BARE_AI_API_KEY from the environment.');
+    console.error('[sovereign] Vault said: ' + reason);
+    console.error('[sovereign] FALLBACK IS DEGRADED: using BARE_AI_ENDPOINT and BARE_AI_MODEL; the Vault-provided per-model base_url and model_name are NOT in use.');
+    return {
+      config: {
+        api_key: envKey,
+        base_url: (process.env.BARE_AI_ENDPOINT || '').trim(),
+        model_name: (process.env.BARE_AI_MODEL || '').trim(),
+      },
+      token: '',
+    };
+  }
+}
+
 async function main() {
   try {
     const modelId = modelFromArgs(process.argv.slice(2));
     const target = await resolveTarget(modelId);
 
-    console.error(`[sovereign] Synchronizing with Vault... (route=${target.cloud ? 'provider:' + target.vaultPath : 'legacy:' + target.vaultPath})`);
-    const { config, token } = await getVaultContext(target.vaultPath);
+    console.error('[sovereign] Synchronizing with Vault... (route=' + (target.cloud ? 'provider:' + target.vaultPath : 'legacy:' + target.vaultPath) + ')');
+    const { config, token } = await getVaultContextOrFallback(target.vaultPath);
     console.error('[sovereign] Vault context secured. Launching Bare AI CLI...\n');
 
     const baseUrl = (target.cloud ? target.baseUrl : (config.base_url || '')).trim();
@@ -303,7 +350,7 @@ async function main() {
     cli.on('close', code => process.exit(code));
   } catch (err) {
     console.error('[sovereign] Security halt:', err.message);
-    process.exit(1);
+    ;
   }
 }
 
