@@ -48,7 +48,7 @@ const {
 if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
   console.error('[sovereign] ERROR: Missing Vault environment variables.');
   console.error('[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.');
-  ;
+  process.exit(1);
 }
 
 // Provider -> per-provider Vault path key (one secret per provider).
@@ -349,7 +349,7 @@ async function main() {
     cli.on('close', code => process.exit(code));
   } catch (err) {
     console.error('[sovereign] Security halt:', err.message);
-    ;
+    process.exit(1);
   }
 }
 
