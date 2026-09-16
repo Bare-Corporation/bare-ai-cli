@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @license
+ * Copyright 2026 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* eslint-disable no-undef, @typescript-eslint/no-unused-vars */
 /**
 ############################################################
@@ -30,24 +35,70 @@ import { spawn } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { Agent } from 'undici';
 
 // TLS verification bypass intentionally removed: the Vault certificate carries a
 // valid IP SAN and is trusted by the system trust store, so strict certificate
 // validation succeeds. Do not reintroduce the bypass - fix the certificate
 // instead.
 
+// ---------------------------------------------------------------------------
+// Vault TLS trust comes from CODE, not from the environment.
+//
+// WHY: NODE_EXTRA_CA_CERTS only has an effect when it is exported BEFORE the
+// Node process starts - which happens in interactive shells (.bashrc) and
+// nowhere else. Under cron, systemd and the M2M bus the variable is absent, so
+// the CA was untrusted and every Vault call died as a bare "fetch failed".
+// The trust anchor is now attached per-request through an undici Agent.
+//
+// RESOLUTION ORDER:
+//   1. NODE_EXTRA_CA_CERTS already set -> leave it alone, no dispatcher needed
+//      (Node's own trust store already carries that CA).
+//   2. Otherwise read the per-user CA file below into memory.
+//   3. If the file is absent, warn once - naming the exact expected path - and
+//      continue with Node's default trust store. Never skip trust silently.
+//
+// Verification stays STRICT: connect.ca ADDS a trust anchor; it does not
+// disable verification. No rejectUnauthorized:false, no
+// NODE_TLS_REJECT_UNAUTHORIZED, ever.
+// ---------------------------------------------------------------------------
+const VAULT_CA_PATH = join(homedir(), '.bare-ai', 'ca', 'vault-ca.crt');
+
+function buildVaultDispatcher() {
+  if (process.env.NODE_EXTRA_CA_CERTS) return null;
+  let ca;
+  try {
+    ca = readFileSync(VAULT_CA_PATH, 'utf8');
+  } catch (err) {
+    console.error(
+      '[sovereign] WARNING: Vault CA file not found at ' +
+        VAULT_CA_PATH +
+        ' - continuing with the Node default trust store (TLS errors may follow) [' +
+        (err && err.code ? err.code : String(err)) +
+        ']',
+    );
+    return null;
+  }
+  return new Agent({ connect: { ca } });
+}
+
+const vaultDispatcher = buildVaultDispatcher();
+// Spread into fetch calls to Vault. Empty object when the environment already
+// supplies the CA, so the built-in global dispatcher keeps being used.
+const vaultFetchOptions = vaultDispatcher
+  ? { dispatcher: vaultDispatcher }
+  : {};
+
 // Global Config from Environment
-const {
-  VAULT_ADDR,
-  VAULT_ROLE_ID,
-  VAULT_SECRET_ID,
-  VAULT_SECRET_PATH
-} = process.env;
+const { VAULT_ADDR, VAULT_ROLE_ID, VAULT_SECRET_ID, VAULT_SECRET_PATH } =
+  process.env;
 
 // Halt if mandatory security variables are missing
 if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
   console.error('[sovereign] ERROR: Missing Vault environment variables.');
-  console.error('[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.');
+  console.error(
+    '[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.',
+  );
   process.exit(1);
 }
 
@@ -84,10 +135,23 @@ function vaultKeyForProvider(provider) {
 // well-known cloud model prefixes to the correct per-provider Vault secret and
 // a built-in endpoint. Provider secrets only carry api_key (since 2026-09-01).
 const PREFIX_ROUTE = {
-  'deepseek-': { key: 'deepseek', baseUrl: 'https://api.deepseek.com/v1/chat/completions' },
-  'claude-': { key: 'claude', baseUrl: 'https://api.anthropic.com/v1/messages' },
-  'gemini-': { key: 'gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-  'gpt-': { key: 'openai', baseUrl: 'https://api.openai.com/v1/chat/completions' },
+  'deepseek-': {
+    key: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1/chat/completions',
+  },
+  'claude-': {
+    key: 'claude',
+    baseUrl: 'https://api.anthropic.com/v1/messages',
+  },
+  'gemini-': {
+    key: 'gemini',
+    baseUrl:
+      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+  },
+  'gpt-': {
+    key: 'openai',
+    baseUrl: 'https://api.openai.com/v1/chat/completions',
+  },
 };
 function modelPrefixRoute(modelId) {
   const low = String(modelId || '').toLowerCase();
@@ -97,8 +161,10 @@ function modelPrefixRoute(modelId) {
   return null;
 }
 
-const CATALOG_CACHE = process.env.CATALOG_CACHE || join(homedir(), '.bare-ai/model-catalog.json');
-const COUNCIL_API_BASE_URL = process.env.COUNCIL_API_BASE_URL || 'https://api.bare-ai.net';
+const CATALOG_CACHE =
+  process.env.CATALOG_CACHE || join(homedir(), '.bare-ai/model-catalog.json');
+const COUNCIL_API_BASE_URL =
+  process.env.COUNCIL_API_BASE_URL || 'https://api.bare-ai.net';
 const CATALOG_MAX_AGE_SEC = Number(process.env.CATALOG_MAX_AGE_SEC || 3600);
 
 // Extract the model id from argv (--model <id> or first positional).
@@ -107,7 +173,13 @@ function modelFromArgs(argv) {
     if (argv[i] === '--model' && argv[i + 1]) return argv[i + 1];
   }
   for (const a of argv) {
-    if (!a.startsWith('-') && !a.startsWith('http') && !a.includes(' ') && !a.includes(':')) return a;
+    if (
+      !a.startsWith('-') &&
+      !a.startsWith('http') &&
+      !a.includes(' ') &&
+      !a.includes(':')
+    )
+      return a;
   }
   return null;
 }
@@ -119,10 +191,15 @@ function getAgentId() {
   const fromEnv = (process.env.AGENT_ID || '').trim();
   if (fromEnv) return fromEnv;
   try {
-    const txt = readFileSync(join(homedir(), '.bare-ai/config/agent.env'), 'utf8');
+    const txt = readFileSync(
+      join(homedir(), '.bare-ai/config/agent.env'),
+      'utf8',
+    );
     const m = txt.match(/^\s*export\s+AGENT_ID\s*=\s*["']?([^"'\s]+)/m);
     if (m && m[1]) return m[1].trim();
-  } catch (_) { /* agent.env missing/unreadable -> send no header */ }
+  } catch (_) {
+    /* agent.env missing/unreadable -> send no header */
+  }
   return undefined;
 }
 
@@ -134,7 +211,9 @@ async function loadCatalog() {
       const parsed = JSON.parse(readFileSync(CATALOG_CACHE, 'utf8'));
       if (parsed && Array.isArray(parsed.models)) return parsed.models;
     }
-  } catch (_) { /* cache missing or stale -> fetch */ }
+  } catch (_) {
+    /* cache missing or stale -> fetch */
+  }
   try {
     const headers = { Accept: 'application/json' };
     const agentId = getAgentId();
@@ -147,7 +226,9 @@ async function loadCatalog() {
       const parsed = await res.json();
       if (parsed && Array.isArray(parsed.models)) return parsed.models;
     }
-  } catch (_) { /* network unavailable -> fallback to legacy */ }
+  } catch (_) {
+    /* network unavailable -> fallback to legacy */
+  }
   return null;
 }
 
@@ -161,7 +242,7 @@ async function resolveTarget(modelId) {
   if (modelId) {
     const rows = await loadCatalog();
     if (rows) {
-      const row = rows.find(r => r.model_id === modelId);
+      const row = rows.find((r) => r.model_id === modelId);
       const key = row ? vaultKeyForProvider(row.provider) : null;
       if (row && key && row.is_cloud) {
         return {
@@ -174,7 +255,12 @@ async function resolveTarget(modelId) {
     }
     // Catalog loaded but model not found as a cloud row -> no provider route.
   } else {
-    return { vaultPath: VAULT_SECRET_PATH, baseUrl: null, modelName: null, cloud: false };
+    return {
+      vaultPath: VAULT_SECRET_PATH,
+      baseUrl: null,
+      modelName: null,
+      cloud: false,
+    };
   }
   // Offline / prefix fallback for well-known cloud models.
   const pref = modelPrefixRoute(modelId);
@@ -186,7 +272,33 @@ async function resolveTarget(modelId) {
       cloud: true,
     };
   }
-  return { vaultPath: VAULT_SECRET_PATH, baseUrl: null, modelName: null, cloud: false };
+  return {
+    vaultPath: VAULT_SECRET_PATH,
+    baseUrl: null,
+    modelName: null,
+    cloud: false,
+  };
+}
+
+/**
+ * Format an error for operator-facing output, including the underlying cause.
+ *
+ * WHY: a TLS trust failure (e.g. the Vault server presenting a certificate this
+ * process does not trust) reaches fetch() as a bare "fetch failed". The actual
+ * diagnosis - DEPTH_ZERO_SELF_SIGNED_CERT, UNABLE_TO_VERIFY_LEAF_SIGNATURE,
+ * ECONNREFUSED - lives on err.cause.code, which was previously thrown away.
+ * That single omission cost hours of investigation; never drop it again.
+ *
+ * This helper changes the MESSAGE only, never retry policy.
+ */
+function describeError(err) {
+  if (!err) return String(err);
+  const base = err.message || String(err);
+  const cause = err.cause;
+  if (!cause) return base;
+  const detail = [cause.code, cause.message].filter(Boolean).join(' ');
+  if (!detail || detail === base) return base;
+  return base + ' (cause: ' + detail + ')';
 }
 
 /**
@@ -213,43 +325,61 @@ async function getVaultContext(vaultPath) {
       const loginRes = await fetch(VAULT_ADDR + '/v1/auth/approle/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }),
+        body: JSON.stringify({
+          role_id: VAULT_ROLE_ID,
+          secret_id: VAULT_SECRET_ID,
+        }),
+        ...vaultFetchOptions,
       });
       const body = await loginRes.json().catch(() => null);
       if (loginRes.ok && body && body.auth && body.auth.client_token) {
         if (attempt) {
-          console.error('vault: AppRole login succeeded on attempt ' + (attempt + 1) + '/3');
+          console.error(
+            'vault: AppRole login succeeded on attempt ' + (attempt + 1) + '/3',
+          );
         }
         loginData = body;
         break;
       }
       lastErr = new Error(
-        'Vault login failed: HTTP ' + loginRes.status + ' ' + JSON.stringify(body));
+        'Vault login failed: HTTP ' +
+          loginRes.status +
+          ' ' +
+          JSON.stringify(body),
+      );
       retryable = VAULT_LOGIN_RETRY_CODES.includes(loginRes.status);
     } catch (err) {
       lastErr = err;
     }
     if (!retryable) break;
     if (attempt < 2) {
-      console.error('vault: AppRole login attempt ' + (attempt + 1) + '/3 failed ('
-        + ((lastErr && lastErr.message) || lastErr) + ') - retrying');
+      console.error(
+        'vault: AppRole login attempt ' +
+          (attempt + 1) +
+          '/3 failed (' +
+          describeError(lastErr) +
+          ') - retrying',
+      );
       await new Promise((r) => setTimeout(r, 2000 + 3000 * attempt));
     }
   }
-  if (!loginData) throw lastErr || new Error('Vault login failed after 3 attempts');
+  if (!loginData)
+    throw lastErr || new Error('Vault login failed after 3 attempts');
 
   const token = loginData.auth.client_token;
 
   // 2. Fetch model config using the token
   const secretRes = await fetch(`${VAULT_ADDR}/v1/${vaultPath}`, {
     headers: { 'X-Vault-Token': token },
+    ...vaultFetchOptions,
   });
   const secretData = await secretRes.json();
-  if (!secretData?.data?.data) throw new Error(`Path ${vaultPath} returned no data.`);
+  if (!secretData?.data?.data)
+    throw new Error(`Path ${vaultPath} returned no data.`);
 
   return {
     config: secretData.data.data,
-    token: token
+    token: token,
   };
 }
 
@@ -275,17 +405,25 @@ async function getVaultContextOrFallback(vaultPath) {
   try {
     return await getVaultContext(vaultPath);
   } catch (vaultErr) {
-    const reason = (vaultErr && vaultErr.message) || String(vaultErr);
+    const reason = describeError(vaultErr);
     const envKey = (process.env.BARE_AI_API_KEY || '').trim();
     if (!envKey) {
-      console.error('[sovereign] FATAL: Vault login failed AND BARE_AI_API_KEY is not set.');
+      console.error(
+        '[sovereign] FATAL: Vault login failed AND BARE_AI_API_KEY is not set.',
+      );
       console.error('[sovereign] Vault said: ' + reason);
-      console.error('[sovereign] No credential from either source - refusing to guess.');
+      console.error(
+        '[sovereign] No credential from either source - refusing to guess.',
+      );
       throw vaultErr;
     }
-    console.error('[sovereign] WARNING: Vault unavailable - falling back to BARE_AI_API_KEY from the environment.');
+    console.error(
+      '[sovereign] WARNING: Vault unavailable - falling back to BARE_AI_API_KEY from the environment.',
+    );
     console.error('[sovereign] Vault said: ' + reason);
-    console.error('[sovereign] FALLBACK IS DEGRADED: using BARE_AI_ENDPOINT and BARE_AI_MODEL; the Vault-provided per-model base_url and model_name are NOT in use.');
+    console.error(
+      '[sovereign] FALLBACK IS DEGRADED: using BARE_AI_ENDPOINT and BARE_AI_MODEL; the Vault-provided per-model base_url and model_name are NOT in use.',
+    );
     return {
       config: {
         api_key: envKey,
@@ -302,24 +440,38 @@ async function main() {
     const modelId = modelFromArgs(process.argv.slice(2));
     const target = await resolveTarget(modelId);
 
-    console.error('[sovereign] Synchronizing with Vault... (route=' + (target.cloud ? 'provider:' + target.vaultPath : 'legacy:' + target.vaultPath) + ')');
+    console.error(
+      '[sovereign] Synchronizing with Vault... (route=' +
+        (target.cloud
+          ? 'provider:' + target.vaultPath
+          : 'legacy:' + target.vaultPath) +
+        ')',
+    );
     const { config, token } = await getVaultContextOrFallback(target.vaultPath);
-    console.error('[sovereign] Vault context secured. Launching Bare AI CLI...\n');
+    console.error(
+      '[sovereign] Vault context secured. Launching Bare AI CLI...\n',
+    );
 
-    const baseUrl = (target.cloud ? target.baseUrl : (config.base_url || '')).trim();
-    const modelName = (target.cloud ? target.modelName : (config.model_name || '')).trim();
+    const baseUrl = (
+      target.cloud ? target.baseUrl : config.base_url || ''
+    ).trim();
+    const modelName = (
+      target.cloud ? target.modelName : config.model_name || ''
+    ).trim();
 
-    if (!baseUrl) throw new Error(`base_url empty for ${modelId || target.vaultPath}`);
+    if (!baseUrl)
+      throw new Error(`base_url empty for ${modelId || target.vaultPath}`);
 
     const secureEnv = {
       ...process.env,
       // Dynamic endpoint logic
-      BARE_AI_ENDPOINT: baseUrl.includes('completions') || baseUrl.includes('messages')
-        ? baseUrl
-        : `${baseUrl}/v1/chat/completions`,
+      BARE_AI_ENDPOINT:
+        baseUrl.includes('completions') || baseUrl.includes('messages')
+          ? baseUrl
+          : `${baseUrl}/v1/chat/completions`,
 
       BARE_AI_API_KEY: (config.api_key || 'none').trim(),
-      BARE_AI_MODEL:   modelName,
+      BARE_AI_MODEL: modelName,
 
       // Temporary token for mid-session hot-swapping
       VAULT_TOKEN: token,
@@ -335,7 +487,7 @@ async function main() {
     // Dynamically inject the system prompt if the bash script provided one
     const spawnArgs = ['bundle/bare-ai.js', '--yolo'];
     if (process.env.BARE_AI_SYSTEM_PROMPT) {
-        spawnArgs.push('-i', process.env.BARE_AI_SYSTEM_PROMPT);
+      spawnArgs.push('-i', process.env.BARE_AI_SYSTEM_PROMPT);
     }
 
     // Append any extra arguments the user passed (like --model)
@@ -346,9 +498,9 @@ async function main() {
       env: secureEnv,
     });
 
-    cli.on('close', code => process.exit(code));
+    cli.on('close', (code) => process.exit(code));
   } catch (err) {
-    console.error('[sovereign] Security halt:', err.message);
+    console.error('[sovereign] Security halt:', describeError(err));
     process.exit(1);
   }
 }
