@@ -1,10 +1,10 @@
-# Gemini CLI settings (`/settings` command)
+# Bare AI CLI settings (`/settings` command)
 
-Control your Gemini CLI experience with the `/settings` command. The `/settings`
-command opens a dialog to view and edit all your Gemini CLI settings, including
-your UI experience, keybindings, and accessibility features.
+Control your Bare AI CLI experience with the `/settings` command. The
+`/settings` command opens a dialog to view and edit all your Bare AI CLI
+settings, including your UI experience, keybindings, and accessibility features.
 
-Your Gemini CLI settings are stored in a `settings.json` file. In addition to
+Your Bare AI CLI settings are stored in a `settings.json` file. In addition to
 using the `/settings` command, you can also edit them in one of the following
 locations:
 
@@ -29,9 +29,8 @@ they appear in the UI.
 | Vim Mode                | `general.vimMode`                  | Enable Vim keybindings                                                                                                                                                                                                                                        | `false`     |
 | Default Approval Mode   | `general.defaultApprovalMode`      | The default approval mode for tool execution. 'default' prompts for approval, 'auto_edit' auto-approves edit tools, and 'plan' is read-only mode. YOLO mode (auto-approve all actions) can only be enabled via command line (--yolo or --approval-mode=yolo). | `"default"` |
 | Enable Auto Update      | `general.enableAutoUpdate`         | Enable automatic updates.                                                                                                                                                                                                                                     | `true`      |
-| Enable Notifications    | `general.enableNotifications`      | Enable run-event notifications for action-required prompts and session completion.                                                                                                                                                                            | `false`     |
-| Enable Plan Mode        | `general.plan.enabled`             | Enable Plan Mode for read-only safety during planning.                                                                                                                                                                                                        | `true`      |
-| Plan Directory          | `general.plan.directory`           | The directory where planning artifacts are stored. If not specified, defaults to the system temporary directory. A custom directory requires a policy to allow write access in Plan Mode.                                                                     | `undefined` |
+| Enable Notifications    | `general.enableNotifications`      | Enable run-event notifications for action-required prompts and session completion. Currently macOS only.                                                                                                                                                      | `false`     |
+| Plan Directory          | `general.plan.directory`           | The directory where planning artifacts are stored. If not specified, defaults to the system temporary directory.                                                                                                                                              | `undefined` |
 | Plan Model Routing      | `general.plan.modelRouting`        | Automatically switch between Pro and Flash models based on Plan Mode status. Uses Pro for the planning phase and Flash for the implementation phase.                                                                                                          | `true`      |
 | Retry Fetch Errors      | `general.retryFetchErrors`         | Retry on "exception TypeError: fetch failed sending request" errors.                                                                                                                                                                                          | `true`      |
 | Max Chat Model Attempts | `general.maxAttempts`              | Maximum number of attempts for requests to the main chat model. Cannot exceed 10.                                                                                                                                                                             | `10`        |
@@ -49,20 +48,20 @@ they appear in the UI.
 
 | UI Label                             | Setting                                | Description                                                                                                                                                       | Default  |
 | ------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Collapse Drawer During Approval      | `ui.collapseDrawerDuringApproval`      | Collapse the input drawer when a tool confirmation is shown.                                                                                                      | `false`  |
+| Escape Pasted @ Symbols              | `ui.escapePastedAtSymbols`             | When enabled, @ symbols in pasted text are escaped to prevent unintended @path expansion.                                                                         | `false`  |
 | Auto Theme Switching                 | `ui.autoThemeSwitching`                | Automatically switch between default light and dark themes based on terminal background color.                                                                    | `true`   |
 | Terminal Background Polling Interval | `ui.terminalBackgroundPollingInterval` | Interval in seconds to poll the terminal background color.                                                                                                        | `60`     |
 | Hide Window Title                    | `ui.hideWindowTitle`                   | Hide the window title bar                                                                                                                                         | `false`  |
 | Inline Thinking                      | `ui.inlineThinkingMode`                | Display model thinking inline: off or full.                                                                                                                       | `"off"`  |
-| Show Thoughts in Title               | `ui.showStatusInTitle`                 | Show Gemini CLI model thoughts in the terminal window title during the working phase                                                                              | `false`  |
+| Show Thoughts in Title               | `ui.showStatusInTitle`                 | Show Bare AI CLI model thoughts in the terminal window title during the working phase                                                                             | `false`  |
 | Dynamic Window Title                 | `ui.dynamicWindowTitle`                | Update the terminal window title with current status icons (Ready: ◇, Action Required: ✋, Working: ✦)                                                            | `true`   |
-| Show Home Directory Warning          | `ui.showHomeDirectoryWarning`          | Show a warning when running Gemini CLI in the home directory.                                                                                                     | `true`   |
+| Show Home Directory Warning          | `ui.showHomeDirectoryWarning`          | Show a warning when running Bare AI CLI in the home directory.                                                                                                    | `true`   |
 | Show Compatibility Warnings          | `ui.showCompatibilityWarnings`         | Show warnings about terminal or OS compatibility issues.                                                                                                          | `true`   |
 | Hide Tips                            | `ui.hideTips`                          | Hide helpful tips in the UI                                                                                                                                       | `false`  |
-| Escape Pasted @ Symbols              | `ui.escapePastedAtSymbols`             | When enabled, @ symbols in pasted text are escaped to prevent unintended @path expansion.                                                                         | `false`  |
 | Show Shortcuts Hint                  | `ui.showShortcutsHint`                 | Show the "? for shortcuts" hint above the input.                                                                                                                  | `true`   |
-| Compact Tool Output                  | `ui.compactToolOutput`                 | Display tool outputs (like directory listings and file reads) in a compact, structured format.                                                                    | `false`  |
 | Hide Banner                          | `ui.hideBanner`                        | Hide the application banner                                                                                                                                       | `false`  |
-| Hide Context Summary                 | `ui.hideContextSummary`                | Hide the context summary (BARE_AI.md, MCP servers) above the input.                                                                                                | `false`  |
+| Hide Context Summary                 | `ui.hideContextSummary`                | Hide the context summary (BARE_AI.md, MCP servers) above the input.                                                                                               | `false`  |
 | Hide CWD                             | `ui.footer.hideCWD`                    | Hide the current working directory in the footer.                                                                                                                 | `false`  |
 | Hide Sandbox Status                  | `ui.footer.hideSandboxStatus`          | Hide the sandbox status indicator in the footer.                                                                                                                  | `false`  |
 | Hide Model Info                      | `ui.footer.hideModelInfo`              | Hide the model name and context usage in the footer.                                                                                                              | `false`  |
@@ -97,25 +96,18 @@ they appear in the UI.
 
 | UI Label                      | Setting                      | Description                                                                            | Default     |
 | ----------------------------- | ---------------------------- | -------------------------------------------------------------------------------------- | ----------- |
-| Model                         | `model.name`                 | The Gemini model to use for conversations.                                             | `undefined` |
+| Model                         | `model.name`                 | The model to use for conversations.                                                    | `undefined` |
 | Max Session Turns             | `model.maxSessionTurns`      | Maximum number of user/model/tool turns to keep in a session. -1 means unlimited.      | `-1`        |
 | Context Compression Threshold | `model.compressionThreshold` | The fraction of context usage at which to trigger context compression (e.g. 0.2, 0.3). | `0.5`       |
 | Disable Loop Detection        | `model.disableLoopDetection` | Disable automatic detection and prevention of infinite loops.                          | `false`     |
 | Skip Next Speaker Check       | `model.skipNextSpeakerCheck` | Skip the next speaker check.                                                           | `true`      |
-
-### Agents
-
-| UI Label                  | Setting                                  | Description                                                                                   | Default |
-| ------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------- | ------- |
-| Confirm Sensitive Actions | `agents.browser.confirmSensitiveActions` | Require manual confirmation for sensitive browser actions (e.g., fill_form, evaluate_script). | `false` |
-| Block File Uploads        | `agents.browser.blockFileUploads`        | Hard-block file upload requests from the browser agent.                                       | `false` |
 
 ### Context
 
 | UI Label                             | Setting                                           | Description                                                                                                                                                                                                                                 | Default |
 | ------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | Memory Discovery Max Dirs            | `context.discoveryMaxDirs`                        | Maximum number of directories to search for memory.                                                                                                                                                                                         | `200`   |
-| Load Memory From Include Directories | `context.loadMemoryFromIncludeDirectories`        | Controls how /memory reload loads BARE_AI.md files. When true, include directories are scanned; when false, only the current directory is used.                                                                                              | `false` |
+| Load Memory From Include Directories | `context.loadMemoryFromIncludeDirectories`        | Controls how /memory reload loads BARE_AI.md files. When true, include directories are scanned; when false, only the current directory is used.                                                                                             | `false` |
 | Respect .gitignore                   | `context.fileFiltering.respectGitIgnore`          | Respect .gitignore files when searching.                                                                                                                                                                                                    | `true`  |
 | Respect .geminiignore                | `context.fileFiltering.respectGeminiIgnore`       | Respect .geminiignore files when searching.                                                                                                                                                                                                 | `true`  |
 | Enable Recursive File Search         | `context.fileFiltering.enableRecursiveFileSearch` | Enable recursive file search functionality when completing @ references in the prompt.                                                                                                                                                      | `true`  |
@@ -126,8 +118,6 @@ they appear in the UI.
 
 | UI Label                         | Setting                              | Description                                                                                                                                                                | Default |
 | -------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Sandbox Allowed Paths            | `tools.sandboxAllowedPaths`          | List of additional paths that the sandbox is allowed to access.                                                                                                            | `[]`    |
-| Sandbox Network Access           | `tools.sandboxNetworkAccess`         | Whether the sandbox is allowed to access the network.                                                                                                                      | `false` |
 | Enable Interactive Shell         | `tools.shell.enableInteractiveShell` | Use node-pty for an interactive shell experience. Fallback to child_process still applies.                                                                                 | `true`  |
 | Show Color                       | `tools.shell.showColor`              | Show color in shell output.                                                                                                                                                | `false` |
 | Use Ripgrep                      | `tools.useRipgrep`                   | Use ripgrep for file content search instead of the fallback implementation. Provides faster search performance.                                                            | `true`  |
@@ -138,9 +128,9 @@ they appear in the UI.
 
 | UI Label                              | Setting                                         | Description                                                                                                                                                                                                                          | Default |
 | ------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| Tool Sandboxing                       | `security.toolSandboxing`                       | Experimental tool-level sandboxing (implementation in progress).                                                                                                                                                                     | `false` |
-| Disable YOLO Mode                     | `security.disableYoloMode`                      | Disable YOLO mode, even if enabled by a flag.                                                                                                                                                                                        | `false` |
+| Tool Sandboxing                       | `security.toolSandboxing`                       | Tool-level sandboxing. Isolates individual tools instead of the entire CLI process.                                                                                                                                                  | `false` |
 | Disable Always Allow                  | `security.disableAlwaysAllow`                   | Disable "Always allow" options in tool confirmation dialogs.                                                                                                                                                                         | `false` |
+| Disable YOLO Mode                     | `security.disableYoloMode`                      | Disable YOLO mode, even if enabled by a flag.                                                                                                                                                                                        | `false` |
 | Allow Permanent Tool Approval         | `security.enablePermanentToolApproval`          | Enable the "Allow for all future sessions" option in tool confirmation dialogs.                                                                                                                                                      | `false` |
 | Auto-add to Policy by Default         | `security.autoAddToPolicyByDefault`             | When enabled, the "Allow for all future sessions" option becomes the default choice for low-risk tools in trusted workspaces.                                                                                                        | `false` |
 | Blocks extensions from Git            | `security.blockGitExtensions`                   | Blocks installing and loading extensions from Git.                                                                                                                                                                                   | `false` |
@@ -159,15 +149,13 @@ they appear in the UI.
 
 | UI Label                   | Setting                                  | Description                                                                                                                                               | Default |
 | -------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Topic & Update Narration   | `experimental.topicUpdateNarration`      | Enable the Topic & Update communication model for reduced chattiness.                                                                                     | `true`  |
 | Enable Tool Output Masking | `experimental.toolOutputMasking.enabled` | Enables tool output masking to save tokens.                                                                                                               | `true`  |
-| Enable Git Worktrees       | `experimental.worktrees`                 | Enable automated Git worktree management for parallel work.                                                                                               | `false` |
 | Use OSC 52 Paste           | `experimental.useOSC52Paste`             | Use OSC 52 for pasting. This may be more robust than the default system when using remote terminal sessions (if your terminal is configured to allow it). | `false` |
 | Use OSC 52 Copy            | `experimental.useOSC52Copy`              | Use OSC 52 for copying. This may be more robust than the default system when using remote terminal sessions (if your terminal is configured to allow it). | `false` |
+| Plan                       | `experimental.plan`                      | Enable Plan Mode.                                                                                                                                         | `true`  |
 | Model Steering             | `experimental.modelSteering`             | Enable model steering (user hints) to guide the model during tool execution.                                                                              | `false` |
 | Direct Web Fetch           | `experimental.directWebFetch`            | Enable web fetch behavior that bypasses LLM summarization.                                                                                                | `false` |
-| Memory Manager Agent       | `experimental.memoryManager`             | Replace the built-in save_memory tool with a memory manager subagent that supports adding, removing, de-duplicating, and organizing memories.             | `false` |
-| Enable Context Management  | `experimental.contextManagement`         | Enable logic for context management.                                                                                                                      | `false` |
-| Topic & Update Narration   | `experimental.topicUpdateNarration`      | Enable the experimental Topic & Update communication model for reduced chattiness and structured progress reporting.                                      | `false` |
 
 ### Skills
 

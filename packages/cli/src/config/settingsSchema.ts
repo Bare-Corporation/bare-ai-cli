@@ -441,7 +441,8 @@ const SETTINGS_SCHEMA = {
         category: 'UI',
         requiresRestart: false,
         default: false,
-        description: 'Collapse the input drawer when a tool confirmation is shown.',
+        description:
+          'Collapse the input drawer when a tool confirmation is shown.',
         showInDialog: true,
       },
       debugRainbow: {
@@ -459,7 +460,8 @@ const SETTINGS_SCHEMA = {
         category: 'UI',
         requiresRestart: false,
         default: false,
-        description: 'When enabled, @ symbols in pasted text are escaped to prevent unintended @path expansion.',
+        description:
+          'When enabled, @ symbols in pasted text are escaped to prevent unintended @path expansion.',
         showInDialog: true,
       },
       theme: {
@@ -948,7 +950,7 @@ const SETTINGS_SCHEMA = {
         category: 'Model',
         requiresRestart: false,
         default: undefined as string | undefined,
-        description: 'The Gemini model to use for conversations.',
+        description: 'The model to use for conversations.',
         showInDialog: true,
       },
       maxSessionTurns: {
@@ -1530,7 +1532,8 @@ const SETTINGS_SCHEMA = {
         category: 'Security',
         requiresRestart: true,
         default: false,
-        description: 'Tool-level sandboxing. Isolates individual tools instead of the entire CLI process.',
+        description:
+          'Tool-level sandboxing. Isolates individual tools instead of the entire CLI process.',
         showInDialog: true,
       },
       disableAlwaysAllow: {
@@ -1539,7 +1542,8 @@ const SETTINGS_SCHEMA = {
         category: 'Security',
         requiresRestart: true,
         default: false,
-        description: 'Disable "Always allow" options in tool confirmation dialogs.',
+        description:
+          'Disable "Always allow" options in tool confirmation dialogs.',
         showInDialog: true,
       },
       disableYoloMode: {
@@ -1829,7 +1833,8 @@ const SETTINGS_SCHEMA = {
         category: 'Experimental',
         requiresRestart: false,
         default: true,
-        description: 'Enable the Topic & Update communication model for reduced chattiness.',
+        description:
+          'Enable the Topic & Update communication model for reduced chattiness.',
         showInDialog: true,
       },
       toolOutputMasking: {

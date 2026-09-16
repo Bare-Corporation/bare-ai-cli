@@ -76,14 +76,15 @@ original CLI.
 Configuration is provided through environment variables, a `.env` file, or the
 `sovereign.js` Vault/OpenBao wrapper.
 
-| Variable               | Purpose                                 | Default                                      |
-| ---------------------- | --------------------------------------- | -------------------------------------------- |
-| `BARE_AI_ENDPOINT`     | Chat completions URL                    | `http://localhost:11434/v1/chat/completions` |
-| `BARE_AI_MODEL`        | Model string (e.g., `granite4:tiny-h`)  | —                                            |
-| `BARE_AI_API_KEY`      | Optional bearer token                   | none                                         |
-| `BARE_AI_CONSTITUTION` | Path to the system prompt markdown file | —                                            |
-| `BARE_AI_LEAN_TOOLS`   | Force tool pruning on/off               | auto-detected                                |
-| `DEBUG_BARE_AI`        | Verbose tracing                         | false                                        |
+| Variable                 | Purpose                                 | Default                                      |
+| ------------------------ | --------------------------------------- | -------------------------------------------- |
+| `BARE_AI_ENDPOINT`       | Chat completions URL                    | `http://localhost:11434/v1/chat/completions` |
+| `BARE_AI_MODEL`          | Model string (e.g., `granite4:tiny-h`)  | —                                            |
+| `BARE_AI_API_KEY`        | Optional bearer token                   | none                                         |
+| `BARE_AI_CONTEXT_WINDOW` | Model context window in tokens          | — (window unknown)                           |
+| `BARE_AI_CONSTITUTION`   | Path to the system prompt markdown file | —                                            |
+| `BARE_AI_LEAN_TOOLS`     | Force tool pruning on/off               | auto-detected                                |
+| `DEBUG_BARE_AI`          | Verbose tracing                         | false                                        |
 
 Vault/OpenBao credentials:
 

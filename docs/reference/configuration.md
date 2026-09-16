@@ -1,6 +1,6 @@
-# Gemini CLI configuration
+# Bare AI CLI configuration
 
-Gemini CLI offers several ways to configure its behavior, including environment
+Bare AI CLI offers several ways to configure its behavior, including environment
 variables, command-line arguments, and settings files. This document outlines
 the different configuration methods and available settings.
 
@@ -22,15 +22,15 @@ overridden by higher numbers):
 
 ## Settings files
 
-Gemini CLI uses JSON settings files for persistent configuration. There are four
-locations for these files:
+Bare AI CLI uses JSON settings files for persistent configuration. There are
+four locations for these files:
 
 <!-- prettier-ignore -->
 > [!TIP]
 > JSON-aware editors can use autocomplete and validation by pointing to
 > the generated schema at `schemas/settings.schema.json` in this repository.
 > When working outside the repo, reference the hosted schema at
-> `https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json`.
+> `https://raw.githubusercontent.com/Bare-Corporation/bare-ai-cli/main/schemas/settings.schema.json`.
 
 - **System defaults file:**
   - **Location:** `/etc/gemini-cli/system-defaults.json` (Linux),
@@ -43,11 +43,11 @@ locations for these files:
     user, project, or system override settings.
 - **User settings file:**
   - **Location:** `~/.gemini/settings.json` (where `~` is your home directory).
-  - **Scope:** Applies to all Gemini CLI sessions for the current user. User
+  - **Scope:** Applies to all Bare AI CLI sessions for the current user. User
     settings override system defaults.
 - **Project settings file:**
   - **Location:** `.gemini/settings.json` within your project's root directory.
-  - **Scope:** Applies only when running Gemini CLI from that specific project.
+  - **Scope:** Applies only when running Bare AI CLI from that specific project.
     Project settings override user settings and system defaults.
 - **System settings file:**
   - **Location:** `/etc/gemini-cli/settings.json` (Linux),
@@ -55,10 +55,10 @@ locations for these files:
     `/Library/Application Support/GeminiCli/settings.json` (macOS). The path can
     be overridden using the `GEMINI_CLI_SYSTEM_SETTINGS_PATH` environment
     variable.
-  - **Scope:** Applies to all Gemini CLI sessions on the system, for all users.
+  - **Scope:** Applies to all Bare AI CLI sessions on the system, for all users.
     System settings act as overrides, taking precedence over all other settings
     files. May be useful for system administrators at enterprises to have
-    controls over users' Gemini CLI setups.
+    controls over users' Bare AI CLI setups.
 
 **Note on environment variables in settings:** String values within your
 `settings.json` and `gemini-extension.json` files can reference environment
@@ -70,14 +70,15 @@ want to provide a fallback value, use `${MY_API_TOKEN:-default-token}`.
 Additionally, each extension can have its own `.env` file in its directory,
 which will be loaded automatically.
 
-**Note for Enterprise Users:** For guidance on deploying and managing Gemini CLI
-in a corporate environment, please see the
+**Note for Enterprise Users:** For guidance on deploying and managing Bare AI
+CLI in a corporate environment, please see the
 [Enterprise Configuration](../cli/enterprise.md) documentation.
 
 ### The `.gemini` directory in your project
 
 In addition to a project settings file, a project's `.gemini` directory can
-contain other project-specific files related to Gemini CLI's operation, such as:
+contain other project-specific files related to Bare AI CLI's operation, such
+as:
 
 - [Custom sandbox profiles](#sandboxing) (e.g.,
   `.gemini/sandbox-macos-custom.sb`, `.gemini/sandbox.Dockerfile`).
@@ -104,6 +105,10 @@ their corresponding top-level category object in your `settings.json` file.
   - **Requires restart:** Yes
 
 #### `general`
+
+- **`general.notificationMethod`** (string):
+  - **Description:** Method for run notifications.
+  - **Default:** `"terminal"`
 
 - **`general.preferredEditor`** (string):
   - **Description:** The preferred editor to open files in.
@@ -135,7 +140,7 @@ their corresponding top-level category object in your `settings.json` file.
 
 - **`general.enableNotifications`** (boolean):
   - **Description:** Enable run-event notifications for action-required prompts
-    and session completion.
+    and session completion. Currently macOS only.
   - **Default:** `false`
 
 - **`general.checkpointing.enabled`** (boolean):
@@ -143,15 +148,9 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `false`
   - **Requires restart:** Yes
 
-- **`general.plan.enabled`** (boolean):
-  - **Description:** Enable Plan Mode for read-only safety during planning.
-  - **Default:** `true`
-  - **Requires restart:** Yes
-
 - **`general.plan.directory`** (string):
   - **Description:** The directory where planning artifacts are stored. If not
-    specified, defaults to the system temporary directory. A custom directory
-    requires a policy to allow write access in Plan Mode.
+    specified, defaults to the system temporary directory.
   - **Default:** `undefined`
   - **Requires restart:** Yes
 
@@ -202,6 +201,20 @@ their corresponding top-level category object in your `settings.json` file.
 
 #### `ui`
 
+- **`ui.collapseDrawerDuringApproval`** (boolean):
+  - **Description:** Collapse the input drawer when a tool confirmation is
+    shown.
+  - **Default:** `false`
+
+- **`ui.debugRainbow`** (boolean):
+  - **Description:** Enable debug rainbow mode.
+  - **Default:** `false`
+
+- **`ui.escapePastedAtSymbols`** (boolean):
+  - **Description:** When enabled, @ symbols in pasted text are escaped to
+    prevent unintended @path expansion.
+  - **Default:** `false`
+
 - **`ui.theme`** (string):
   - **Description:** The color theme for the UI. See the CLI themes guide for
     available options.
@@ -231,8 +244,8 @@ their corresponding top-level category object in your `settings.json` file.
   - **Values:** `"off"`, `"full"`
 
 - **`ui.showStatusInTitle`** (boolean):
-  - **Description:** Show Gemini CLI model thoughts in the terminal window title
-    during the working phase
+  - **Description:** Show Bare AI CLI model thoughts in the terminal window
+    title during the working phase
   - **Default:** `false`
 
 - **`ui.dynamicWindowTitle`** (boolean):
@@ -241,7 +254,7 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `true`
 
 - **`ui.showHomeDirectoryWarning`** (boolean):
-  - **Description:** Show a warning when running Gemini CLI in the home
+  - **Description:** Show a warning when running Bare AI CLI in the home
     directory.
   - **Default:** `true`
   - **Requires restart:** Yes
@@ -255,18 +268,8 @@ their corresponding top-level category object in your `settings.json` file.
   - **Description:** Hide helpful tips in the UI
   - **Default:** `false`
 
-- **`ui.escapePastedAtSymbols`** (boolean):
-  - **Description:** When enabled, @ symbols in pasted text are escaped to
-    prevent unintended @path expansion.
-  - **Default:** `false`
-
 - **`ui.showShortcutsHint`** (boolean):
   - **Description:** Show the "? for shortcuts" hint above the input.
-  - **Default:** `true`
-
-- **`ui.compactToolOutput`** (boolean):
-  - **Description:** Display tool outputs (like directory listings and file
-    reads) in a compact, structured format.
   - **Default:** `true`
 
 - **`ui.hideBanner`** (boolean):
@@ -274,8 +277,8 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `false`
 
 - **`ui.hideContextSummary`** (boolean):
-  - **Description:** Hide the context summary (BARE_AI.md, MCP servers) above the
-    input.
+  - **Description:** Hide the context summary (BARE_AI.md, MCP servers) above
+    the input.
   - **Default:** `false`
 
 - **`ui.footer.items`** (array):
@@ -302,16 +305,11 @@ their corresponding top-level category object in your `settings.json` file.
 
 - **`ui.footer.hideContextPercentage`** (boolean):
   - **Description:** Hides the context window usage percentage.
-  - **Default:** `true`
+  - **Default:** `false`
 
 - **`ui.hideFooter`** (boolean):
   - **Description:** Hide the footer from the UI
   - **Default:** `false`
-
-- **`ui.collapseDrawerDuringApproval`** (boolean):
-  - **Description:** Whether to collapse the UI drawer when a tool is awaiting
-    confirmation.
-  - **Default:** `true`
 
 - **`ui.showMemoryUsage`** (boolean):
   - **Description:** Display memory usage information in the UI
@@ -339,16 +337,6 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `false`
   - **Requires restart:** Yes
 
-- **`ui.renderProcess`** (boolean):
-  - **Description:** Enable Ink render process for the UI.
-  - **Default:** `true`
-  - **Requires restart:** Yes
-
-- **`ui.terminalBuffer`** (boolean):
-  - **Description:** Use the new terminal buffer architecture for rendering.
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
 - **`ui.useBackgroundColor`** (boolean):
   - **Description:** Whether to use background colors in the UI.
   - **Default:** `true`
@@ -366,8 +354,8 @@ their corresponding top-level category object in your `settings.json` file.
 
 - **`ui.loadingPhrases`** (enum):
   - **Description:** What to show while the model is working: tips, witty
-    comments, all, or off.
-  - **Default:** `"off"`
+    comments, both, or nothing.
+  - **Default:** `"tips"`
   - **Values:** `"tips"`, `"witty"`, `"all"`, `"off"`
 
 - **`ui.errorVerbosity`** (enum):
@@ -420,24 +408,10 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `"ask"`
   - **Values:** `"ask"`, `"always"`, `"never"`
 
-- **`billing.vertexAi.requestType`** (enum):
-  - **Description:** Sets the X-Vertex-AI-LLM-Request-Type header for Vertex AI
-    requests.
-  - **Default:** `undefined`
-  - **Values:** `"dedicated"`, `"shared"`
-  - **Requires restart:** Yes
-
-- **`billing.vertexAi.sharedRequestType`** (enum):
-  - **Description:** Sets the X-Vertex-AI-LLM-Shared-Request-Type header for
-    Vertex AI requests.
-  - **Default:** `undefined`
-  - **Values:** `"priority"`, `"flex"`
-  - **Requires restart:** Yes
-
 #### `model`
 
 - **`model.name`** (string):
-  - **Description:** The Gemini model to use for conversations.
+  - **Description:** The model to use for conversations.
   - **Default:** `undefined`
 
 - **`model.maxSessionTurns`** (number):
@@ -557,6 +531,18 @@ their corresponding top-level category object in your `settings.json` file.
         "extends": "chat-base-3",
         "modelConfig": {
           "model": "gemma-4-26b-a4b-it"
+        }
+      },
+      "Qwen3.8-Flash-Next": {
+        "extends": "chat-base",
+        "modelConfig": {
+          "model": "Qwen3.8-Flash-Next"
+        }
+      },
+      "qwen-flash": {
+        "extends": "Qwen3.8-Flash-Next",
+        "modelConfig": {
+          "model": "Qwen3.8-Flash-Next"
         }
       },
       "gemini-2.5-flash-base": {
@@ -743,546 +729,6 @@ their corresponding top-level category object in your `settings.json` file.
     used.
   - **Default:** `[]`
 
-- **`modelConfigs.modelDefinitions`** (object):
-  - **Description:** Registry of model metadata, including tier, family, and
-    features.
-  - **Default:**
-
-    ```json
-    {
-      "gemini-3.1-flash-lite-preview": {
-        "tier": "flash-lite",
-        "family": "gemini-3",
-        "isPreview": true,
-        "isVisible": true,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": true
-        }
-      },
-      "gemini-3.1-pro-preview": {
-        "tier": "pro",
-        "family": "gemini-3",
-        "isPreview": true,
-        "isVisible": true,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": true
-        }
-      },
-      "gemini-3.1-pro-preview-customtools": {
-        "tier": "pro",
-        "family": "gemini-3",
-        "isPreview": true,
-        "isVisible": false,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": true
-        }
-      },
-      "gemini-3-pro-preview": {
-        "tier": "pro",
-        "family": "gemini-3",
-        "isPreview": true,
-        "isVisible": true,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": true
-        }
-      },
-      "gemini-3-flash-preview": {
-        "tier": "flash",
-        "family": "gemini-3",
-        "isPreview": true,
-        "isVisible": true,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": true
-        }
-      },
-      "gemini-2.5-pro": {
-        "tier": "pro",
-        "family": "gemini-2.5",
-        "isPreview": false,
-        "isVisible": true,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": false
-        }
-      },
-      "gemini-2.5-flash": {
-        "tier": "flash",
-        "family": "gemini-2.5",
-        "isPreview": false,
-        "isVisible": true,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": false
-        }
-      },
-      "gemini-2.5-flash-lite": {
-        "tier": "flash-lite",
-        "family": "gemini-2.5",
-        "isPreview": false,
-        "isVisible": true,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": false
-        }
-      },
-      "gemma-4-31b-it": {
-        "displayName": "gemma-4-31b-it",
-        "tier": "custom",
-        "family": "gemma-4",
-        "isPreview": false,
-        "isVisible": true,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": false
-        }
-      },
-      "gemma-4-26b-a4b-it": {
-        "displayName": "gemma-4-26b-a4b-it",
-        "tier": "custom",
-        "family": "gemma-4",
-        "isPreview": false,
-        "isVisible": true,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": false
-        }
-      },
-      "auto": {
-        "tier": "auto",
-        "isPreview": true,
-        "isVisible": false,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": false
-        }
-      },
-      "pro": {
-        "tier": "pro",
-        "isPreview": false,
-        "isVisible": false,
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": false
-        }
-      },
-      "flash": {
-        "tier": "flash",
-        "isPreview": false,
-        "isVisible": false,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": false
-        }
-      },
-      "flash-lite": {
-        "tier": "flash-lite",
-        "isPreview": false,
-        "isVisible": false,
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": false
-        }
-      },
-      "auto-gemini-3": {
-        "displayName": "Auto (Gemini 3)",
-        "tier": "auto",
-        "isPreview": true,
-        "isVisible": true,
-        "dialogDescription": "Let Gemini CLI decide the best model for the task: gemini-3-pro, gemini-3-flash",
-        "features": {
-          "thinking": true,
-          "multimodalToolUse": false
-        }
-      },
-      "auto-gemini-2.5": {
-        "displayName": "Auto (Gemini 2.5)",
-        "tier": "auto",
-        "isPreview": false,
-        "isVisible": true,
-        "dialogDescription": "Let Gemini CLI decide the best model for the task: gemini-2.5-pro, gemini-2.5-flash",
-        "features": {
-          "thinking": false,
-          "multimodalToolUse": false
-        }
-      }
-    }
-    ```
-
-  - **Requires restart:** Yes
-
-- **`modelConfigs.modelIdResolutions`** (object):
-  - **Description:** Rules for resolving requested model names to concrete model
-    IDs based on context.
-  - **Default:**
-
-    ```json
-    {
-      "gemma-4-31b-it": {
-        "default": "gemma-4-31b-it"
-      },
-      "gemma-4-26b-a4b-it": {
-        "default": "gemma-4-26b-a4b-it"
-      },
-      "gemini-3.1-pro-preview": {
-        "default": "gemini-3.1-pro-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-pro"
-          },
-          {
-            "condition": {
-              "useCustomTools": true
-            },
-            "target": "gemini-3.1-pro-preview-customtools"
-          }
-        ]
-      },
-      "gemini-3.1-pro-preview-customtools": {
-        "default": "gemini-3.1-pro-preview-customtools",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-pro"
-          }
-        ]
-      },
-      "gemini-3-flash-preview": {
-        "default": "gemini-3-flash-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-flash"
-          }
-        ]
-      },
-      "gemini-3-pro-preview": {
-        "default": "gemini-3-pro-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-pro"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true,
-              "useCustomTools": true
-            },
-            "target": "gemini-3.1-pro-preview-customtools"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true
-            },
-            "target": "gemini-3.1-pro-preview"
-          }
-        ]
-      },
-      "auto-gemini-3": {
-        "default": "gemini-3-pro-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-pro"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true,
-              "useCustomTools": true
-            },
-            "target": "gemini-3.1-pro-preview-customtools"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true
-            },
-            "target": "gemini-3.1-pro-preview"
-          }
-        ]
-      },
-      "auto": {
-        "default": "gemini-3-pro-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-pro"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true,
-              "useCustomTools": true
-            },
-            "target": "gemini-3.1-pro-preview-customtools"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true
-            },
-            "target": "gemini-3.1-pro-preview"
-          }
-        ]
-      },
-      "pro": {
-        "default": "gemini-3-pro-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-pro"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true,
-              "useCustomTools": true
-            },
-            "target": "gemini-3.1-pro-preview-customtools"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true
-            },
-            "target": "gemini-3.1-pro-preview"
-          }
-        ]
-      },
-      "auto-gemini-2.5": {
-        "default": "gemini-2.5-pro"
-      },
-      "gemini-3.1-flash-lite-preview": {
-        "default": "gemini-3.1-flash-lite-preview",
-        "contexts": [
-          {
-            "condition": {
-              "useGemini3_1FlashLite": false
-            },
-            "target": "gemini-2.5-flash-lite"
-          }
-        ]
-      },
-      "flash": {
-        "default": "gemini-3-flash-preview",
-        "contexts": [
-          {
-            "condition": {
-              "hasAccessToPreview": false
-            },
-            "target": "gemini-2.5-flash"
-          }
-        ]
-      },
-      "flash-lite": {
-        "default": "gemini-2.5-flash-lite",
-        "contexts": [
-          {
-            "condition": {
-              "useGemini3_1FlashLite": true
-            },
-            "target": "gemini-3.1-flash-lite-preview"
-          }
-        ]
-      }
-    }
-    ```
-
-  - **Requires restart:** Yes
-
-- **`modelConfigs.classifierIdResolutions`** (object):
-  - **Description:** Rules for resolving classifier tiers (flash, pro) to
-    concrete model IDs.
-  - **Default:**
-
-    ```json
-    {
-      "flash": {
-        "default": "gemini-3-flash-preview",
-        "contexts": [
-          {
-            "condition": {
-              "requestedModels": ["auto-gemini-2.5", "gemini-2.5-pro"]
-            },
-            "target": "gemini-2.5-flash"
-          },
-          {
-            "condition": {
-              "requestedModels": ["auto-gemini-3", "gemini-3-pro-preview"]
-            },
-            "target": "gemini-3-flash-preview"
-          }
-        ]
-      },
-      "pro": {
-        "default": "gemini-3-pro-preview",
-        "contexts": [
-          {
-            "condition": {
-              "requestedModels": ["auto-gemini-2.5", "gemini-2.5-pro"]
-            },
-            "target": "gemini-2.5-pro"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true,
-              "useCustomTools": true
-            },
-            "target": "gemini-3.1-pro-preview-customtools"
-          },
-          {
-            "condition": {
-              "useGemini3_1": true
-            },
-            "target": "gemini-3.1-pro-preview"
-          }
-        ]
-      }
-    }
-    ```
-
-  - **Requires restart:** Yes
-
-- **`modelConfigs.modelChains`** (object):
-  - **Description:** Availability policy chains defining fallback behavior for
-    models.
-  - **Default:**
-
-    ```json
-    {
-      "preview": [
-        {
-          "model": "gemini-3-pro-preview",
-          "actions": {
-            "terminal": "prompt",
-            "transient": "prompt",
-            "not_found": "prompt",
-            "unknown": "prompt"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        },
-        {
-          "model": "gemini-3-flash-preview",
-          "isLastResort": true,
-          "actions": {
-            "terminal": "prompt",
-            "transient": "prompt",
-            "not_found": "prompt",
-            "unknown": "prompt"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        }
-      ],
-      "default": [
-        {
-          "model": "gemini-2.5-pro",
-          "actions": {
-            "terminal": "prompt",
-            "transient": "prompt",
-            "not_found": "prompt",
-            "unknown": "prompt"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        },
-        {
-          "model": "gemini-2.5-flash",
-          "isLastResort": true,
-          "actions": {
-            "terminal": "prompt",
-            "transient": "prompt",
-            "not_found": "prompt",
-            "unknown": "prompt"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        }
-      ],
-      "lite": [
-        {
-          "model": "gemini-2.5-flash-lite",
-          "actions": {
-            "terminal": "silent",
-            "transient": "silent",
-            "not_found": "silent",
-            "unknown": "silent"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        },
-        {
-          "model": "gemini-2.5-flash",
-          "actions": {
-            "terminal": "silent",
-            "transient": "silent",
-            "not_found": "silent",
-            "unknown": "silent"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        },
-        {
-          "model": "gemini-2.5-pro",
-          "isLastResort": true,
-          "actions": {
-            "terminal": "silent",
-            "transient": "silent",
-            "not_found": "silent",
-            "unknown": "silent"
-          },
-          "stateTransitions": {
-            "terminal": "terminal",
-            "transient": "terminal",
-            "not_found": "terminal",
-            "unknown": "terminal"
-          }
-        }
-      ]
-    }
-    ```
-
-  - **Requires restart:** Yes
-
 #### `agents`
 
 - **`agents.overrides`** (object):
@@ -1308,40 +754,8 @@ their corresponding top-level category object in your `settings.json` file.
   - **Requires restart:** Yes
 
 - **`agents.browser.visualModel`** (string):
-  - **Description:** Model for the visual agent's analyze_screenshot tool. When
-    set, enables the tool.
+  - **Description:** Model override for the visual agent.
   - **Default:** `undefined`
-  - **Requires restart:** Yes
-
-- **`agents.browser.allowedDomains`** (array):
-  - **Description:** A list of allowed domains for the browser agent (e.g.,
-    ["github.com", "*.google.com"]).
-  - **Default:**
-
-    ```json
-    ["github.com", "*.google.com", "localhost"]
-    ```
-
-  - **Requires restart:** Yes
-
-- **`agents.browser.disableUserInput`** (boolean):
-  - **Description:** Disable user input on browser window during automation.
-  - **Default:** `true`
-
-- **`agents.browser.maxActionsPerTask`** (number):
-  - **Description:** The maximum number of tool calls allowed per browser task.
-    Enforcement is hard: the agent will be terminated when the limit is reached.
-  - **Default:** `100`
-
-- **`agents.browser.confirmSensitiveActions`** (boolean):
-  - **Description:** Require manual confirmation for sensitive browser actions
-    (e.g., fill_form, evaluate_script).
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
-- **`agents.browser.blockFileUploads`** (boolean):
-  - **Description:** Hard-block file upload requests from the browser agent.
-  - **Default:** `false`
   - **Requires restart:** Yes
 
 #### `context`
@@ -1364,18 +778,6 @@ their corresponding top-level category object in your `settings.json` file.
   - **Description:** Maximum number of directories to search for memory.
   - **Default:** `200`
 
-- **`context.memoryBoundaryMarkers`** (array):
-  - **Description:** File or directory names that mark the boundary for
-    GEMINI.md discovery. The upward traversal stops at the first directory
-    containing any of these markers. An empty array disables parent traversal.
-  - **Default:**
-
-    ```json
-    [".git"]
-    ```
-
-  - **Requires restart:** Yes
-
 - **`context.includeDirectories`** (array):
   - **Description:** Additional directories to include in the workspace context.
     Missing directories will be skipped with a warning.
@@ -1395,12 +797,6 @@ their corresponding top-level category object in your `settings.json` file.
 - **`context.fileFiltering.respectGeminiIgnore`** (boolean):
   - **Description:** Respect .geminiignore files when searching.
   - **Default:** `true`
-  - **Requires restart:** Yes
-
-- **`context.fileFiltering.enableFileWatcher`** (boolean):
-  - **Description:** Enable file watcher updates for @ file suggestions
-    (experimental).
-  - **Default:** `false`
   - **Requires restart:** Yes
 
 - **`context.fileFiltering.enableRecursiveFileSearch`** (boolean):
@@ -1424,23 +820,11 @@ their corresponding top-level category object in your `settings.json` file.
 
 #### `tools`
 
-- **`tools.sandbox`** (string):
-  - **Description:** Legacy full-process sandbox execution environment. Set to a
-    boolean to enable or disable the sandbox, provide a string path to a sandbox
-    profile, or specify an explicit sandbox command (e.g., "docker", "podman",
-    "lxc", "windows-native").
+- **`tools.sandbox`** (boolean | string):
+  - **Description:** Sandbox execution environment. Set to a boolean to enable
+    or disable the sandbox, provide a string path to a sandbox profile, or
+    specify an explicit sandbox command (e.g., "docker", "podman", "lxc").
   - **Default:** `undefined`
-  - **Requires restart:** Yes
-
-- **`tools.sandboxAllowedPaths`** (array):
-  - **Description:** List of additional paths that the sandbox is allowed to
-    access.
-  - **Default:** `[]`
-  - **Requires restart:** Yes
-
-- **`tools.sandboxNetworkAccess`** (boolean):
-  - **Description:** Whether the sandbox is allowed to access the network.
-  - **Default:** `false`
   - **Requires restart:** Yes
 
 - **`tools.shell.enableInteractiveShell`** (boolean):
@@ -1449,14 +833,6 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `true`
   - **Requires restart:** Yes
 
-- **`tools.shell.backgroundCompletionBehavior`** (enum):
-  - **Description:** Controls what happens when a background shell command
-    finishes. 'silent' (default): quietly exits in background. 'inject':
-    automatically returns output to agent. 'notify': shows brief message in
-    chat.
-  - **Default:** `"silent"`
-  - **Values:** `"silent"`, `"inject"`, `"notify"`
-
 - **`tools.shell.pager`** (string):
   - **Description:** The pager command to use for shell output. Defaults to
     `cat`.
@@ -1464,7 +840,7 @@ their corresponding top-level category object in your `settings.json` file.
 
 - **`tools.shell.showColor`** (boolean):
   - **Description:** Show color in shell output.
-  - **Default:** `true`
+  - **Default:** `false`
 
 - **`tools.shell.inactivityTimeout`** (number):
   - **Description:** The maximum time in seconds allowed without output from the
@@ -1488,12 +864,6 @@ their corresponding top-level category object in your `settings.json` file.
     trusted commands (for example ["run_shell_command(git)",
     "run_shell_command(npm test)"]). See shell tool command restrictions for
     matching details.
-  - **Default:** `undefined`
-  - **Requires restart:** Yes
-
-- **`tools.confirmationRequired`** (array):
-  - **Description:** Tool names that always require user confirmation. Takes
-    precedence over allowed tools and core tool allowlists.
   - **Default:** `undefined`
   - **Requires restart:** Yes
 
@@ -1563,14 +933,14 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `false`
   - **Requires restart:** Yes
 
-- **`security.disableYoloMode`** (boolean):
-  - **Description:** Disable YOLO mode, even if enabled by a flag.
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
 - **`security.disableAlwaysAllow`** (boolean):
   - **Description:** Disable "Always allow" options in tool confirmation
     dialogs.
+  - **Default:** `false`
+  - **Requires restart:** Yes
+
+- **`security.disableYoloMode`** (boolean):
+  - **Description:** Disable YOLO mode, even if enabled by a flag.
   - **Default:** `false`
   - **Requires restart:** Yes
 
@@ -1645,7 +1015,7 @@ their corresponding top-level category object in your `settings.json` file.
 
 - **`advanced.autoConfigureMemory`** (boolean):
   - **Description:** Automatically configure Node.js memory limits
-  - **Default:** `true`
+  - **Default:** `false`
   - **Requires restart:** Yes
 
 - **`advanced.dnsResolutionOrder`** (string):
@@ -1667,55 +1037,57 @@ their corresponding top-level category object in your `settings.json` file.
 
 #### `experimental`
 
-- **`experimental.gemma`** (boolean):
-  - **Description:** Enable access to Gemma 4 models (experimental).
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
-- **`experimental.voiceMode`** (boolean):
-  - **Description:** Enable experimental voice dictation and commands (/voice,
-    /voice model).
-  - **Default:** `false`
-
-- **`experimental.voice.activationMode`** (enum):
-  - **Description:** How to trigger voice recording with the Space key.
-  - **Default:** `"push-to-talk"`
-  - **Values:** `"push-to-talk"`, `"toggle"`
-
-- **`experimental.voice.backend`** (enum):
-  - **Description:** The backend to use for voice transcription.
+- **`experimental.voice.backend`** (string):
+  - **Description:** Voice backend to use.
   - **Default:** `"gemini-live"`
-  - **Values:** `"gemini-live"`, `"whisper"`
-
-- **`experimental.voice.whisperModel`** (enum):
-  - **Description:** The Whisper model to use for local transcription.
-  - **Default:** `"ggml-base.en.bin"`
-  - **Values:** `"ggml-tiny.en.bin"`, `"ggml-base.en.bin"`,
-    `"ggml-large-v3-turbo-q5_0.bin"`, `"ggml-large-v3-turbo-q8_0.bin"`
 
 - **`experimental.voice.stopGracePeriodMs`** (number):
-  - **Description:** How long to wait for final transcription after stopping
-    recording.
-  - **Default:** `1000`
+  - **Description:** Grace period in ms before stopping voice.
+  - **Default:** `1500`
 
-- **`experimental.adk.agentSessionNoninteractiveEnabled`** (boolean):
-  - **Description:** Enable non-interactive agent sessions.
+- **`experimental.voice.activationMode`** (string):
+  - **Description:** Voice activation mode.
+  - **Default:** `"manual"`
+
+- **`experimental.voice.whisperModel`** (string):
+  - **Description:** Whisper model filename.
+  - **Default:** `"ggml-base.en.bin"`
+
+- **`experimental.dynamicModelConfiguration`** (boolean):
+  - **Description:** Enable dynamic model configuration via settings.
   - **Default:** `false`
   - **Requires restart:** Yes
 
-- **`experimental.adk.agentSessionInteractiveEnabled`** (boolean):
-  - **Description:** Enable the agent session implementation for the interactive
-    CLI.
-  - **Default:** `false`
-  - **Requires restart:** Yes
+- **`experimental.topicUpdateNarration`** (boolean):
+  - **Description:** Enable the Topic & Update communication model for reduced
+    chattiness.
+  - **Default:** `true`
 
-- **`experimental.enableAgents`** (boolean):
-  - **Description:** Enable local and remote subagents.
+- **`experimental.toolOutputMasking.enabled`** (boolean):
+  - **Description:** Enables tool output masking to save tokens.
   - **Default:** `true`
   - **Requires restart:** Yes
 
-- **`experimental.worktrees`** (boolean):
-  - **Description:** Enable automated Git worktree management for parallel work.
+- **`experimental.toolOutputMasking.toolProtectionThreshold`** (number):
+  - **Description:** Minimum number of tokens to protect from masking (most
+    recent tool outputs).
+  - **Default:** `50000`
+  - **Requires restart:** Yes
+
+- **`experimental.toolOutputMasking.minPrunableTokensThreshold`** (number):
+  - **Description:** Minimum prunable tokens required to trigger a masking pass.
+  - **Default:** `30000`
+  - **Requires restart:** Yes
+
+- **`experimental.toolOutputMasking.protectLatestTurn`** (boolean):
+  - **Description:** Ensures the absolute latest turn is never masked,
+    regardless of token count.
+  - **Default:** `true`
+  - **Requires restart:** Yes
+
+- **`experimental.enableAgents`** (boolean):
+  - **Description:** Enable local and remote subagents. Warning: Experimental
+    feature, uses YOLO mode for subagents
   - **Default:** `false`
   - **Requires restart:** Yes
 
@@ -1746,10 +1118,8 @@ their corresponding top-level category object in your `settings.json` file.
   - **Requires restart:** Yes
 
 - **`experimental.jitContext`** (boolean):
-  - **Description:** Enable Just-In-Time (JIT) context loading. Defaults to
-    true; set to false to opt out and load all GEMINI.md files into the system
-    instruction up-front.
-  - **Default:** `true`
+  - **Description:** Enable Just-In-Time (JIT) context loading.
+  - **Default:** `false`
   - **Requires restart:** Yes
 
 - **`experimental.useOSC52Paste`** (boolean):
@@ -1763,6 +1133,11 @@ their corresponding top-level category object in your `settings.json` file.
     default system when using remote terminal sessions (if your terminal is
     configured to allow it).
   - **Default:** `false`
+
+- **`experimental.plan`** (boolean):
+  - **Description:** Enable Plan Mode.
+  - **Default:** `true`
+  - **Requires restart:** Yes
 
 - **`experimental.taskTracker`** (boolean):
   - **Description:** Enable task tracker tools.
@@ -1779,28 +1154,20 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `false`
   - **Requires restart:** Yes
 
-- **`experimental.dynamicModelConfiguration`** (boolean):
-  - **Description:** Enable dynamic model configuration (definitions,
-    resolutions, and chains) via settings.
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
-- **`experimental.gemmaModelRouter.enabled`** (boolean):
-  - **Description:** Enable the Gemma Model Router (experimental). Requires a
-    local endpoint serving Gemma via the Gemini API using LiteRT-LM shim.
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
 - **`experimental.gemmaModelRouter.autoStartServer`** (boolean):
-  - **Description:** Automatically start the LiteRT-LM server when Gemini CLI
-    starts and the Gemma router is enabled.
+  - **Description:** Auto start the Gemma model router server.
   - **Default:** `false`
   - **Requires restart:** Yes
 
 - **`experimental.gemmaModelRouter.binaryPath`** (string):
-  - **Description:** Custom path to the LiteRT-LM binary. Leave empty to use the
-    default location (~/.gemini/bin/litert/).
-  - **Default:** `""`
+  - **Description:** Path to the Gemma model router binary.
+  - **Default:** `undefined`
+  - **Requires restart:** Yes
+
+- **`experimental.gemmaModelRouter.enabled`** (boolean):
+  - **Description:** Enable the Gemma Model Router (experimental). Requires a
+    local endpoint serving Gemma via the Bare AI API using LiteRT-LM shim.
+  - **Default:** `false`
   - **Requires restart:** Yes
 
 - **`experimental.gemmaModelRouter.classifier.host`** (string):
@@ -1813,34 +1180,6 @@ their corresponding top-level category object in your `settings.json` file.
     `gemma3-1b-gpu-custom`.
   - **Default:** `"gemma3-1b-gpu-custom"`
   - **Requires restart:** Yes
-
-- **`experimental.memoryV2`** (boolean):
-  - **Description:** Disable the built-in save_memory tool and let the main
-    agent persist project context by editing markdown files directly with
-    edit/write_file. Route facts across four tiers: team-shared conventions go
-    to project GEMINI.md files, project-specific personal notes go to the
-    per-project private memory folder (MEMORY.md as index + sibling .md files
-    for detail), and cross-project personal preferences go to the global
-    ~/.gemini/GEMINI.md (the only file under ~/.gemini/ that the agent can edit
-    — settings, credentials, etc. remain off-limits). Set to false to fall back
-    to the legacy save_memory tool.
-  - **Default:** `true`
-  - **Requires restart:** Yes
-
-- **`experimental.generalistProfile`** (boolean):
-  - **Description:** Suitable for general coding and software development tasks.
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
-- **`experimental.contextManagement`** (boolean):
-  - **Description:** Enable logic for context management.
-  - **Default:** `false`
-  - **Requires restart:** Yes
-
-- **`experimental.topicUpdateNarration`** (boolean):
-  - **Description:** Enable the experimental Topic & Update communication model
-    for reduced chattiness and structured progress reporting.
-  - **Default:** `false`
 
 #### `skills`
 
@@ -1928,74 +1267,10 @@ their corresponding top-level category object in your `settings.json` file.
     prioritize available tools dynamically.
   - **Default:** `[]`
 
-#### `contextManagement`
-
-- **`contextManagement.historyWindow.maxTokens`** (number):
-  - **Description:** The number of tokens to allow before triggering
-    compression.
-  - **Default:** `150000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.historyWindow.retainedTokens`** (number):
-  - **Description:** The number of tokens to always retain.
-  - **Default:** `40000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.messageLimits.normalMaxTokens`** (number):
-  - **Description:** The target number of tokens to budget for a normal
-    conversation turn.
-  - **Default:** `2500`
-  - **Requires restart:** Yes
-
-- **`contextManagement.messageLimits.retainedMaxTokens`** (number):
-  - **Description:** The maximum number of tokens a single conversation turn can
-    consume before truncation.
-  - **Default:** `12000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.messageLimits.normalizationHeadRatio`** (number):
-  - **Description:** The ratio of tokens to retain from the beginning of a
-    truncated message (0.0 to 1.0).
-  - **Default:** `0.25`
-  - **Requires restart:** Yes
-
-- **`contextManagement.tools.distillation.maxOutputTokens`** (number):
-  - **Description:** Maximum tokens to show to the model when truncating large
-    tool outputs.
-  - **Default:** `10000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.tools.distillation.summarizationThresholdTokens`**
-  (number):
-  - **Description:** Threshold above which truncated tool outputs will be
-    summarized by an LLM.
-  - **Default:** `20000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.tools.outputMasking.protectionThresholdTokens`**
-  (number):
-  - **Description:** Minimum number of tokens to protect from masking (most
-    recent tool outputs).
-  - **Default:** `50000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.tools.outputMasking.minPrunableThresholdTokens`**
-  (number):
-  - **Description:** Minimum prunable tokens required to trigger a masking pass.
-  - **Default:** `30000`
-  - **Requires restart:** Yes
-
-- **`contextManagement.tools.outputMasking.protectLatestTurn`** (boolean):
-  - **Description:** Ensures the absolute latest turn is never masked,
-    regardless of token count.
-  - **Default:** `true`
-  - **Requires restart:** Yes
-
 #### `admin`
 
 - **`admin.secureModeEnabled`** (boolean):
-  - **Description:** If true, disallows YOLO mode and "Always allow" options
-    from being used.
+  - **Description:** If true, disallows yolo mode from being used.
   - **Default:** `false`
 
 - **`admin.extensions.enabled`** (boolean):
@@ -2008,11 +1283,7 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `true`
 
 - **`admin.mcp.config`** (object):
-  - **Description:** Admin-configured MCP servers (allowlist).
-  - **Default:** `{}`
-
-- **`admin.mcp.requiredConfig`** (object):
-  - **Description:** Admin-required MCP servers that are always injected.
+  - **Description:** Admin-configured MCP servers.
   - **Default:** `{}`
 
 - **`admin.skills.enabled`** (boolean):
@@ -2023,7 +1294,7 @@ their corresponding top-level category object in your `settings.json` file.
 #### `mcpServers`
 
 Configures connections to one or more Model-Context Protocol (MCP) servers for
-discovering and using custom tools. Gemini CLI attempts to connect to each
+discovering and using custom tools. Bare AI CLI attempts to connect to each
 configured MCP server to discover available tools. Every discovered tool is
 prepended with the `mcp_` prefix and its server alias to form a fully qualified
 name (FQN) (e.g., `mcp_serverAlias_actualToolName`) to avoid conflicts. Note
@@ -2074,7 +1345,7 @@ provided. If multiple are specified, the order of precedence is `httpUrl`, then
 
 #### `telemetry`
 
-Configures logging and metrics collection for Gemini CLI. For more information,
+Configures logging and metrics collection for Bare AI CLI. For more information,
 see [Telemetry](../cli/telemetry.md).
 
 - **Properties:**
@@ -2194,7 +1465,7 @@ loading order is:
 
 **Environment variable exclusion:** Some environment variables (like `DEBUG` and
 `DEBUG_MODE`) are automatically excluded from being loaded from project `.env`
-files to prevent interference with gemini-cli behavior. Variables from
+files to prevent interference with Bare AI CLI behavior. Variables from
 `.gemini/.env` files are never excluded. You can customize this behavior using
 the `advanced.excludedEnvVars` setting in your `settings.json` file.
 
@@ -2205,7 +1476,7 @@ the `advanced.excludedEnvVars` setting in your `settings.json` file.
   - Set this in your shell profile (e.g., `~/.bashrc`, `~/.zshrc`) or an `.env`
     file.
 - **`GEMINI_MODEL`**:
-  - Specifies the default Gemini model to use.
+  - Specifies the default model to use.
   - Overrides the hardcoded default
   - Example: `export GEMINI_MODEL="gemini-3-flash-preview"` (Windows PowerShell:
     `$env:GEMINI_MODEL="gemini-3-flash-preview"`)
@@ -2219,11 +1490,11 @@ the `advanced.excludedEnvVars` setting in your `settings.json` file.
     of the default `~/.gemini/`.
 - **`GEMINI_CLI_IDE_PID`**:
   - Manually specifies the PID of the IDE process to use for integration. This
-    is useful when running Gemini CLI in a standalone terminal while still
+    is useful when running Bare AI CLI in a standalone terminal while still
     wanting to associate it with a specific IDE instance.
   - Overrides the automatic IDE detection logic.
 - **`GEMINI_CLI_HOME`**:
-  - Specifies the root directory for Gemini CLI's user-level configuration and
+  - Specifies the root directory for Bare AI CLI's user-level configuration and
     storage.
   - By default, this is the user's system home directory. The CLI will create a
     `.gemini` folder inside this directory.
@@ -2336,8 +1607,8 @@ the `advanced.excludedEnvVars` setting in your `settings.json` file.
   - Set to `true` or `1` to enable verbose debug logging, which can be helpful
     for troubleshooting.
   - **Note:** These variables are automatically excluded from project `.env`
-    files by default to prevent interference with gemini-cli behavior. Use
-    `.gemini/.env` files if you need to set these for gemini-cli specifically.
+    files by default to prevent interference with Bare AI CLI behavior. Use
+    `.gemini/.env` files if you need to set these for Bare AI CLI specifically.
 - **`NO_COLOR`**:
   - Set to any value to disable all color output in the CLI.
 - **`CLI_TITLE`**:
@@ -2345,13 +1616,45 @@ the `advanced.excludedEnvVars` setting in your `settings.json` file.
 - **`CODE_ASSIST_ENDPOINT`**:
   - Specifies the endpoint for the code assist server.
   - This is useful for development and testing.
+- **`BARE_AI_CONTEXT_WINDOW`**:
+  - Declares the model context window, in tokens, for the node the CLI runs on.
+    Set it when you serve a model whose real window does not match any built-in
+    table entry — a self-hosted endpoint can accept far more than that entry
+    assumes.
+  - Value resolution order (first match wins):
+    1. A per-model context window from the model catalog — _not implemented._ No
+       catalog available to the CLI carries a context-window field, so this tier
+       exists in the design but never matches today.
+    2. `BARE_AI_CONTEXT_WINDOW`, when it parses to a number greater than zero.
+    3. The built-in name-prefix table (`deepseek-*`, `claude-*`, `gpt-*`,
+       `o1-`/`o3-`/`o4-`, plus the named Gemini, Qwen and Gemma entries) — an
+       estimate, not a verified window.
+    4. `DEFAULT_TOKEN_LIMIT` (1,048,576) for anything unrecognised.
+  - Effects:
+    - **Footer.** With no declared window the context gauge renders
+      `<n> tokens (window unknown)` and no percentage at all, because there is
+      no verified denominator to divide by. Once declared it renders `NN% used`
+      again, or `over window (<observed> / <declared> configured)` if a session
+      exceeds it. A figure above 100% is never rendered.
+    - **Auto-compression timing.** Compression triggers at
+      `model.compressionThreshold` of the resolved window, so declaring a
+      smaller window makes compression fire **sooner** and a larger window makes
+      it fire **later**. If you declare a large window, consider lowering
+      `model.compressionThreshold` to match.
+    - **Context-limit checks** in the streaming and client paths resolve the
+      same value.
+  - The built-in table is deliberately left alone. When a session's observed
+    prompt exceeds the resolved limit, the CLI logs one warning per model per
+    session naming the model, the observed count and the resolved limit. That
+    log line is how the real ceiling of a served model gets established, and the
+    table is corrected only once that data exists.
 
 ### Environment variable redaction
 
-To prevent accidental leakage of sensitive information, Gemini CLI automatically
-redacts potential secrets from environment variables when executing tools (such
-as shell commands). This "best effort" redaction applies to variables inherited
-from the system or loaded from `.env` files.
+To prevent accidental leakage of sensitive information, Bare AI CLI
+automatically redacts potential secrets from environment variables when
+executing tools (such as shell commands). This "best effort" redaction applies
+to variables inherited from the system or loaded from `.env` files.
 
 **Default Redaction Rules:**
 
@@ -2451,7 +1754,7 @@ for that specific session.
     message.
   - Example: `gemini --list-sessions`
 - **`--model <model_name>`** (**`-m <model_name>`**):
-  - Specifies the Gemini model to use for this session.
+  - Specifies the model to use for this session.
   - Example: `npm start -- --model gemini-3-pro-preview`
 - **`--output-format <format>`**:
   - **Description:** Specifies the format of the CLI output for non-interactive
@@ -2464,7 +1767,7 @@ for that specific session.
     `--output-format json` or `--output-format stream-json` flag.
 - **`--prompt <your_prompt>`** (**`-p <your_prompt>`**):
   - **Deprecated:** Use positional arguments instead.
-  - Used to pass a prompt directly to the command. This invokes Gemini CLI in a
+  - Used to pass a prompt directly to the command. This invokes Bare AI CLI in a
     non-interactive mode.
 - **`--prompt-interactive <your_prompt>`** (**`-i <your_prompt>`**):
   - Starts an interactive session with the provided prompt as the initial input.
@@ -2495,7 +1798,7 @@ for that specific session.
 While not strictly configuration for the CLI's _behavior_, context files
 (defaulting to `BARE_AI.md` but configurable via the `context.fileName` setting)
 are crucial for configuring the _instructional context_ (also referred to as
-"memory") provided to the Gemini model. This powerful feature allows you to give
+"memory") provided to the model. This powerful feature allows you to give
 project-specific instructions, coding style guides, or any relevant background
 information to the AI, making its responses more tailored and accurate to your
 needs. The CLI includes UI elements, such as an indicator in the footer showing
@@ -2503,8 +1806,8 @@ the number of loaded context files, to keep you informed about the active
 context.
 
 - **Purpose:** These Markdown files contain instructions, guidelines, or context
-  that you want the Gemini model to be aware of during your interactions. The
-  system is designed to manage this instructional context hierarchically.
+  that you want the model to be aware of during your interactions. The system is
+  designed to manage this instructional context hierarchically.
 
 ### Example context file content (e.g., `BARE_AI.md`)
 
@@ -2574,9 +1877,9 @@ conventions and context.
         component, module, or subsection of your project.
 - **Concatenation and UI indication:** The contents of all found context files
   are concatenated (with separators indicating their origin and path) and
-  provided as part of the system prompt to the Gemini model. The CLI footer
-  displays the count of loaded context files, giving you a quick visual cue
-  about the active instructional context.
+  provided as part of the system prompt to the model. The CLI footer displays
+  the count of loaded context files, giving you a quick visual cue about the
+  active instructional context.
 - **Importing content:** You can modularize your context files by importing
   other Markdown files using the `@path/to/file.md` syntax. For more details,
   see the [Memory Import Processor documentation](./memport.md).
@@ -2591,11 +1894,11 @@ conventions and context.
 
 By understanding and utilizing these configuration layers and the hierarchical
 nature of context files, you can effectively manage the AI's memory and tailor
-the Gemini CLI's responses to your specific needs and projects.
+the Bare AI CLI's responses to your specific needs and projects.
 
 ## Sandboxing
 
-The Gemini CLI can execute potentially unsafe operations (like shell commands
+The Bare AI CLI can execute potentially unsafe operations (like shell commands
 and file modifications) within a sandboxed environment to protect your system.
 
 Sandboxing is disabled by default, but you can enable it in a few ways:
@@ -2624,7 +1927,7 @@ FROM gemini-cli-sandbox
 ```
 
 When `.gemini/sandbox.Dockerfile` exists, you can use `BUILD_SANDBOX`
-environment variable when running Gemini CLI to automatically build the custom
+environment variable when running Bare AI CLI to automatically build the custom
 sandbox image:
 
 ```bash
@@ -2632,12 +1935,12 @@ BUILD_SANDBOX=1 gemini -s
 ```
 
 Building a custom sandbox with `BUILD_SANDBOX` is only supported when running
-Gemini CLI from source. If you installed the CLI with npm, build the Docker
+Bare AI CLI from source. If you installed the CLI with npm, build the Docker
 image separately and reference that image in your sandbox configuration.
 
 ## Usage statistics
 
-To help us improve the Gemini CLI, we collect anonymized usage statistics. This
+To help us improve the Bare AI CLI, we collect anonymized usage statistics. This
 data helps us understand how the CLI is used, identify common issues, and
 prioritize new features.
 
@@ -2646,9 +1949,9 @@ prioritize new features.
 - **Tool calls:** We log the names of the tools that are called, whether they
   succeed or fail, and how long they take to execute. We do not collect the
   arguments passed to the tools or any data returned by them.
-- **API requests:** We log the Gemini model used for each request, the duration
-  of the request, and whether it was successful. We do not collect the content
-  of the prompts or responses.
+- **API requests:** We log the model used for each request, the duration of the
+  request, and whether it was successful. We do not collect the content of the
+  prompts or responses.
 - **Session information:** We collect information about the configuration of the
   CLI, such as the enabled tools and the approval mode.
 
@@ -2657,7 +1960,7 @@ prioritize new features.
 - **Personally identifiable information (PII):** We do not collect any personal
   information, such as your name, email address, or API keys.
 - **Prompt and response content:** We do not log the content of your prompts or
-  the responses from the Gemini model.
+  the responses from the model.
 - **File content:** We do not log the content of any files that are read or
   written by the CLI.
 
