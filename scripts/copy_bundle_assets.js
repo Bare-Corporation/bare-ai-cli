@@ -58,7 +58,11 @@ console.log(`Copied ${policyFiles.length} policy files to bundle/policies/`);
 const docsSrc = join(root, 'docs');
 const docsDest = join(bundleDir, 'docs');
 if (existsSync(docsSrc)) {
-  cpSync(docsSrc, docsDest, { recursive: true, dereference: true });
+  cpSync(docsSrc, docsDest, {
+    recursive: true,
+    dereference: true,
+    force: true,
+  });
   console.log('Copied docs to bundle/docs/');
 }
 
@@ -69,6 +73,7 @@ if (existsSync(builtinSkillsSrc)) {
   cpSync(builtinSkillsSrc, builtinSkillsDest, {
     recursive: true,
     dereference: true,
+    force: true,
   });
   console.log('Copied built-in skills to bundle/builtin/');
 }
@@ -87,6 +92,7 @@ if (existsSync(devtoolsDistSrc)) {
   cpSync(devtoolsDistSrc, join(devtoolsDest, 'dist'), {
     recursive: true,
     dereference: true,
+    force: true,
   });
   copyFileSync(
     join(devtoolsSrc, 'package.json'),
@@ -105,7 +111,11 @@ if (!existsSync(bundleMcpSrc)) {
   );
   process.exit(1);
 }
-cpSync(bundleMcpSrc, bundleMcpDest, { recursive: true, dereference: true });
+cpSync(bundleMcpSrc, bundleMcpDest, {
+  recursive: true,
+  dereference: true,
+  force: true,
+});
 console.log('Copied bundled chrome-devtools-mcp to bundle/bundled/');
 
 // 7. Copy Extension Examples
@@ -120,6 +130,7 @@ if (existsSync(extensionExamplesSrc)) {
   cpSync(extensionExamplesSrc, extensionExamplesDest, {
     recursive: true,
     dereference: true,
+    force: true,
     filter: (src) => !EXCLUDED_EXAMPLE_DIRS.some((dir) => src.includes(dir)),
   });
   console.log('Copied extension examples to bundle/examples/');
