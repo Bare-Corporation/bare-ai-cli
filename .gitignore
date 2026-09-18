@@ -38,6 +38,7 @@ dist
 .docker
 
 bundle
+bundle.bak-*
 
 # Test report files
 junit.xml
