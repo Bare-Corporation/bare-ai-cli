@@ -30,6 +30,15 @@
  * export VAULT_ROLE_ID="your-role-id"
  * export VAULT_SECRET_ID="your-secret-id"
  * export VAULT_SECRET_PATH="secret/data/models/gemini-flash"
+ *
+ * OPTIONAL system-prompt handoff (PREFERRED - see loadSystemPrompt):
+ * export BARE_AI_SYSTEM_PROMPT_FILE="/run/user/1000/bare_prompt.md"
+ * The file holds the combined role + constitution prompt. A path keeps the
+ * launch arguments and the child environment small; passing the prompt text
+ * itself hits the kernel's 128 KiB per-argument limit (MAX_ARG_STRLEN) and
+ * fails with E2BIG once role.md and technical-constitution.md are combined.
+ * BARE_AI_SYSTEM_PROMPT (the raw string) is still honoured as a fallback for
+ * launchers that have not been updated.
  */
 import { spawn } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
@@ -302,6 +311,65 @@ function describeError(err) {
 }
 
 /**
+ * Resolve the system prompt to inject into the CLI.
+ *
+ * PREFERRED: BARE_AI_SYSTEM_PROMPT_FILE - a path to a file holding the prompt.
+ * WHY: the combined role + technical-constitution prompt is routinely larger
+ * than the kernel's per-argument limit (MAX_ARG_STRLEN, 128 KiB), and carrying
+ * it in the environment also inflated the environment block of every exec'd
+ * child. The launch then died with E2BIG before the CLI ever ran. Passing a
+ * path keeps both the argv and the environment small.
+ *
+ * FALLBACK: BARE_AI_SYSTEM_PROMPT - the legacy in-environment string, kept so
+ * older launchers keep working during a rolling update.
+ *
+ * Returns '' when no prompt is configured. Never throws: a missing or
+ * unreadable file is reported on stderr and degrades to the legacy variable.
+ */
+function loadSystemPrompt() {
+  const filePath = (process.env.BARE_AI_SYSTEM_PROMPT_FILE || '').trim();
+  if (filePath) {
+    try {
+      const info = statSync(filePath);
+      if (info.isFile() && info.size > 0) {
+        const text = readFileSync(filePath, 'utf8');
+        if (text.trim()) {
+          console.error(
+            '[sovereign] System prompt loaded from ' +
+              filePath +
+              ' (' +
+              info.size +
+              ' bytes, file handoff).',
+          );
+          return text;
+        }
+        console.error(
+          '[sovereign] WARNING: prompt file ' +
+            filePath +
+            ' is empty - trying BARE_AI_SYSTEM_PROMPT instead.',
+        );
+      } else {
+        console.error(
+          '[sovereign] WARNING: prompt file ' +
+            filePath +
+            ' is not a non-empty regular file - trying BARE_AI_SYSTEM_PROMPT instead.',
+        );
+      }
+    } catch (err) {
+      console.error(
+        '[sovereign] WARNING: could not read BARE_AI_SYSTEM_PROMPT_FILE (' +
+          describeError(err) +
+          ') - trying BARE_AI_SYSTEM_PROMPT instead.',
+      );
+    }
+  }
+
+  const legacy = process.env.BARE_AI_SYSTEM_PROMPT;
+  if (legacy && legacy.trim()) return legacy;
+  return '';
+}
+
+/**
  * Orchestrates Vault Auth and Config Retrieval
  * Returns both the configuration data and the temporary session token
  */
@@ -484,10 +552,20 @@ async function main() {
     delete secureEnv.VAULT_ROLE_ID;
     delete secureEnv.VAULT_SECRET_ID;
 
-    // Dynamically inject the system prompt if the bash script provided one
+    // The prompt reaches the CLI through argv (see loadSystemPrompt), and the
+    // bundled CLI never reads this variable itself. Drop any inherited copy:
+    // duplicating a prompt of this size into the child's environment block is
+    // exactly the payload that made the exec fail with E2BIG.
+    delete secureEnv.BARE_AI_SYSTEM_PROMPT;
+
+    // Dynamically inject the system prompt if the launcher provided one.
+    // loadSystemPrompt() prefers the file handoff and falls back to the
+    // legacy environment string, so an oversized prompt never has to travel
+    // as a command-line argument (which fails with E2BIG).
     const spawnArgs = ['bundle/bare-ai.js', '--yolo'];
-    if (process.env.BARE_AI_SYSTEM_PROMPT) {
-      spawnArgs.push('-i', process.env.BARE_AI_SYSTEM_PROMPT);
+    const systemPrompt = loadSystemPrompt();
+    if (systemPrompt) {
+      spawnArgs.push('-i', systemPrompt);
     }
 
     // Append any extra arguments the user passed (like --model)
