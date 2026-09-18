@@ -161,6 +161,12 @@ export async function parseArguments(
           description:
             'Execute the provided prompt and continue in interactive mode',
         })
+        .option('prompt-interactive-file', {
+          type: 'string',
+          nargs: 1,
+          description:
+            'Read the interactive initial prompt from a file (for prompts that exceed command-line limits). Equivalent to --prompt-interactive (-i) with the file contents.',
+        })
         .option('sandbox', {
           alias: 's',
           type: 'boolean',
@@ -326,6 +332,21 @@ export async function parseArguments(
       if (argv['prompt'] && argv['promptInteractive']) {
         return 'Cannot use both --prompt (-p) and --prompt-interactive (-i) together';
       }
+      // --prompt-interactive-file fills the interactive initial prompt, so it
+      // cannot be combined with any other source for that value, nor with the
+      // headless prompt paths (which select a different session mode).
+      if (argv['prompt-interactive-file'] && argv['prompt']) {
+        return 'Cannot use both --prompt (-p) and --prompt-interactive-file together: they select different session modes';
+      }
+      if (argv['prompt-interactive-file'] && argv['prompt-file']) {
+        return 'Cannot use both --prompt-file (headless) and --prompt-interactive-file (interactive) together';
+      }
+      if (argv['prompt-interactive-file'] && argv['promptInteractive']) {
+        return 'Cannot use both --prompt-interactive (-i) and --prompt-interactive-file together';
+      }
+      if (argv['prompt-interactive-file'] && hasPositionalQuery) {
+        return 'Cannot use both a positional prompt and --prompt-interactive-file together';
+      }
       if (argv['yolo'] && argv['approvalMode']) {
         return 'Cannot use both --yolo (-y) and --approval-mode together. Use --approval-mode=yolo instead.';
       }
@@ -398,15 +419,38 @@ export async function parseArguments(
       result['prompt'] = q;
     }
   }
-  
-    if (result['prompt-file']) {
+
+  if (result['prompt-file']) {
     try {
       const fs = await import('node:fs');
       result['prompt'] = fs.readFileSync(result['prompt-file'], 'utf-8').trim();
       delete result['prompt-file'];
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      debugLogger.error(`Failed to read prompt file: ${result['prompt-file']} - ${msg}`);
+      debugLogger.error(
+        `Failed to read prompt file: ${result['prompt-file']} - ${msg}`,
+      );
+      yargsInstance.showHelp();
+      await runExitCleanup();
+      process.exit(1);
+    }
+  }
+  // --prompt-interactive-file is the interactive counterpart of --prompt-file:
+  // it reads the prompt from disk and assigns promptInteractive, the same field
+  // -i/--prompt-interactive sets, so the session stays interactive. Reading the
+  // file here means prompt TEXT never has to fit in a command-line argument.
+  if (result['prompt-interactive-file']) {
+    try {
+      const fs = await import('node:fs');
+      result['promptInteractive'] = fs
+        .readFileSync(result['prompt-interactive-file'], 'utf-8')
+        .trim();
+      delete result['prompt-interactive-file'];
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      debugLogger.error(
+        `Failed to read prompt file: ${result['prompt-interactive-file']} - ${msg}`,
+      );
       yargsInstance.showHelp();
       await runExitCleanup();
       process.exit(1);

@@ -370,6 +370,35 @@ function loadSystemPrompt() {
 }
 
 /**
+ * Resolve the prompt handoff FILE to pass through to the CLI, or '' when there
+ * is no usable file.
+ *
+ * WHY THIS IS SEPARATE FROM loadSystemPrompt(): the prompt must not travel as
+ * prompt CONTENT in argv. A single argv element is capped by the kernel at
+ * MAX_ARG_STRLEN (131072 bytes), and the combined role + constitution prompt is
+ * larger than that, so passing the text as an argument moves the E2BIG from the
+ * environment into argv. The spawn site therefore passes this path and lets the
+ * CLI read the file itself.
+ *
+ * The validation rules are intentionally the same as loadSystemPrompt()'s. That
+ * function stays self-contained because external tooling (verify_launcher.sh in
+ * bare-ai-agent) extracts and evaluates it directly, so it must not depend on
+ * anything defined here.
+ */
+function resolvePromptFile() {
+  const filePath = (process.env.BARE_AI_SYSTEM_PROMPT_FILE || '').trim();
+  if (!filePath) return '';
+  try {
+    const info = statSync(filePath);
+    if (!info.isFile() || info.size === 0) return '';
+    if (!readFileSync(filePath, 'utf8').trim()) return '';
+    return filePath;
+  } catch (_) {
+    return '';
+  }
+}
+
+/**
  * Orchestrates Vault Auth and Config Retrieval
  * Returns both the configuration data and the temporary session token
  */
@@ -559,17 +588,54 @@ async function main() {
     delete secureEnv.BARE_AI_SYSTEM_PROMPT;
 
     // Dynamically inject the system prompt if the launcher provided one.
-    // loadSystemPrompt() prefers the file handoff and falls back to the
-    // legacy environment string, so an oversized prompt never has to travel
-    // as a command-line argument (which fails with E2BIG).
+    //
+    // The prompt must NOT travel as prompt CONTENT in argv: the kernel caps a
+    // single argument at MAX_ARG_STRLEN (131072 bytes) and the combined role +
+    // constitution prompt is already bigger than that, so passing the text as an
+    // argument only moves the E2BIG from the environment into argv.
+    //
+    // Preferred: pass the PATH of the handoff file via --prompt-interactive-file.
+    // That flag assigns the same CliArgs.promptInteractive as -i, so the session
+    // stays interactive while the prompt text is read from disk by the CLI.
+    // Fallback: a legacy in-environment prompt small enough to be an argument is
+    // still passed inline as -i.
     const spawnArgs = ['bundle/bare-ai.js', '--yolo'];
-    const systemPrompt = loadSystemPrompt();
-    if (systemPrompt) {
-      spawnArgs.push('-i', systemPrompt);
+    const promptFile = resolvePromptFile();
+    if (promptFile) {
+      console.error(
+        '[sovereign] System prompt handed over by path: ' +
+          promptFile +
+          ' (the CLI reads the file, so prompt content stays out of argv).',
+      );
+      spawnArgs.push('--prompt-interactive-file', promptFile);
+    } else {
+      const systemPrompt = loadSystemPrompt();
+      if (systemPrompt) {
+        spawnArgs.push('-i', systemPrompt);
+      }
     }
 
     // Append any extra arguments the user passed (like --model)
     spawnArgs.push(...process.argv.slice(2));
+
+    // HARD GUARD: refuse any single argument approaching MAX_ARG_STRLEN. A raw
+    // "spawn E2BIG" hides a design error behind a generic OS error, so name the
+    // limit and the offending size instead. Large prompt text must be passed as
+    // a file path, never as an argument.
+    const MAX_ARG_BYTES = 100 * 1024;
+    for (const arg of spawnArgs) {
+      const argBytes = Buffer.byteLength(arg, 'utf8');
+      if (argBytes > MAX_ARG_BYTES) {
+        throw new Error(
+          'refusing to spawn: one argument is ' +
+            argBytes +
+            ' bytes, over the ' +
+            MAX_ARG_BYTES +
+            '-byte single-argument limit (kernel MAX_ARG_STRLEN is 131072); ' +
+            'large prompt text must be handed over as a file path',
+        );
+      }
+    }
 
     const cli = spawn('node', spawnArgs, {
       stdio: 'inherit',

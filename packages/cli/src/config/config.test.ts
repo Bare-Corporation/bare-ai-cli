@@ -385,6 +385,119 @@ describe('parseArguments', () => {
     expect(parsedArgs.promptInteractive).toBe(expected.promptInteractive);
   });
 
+  describe('--prompt-interactive-file (interactive prompt from disk)', () => {
+    let promptFile: string;
+
+    beforeEach(async () => {
+      // This suite mocks 'fs' with writeFileSync stubbed out, so the fixture is
+      // created through the real module.
+      const realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+      const dir = realFs.mkdtempSync(path.join(os.tmpdir(), 'bare-ai-prompt-'));
+      promptFile = path.join(dir, 'prompt.md');
+      realFs.writeFileSync(
+        promptFile,
+        'interactive prompt from a file',
+        'utf-8',
+      );
+    });
+
+    it('assigns the file contents to promptInteractive and leaves prompt empty', async () => {
+      process.argv = [
+        'node',
+        'script.js',
+        '--prompt-interactive-file',
+        promptFile,
+      ];
+      const parsedArgs = await parseArguments(createTestMergedSettings());
+      // promptInteractive is the field -i/--prompt-interactive sets, and that is
+      // what keeps the session interactive; prompt is the headless field.
+      expect(parsedArgs.promptInteractive).toBe(
+        'interactive prompt from a file',
+      );
+      expect(parsedArgs.prompt).toBeUndefined();
+    });
+
+    it('keeps --prompt-file on the headless path for comparison', async () => {
+      process.argv = ['node', 'script.js', '--prompt-file', promptFile];
+      const parsedArgs = await parseArguments(createTestMergedSettings());
+      expect(parsedArgs.prompt).toBe('interactive prompt from a file');
+      expect(parsedArgs.promptInteractive).toBeUndefined();
+    });
+
+    it.each([
+      {
+        description: '--prompt (-p)',
+        extraArgs: ['--prompt', 'x'],
+        message:
+          'Cannot use both --prompt (-p) and --prompt-interactive-file together',
+      },
+      {
+        description: '--prompt-interactive (-i)',
+        extraArgs: ['-i', 'x'],
+        message:
+          'Cannot use both --prompt-interactive (-i) and --prompt-interactive-file together',
+      },
+    ])(
+      'rejects $description together with --prompt-interactive-file',
+      async ({ extraArgs, message }) => {
+        process.argv = [
+          'node',
+          'script.js',
+          '--prompt-interactive-file',
+          promptFile,
+          ...extraArgs,
+        ];
+
+        const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+          throw new Error('process.exit called');
+        });
+
+        const mockConsoleError = vi
+          .spyOn(console, 'error')
+          .mockImplementation(() => {});
+
+        await expect(
+          parseArguments(createTestMergedSettings()),
+        ).rejects.toThrow('process.exit called');
+
+        expect(mockConsoleError).toHaveBeenCalledWith(
+          expect.stringContaining(message),
+        );
+
+        mockExit.mockRestore();
+        mockConsoleError.mockRestore();
+      },
+    );
+
+    it('fails loudly when the prompt file cannot be read', async () => {
+      process.argv = [
+        'node',
+        'script.js',
+        '--prompt-interactive-file',
+        '/nonexistent/prompt.md',
+      ];
+
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit called');
+      });
+
+      const mockConsoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      await expect(parseArguments(createTestMergedSettings())).rejects.toThrow(
+        'process.exit called',
+      );
+
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to read prompt file'),
+      );
+
+      mockExit.mockRestore();
+      mockConsoleError.mockRestore();
+    });
+  });
+
   describe('positional arguments and @commands', () => {
     beforeEach(() => {
       // Default to headless mode for these tests as they mostly expect one-shot behavior
