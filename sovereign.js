@@ -581,10 +581,10 @@ async function main() {
     delete secureEnv.VAULT_ROLE_ID;
     delete secureEnv.VAULT_SECRET_ID;
 
-    // The prompt reaches the CLI through argv (see loadSystemPrompt), and the
-    // bundled CLI never reads this variable itself. Drop any inherited copy:
-    // duplicating a prompt of this size into the child's environment block is
-    // exactly the payload that made the exec fail with E2BIG.
+    // The bundled CLI never reads this variable: the prompt reaches it by file
+    // path instead (see resolvePromptFile below). Drop any inherited copy
+    // anyway - duplicating a prompt of this size into the child's environment
+    // block is exactly the payload that made an earlier exec fail with E2BIG.
     delete secureEnv.BARE_AI_SYSTEM_PROMPT;
 
     // Dynamically inject the system prompt if the launcher provided one.
