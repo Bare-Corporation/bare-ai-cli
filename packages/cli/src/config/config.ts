@@ -456,9 +456,12 @@ export async function parseArguments(
       process.exit(1);
     }
   }
-  // Keep CliArgs.query as a string for downstream typing
-  (result as Record<string, unknown>)['query'] = q || undefined;
-  (result as Record<string, unknown>)['startupMessages'] = startupMessages;
+  // Keep CliArgs.query as a string for downstream typing.
+  //
+  // Object.assign rather than `(result as Record<string, unknown>)['x'] = ...`:
+  // yargs' parse() result is `any`, and asserting it would trip
+  // @typescript-eslint/no-unsafe-type-assertion. The assignment is equivalent.
+  Object.assign(result, { query: q || undefined, startupMessages });
 
   // The import format is now only controlled by settings.memoryImportFormat
   // We no longer accept it as a CLI argument
@@ -605,6 +608,11 @@ export async function loadCliConfig(
       memoryImportFormat,
       memoryFileFiltering,
       settings.context?.discoveryMaxDirs,
+      // Boundary marker for the upward memory search. The core signature takes
+      // this as its 9th parameter, defaulting to ['.git']; pass it explicitly so
+      // the call site states the contract instead of depending on a default that
+      // a reordering refactor could silently change.
+      ['.git'],
     );
     memoryContent = result.memoryContent;
     fileCount = result.fileCount;
@@ -673,7 +681,9 @@ export async function loadCliConfig(
     /* [BARE-AI PATCH] untrusted folder override removed */
   }
 
-  let telemetrySettings;
+  // Explicitly typed: a bare `let` infers `any` here, which would make the
+  // telemetry settings an unsafe value downstream (no-unsafe-assignment).
+  let telemetrySettings: Awaited<ReturnType<typeof resolveTelemetrySettings>>;
   try {
     telemetrySettings = await resolveTelemetrySettings({
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
@@ -700,9 +710,15 @@ export async function loadCliConfig(
 
   const allowedTools = argv.allowedTools || settings.tools?.allowed || [];
 
+  // ACP-driven sessions are interactive by mode but have no human at the
+  // terminal: the client is a program. ask_user must therefore be excluded for
+  // ACP as well, otherwise the agent can block forever waiting for an answer
+  // that will never arrive.
+  const acpMode = !!argv.acp || !!argv.experimentalAcp;
+
   // In non-interactive mode, exclude tools that require a prompt.
   const extraExcludes: string[] = [];
-  if (!interactive) {
+  if (!interactive || acpMode) {
     // The Policy Engine natively handles headless safety by translating ASK_USER
     // decisions to DENY. However, we explicitly block ask_user here to guarantee
     // it can never be allowed via a high-priority policy rule when no human is present.
