@@ -42,6 +42,15 @@ Bare AI CLI intercepts the Google SDK calls in the CLI's routing layer:
   are written to a persistent `bare-ai-trace.log`.
 - **Sovereign web search** — routes search through a self-hosted SearXNG
   instance (`BARE_AI_SEARCH_URL`), falling back to Google Search when unset.
+- **Multi-provider routing** — the provider is detected from the endpoint URL
+  (Ollama, OpenAI-compatible, Google, Anthropic, DeepSeek) and provider-specific
+  headers and features are applied (native Anthropic Messages API, DeepSeek
+  reasoning content).
+- **Model catalog / Sovereign Switchboard** — models resolve from the Council
+  API catalog (`/v1/models`) and hot-swap via `/model`, so onboarding a new
+  model is a catalog change, not a code change.
+- **Multi-model Council** — `/council` orchestrates a cross-model debate; a
+  "Composer" pass selects the models, roles, and rounds from the catalog.
 
 ---
 
@@ -84,7 +93,10 @@ Configuration is provided through environment variables, a `.env` file, or the
 | `BARE_AI_CONTEXT_WINDOW` | Model context window in tokens          | — (window unknown)                           |
 | `BARE_AI_CONSTITUTION`   | Path to the system prompt markdown file | —                                            |
 | `BARE_AI_LEAN_TOOLS`     | Force tool pruning on/off               | auto-detected                                |
+| `BARE_AI_NO_TOOLS`       | Disable tool use (thinker/reasoning)    | auto (by model capability)                   |
 | `DEBUG_BARE_AI`          | Verbose tracing                         | false                                        |
+| `BARE_AI_SEARCH_URL`     | Self-hosted SearXNG instance URL        | — (falls back to Google Search)              |
+| `COUNCIL_API_BASE_URL`   | Council model-catalog API base URL      | `https://api.bare-ai.net`                    |
 
 Vault/OpenBao credentials:
 
