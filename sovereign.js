@@ -170,6 +170,30 @@ function modelPrefixRoute(modelId) {
   return null;
 }
 
+/**
+ * Turn a catalogue/Vault base_url into a ready-to-POST completions URL.
+ *
+ * WHY: the catalogue mixes fully-formed endpoints
+ * ("https://api.deepseek.com/v1/chat/completions"), versioned roots
+ * ("http://100.64.0.20:8002/v1", a local llama.cpp server) and bare host:port
+ * ("100.64.0.20:11434", Ollama). Appending "/v1/chat/completions"
+ * unconditionally produced ".../v1/v1/chat/completions", and a schemeless
+ * host:port produced an unparseable URL. Normalise instead of assuming.
+ *
+ * A base_url whose scheme was supplied by the operator is left as http/https;
+ * a bare host:port gets http:// added, which is what every local engine on
+ * this fleet speaks.
+ */
+function toCompletionsUrl(baseUrl) {
+  let base = String(baseUrl || '').trim();
+  if (!base) return '';
+  if (!/^https?:\/\//i.test(base)) base = 'http://' + base;
+  base = base.replace(/\/+$/, '');
+  if (/\/chat\/completions$|\/messages$/.test(base)) return base;
+  if (/\/v1$/.test(base)) return base + '/chat/completions';
+  return base + '/v1/chat/completions';
+}
+
 const CATALOG_CACHE =
   process.env.CATALOG_CACHE || join(homedir(), '.bare-ai/model-catalog.json');
 const COUNCIL_API_BASE_URL =
@@ -243,15 +267,37 @@ async function loadCatalog() {
 
 /**
  * Resolve routing target for a model id.
- * Returns { vaultPath, baseUrl, modelName, cloud } where cloud=true means
- * per-provider routing (baseUrl/modelName come from catalog) and cloud=false
- * means legacy VAULT_SECRET_PATH routing (config supplies everything).
+ * Returns { vaultPath, baseUrl, modelName, cloud }.
+ *
+ * cloud=true  -> routed to a cloud provider: baseUrl/modelName come from the
+ *                catalogue row, credentials from that PROVIDER's Vault path.
+ * cloud=false -> not a cloud provider: baseUrl/modelName come from the target
+ *                when it has them (a local catalogue row, or nothing at all
+ *                when there is no model id), otherwise from the legacy
+ *                VAULT_SECRET_PATH config. Credentials always come from the
+ *                path named in vaultPath.
+ *
+ * WHY the local row is returned BEFORE the prefix fallback: a local model is
+ * routinely named after the vendor whose weights it runs
+ * ("deepseek-v4-flash-local"), so the name-prefix heuristic below used to
+ * capture it and send both the request and the operator's prompt to that
+ * vendor's public API. A catalogue row that says is_cloud=false is
+ * authoritative; the heuristic only applies to ids the catalogue does not
+ * describe as local.
  */
 async function resolveTarget(modelId) {
   if (modelId) {
     const rows = await loadCatalog();
     if (rows) {
       const row = rows.find((r) => r.model_id === modelId);
+      if (row && !row.is_cloud) {
+        return {
+          vaultPath: VAULT_SECRET_PATH,
+          baseUrl: (row.base_url || '').trim(),
+          modelName: (row.model_id || modelId).trim(),
+          cloud: false,
+        };
+      }
       const key = row ? vaultKeyForProvider(row.provider) : null;
       if (row && key && row.is_cloud) {
         return {
@@ -262,7 +308,8 @@ async function resolveTarget(modelId) {
         };
       }
     }
-    // Catalog loaded but model not found as a cloud row -> no provider route.
+    // Catalog loaded but model not found as a cloud or local row -> the
+    // prefix heuristic below gets a chance.
   } else {
     return {
       vaultPath: VAULT_SECRET_PATH,
@@ -549,12 +596,11 @@ async function main() {
       '[sovereign] Vault context secured. Launching Bare AI CLI...\n',
     );
 
-    const baseUrl = (
-      target.cloud ? target.baseUrl : config.base_url || ''
-    ).trim();
-    const modelName = (
-      target.cloud ? target.modelName : config.model_name || ''
-    ).trim();
+    // An explicit target value wins: it is either the catalogue row of a remote
+    // provider or the catalogue row of a LOCAL engine. The legacy Vault config
+    // only fills the gap when the target has neither (no --model, no row).
+    const baseUrl = (target.baseUrl || config.base_url || '').trim();
+    const modelName = (target.modelName || config.model_name || '').trim();
 
     if (!baseUrl)
       throw new Error(`base_url empty for ${modelId || target.vaultPath}`);
@@ -562,10 +608,7 @@ async function main() {
     const secureEnv = {
       ...process.env,
       // Dynamic endpoint logic
-      BARE_AI_ENDPOINT:
-        baseUrl.includes('completions') || baseUrl.includes('messages')
-          ? baseUrl
-          : `${baseUrl}/v1/chat/completions`,
+      BARE_AI_ENDPOINT: toCompletionsUrl(baseUrl),
 
       BARE_AI_API_KEY: (config.api_key || 'none').trim(),
       BARE_AI_MODEL: modelName,
