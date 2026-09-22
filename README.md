@@ -85,18 +85,35 @@ original CLI.
 Configuration is provided through environment variables, a `.env` file, or the
 `sovereign.js` Vault/OpenBao wrapper.
 
-| Variable                 | Purpose                                 | Default                                      |
-| ------------------------ | --------------------------------------- | -------------------------------------------- |
-| `BARE_AI_ENDPOINT`       | Chat completions URL                    | `http://localhost:11434/v1/chat/completions` |
-| `BARE_AI_MODEL`          | Model string (e.g., `granite4:tiny-h`)  | —                                            |
-| `BARE_AI_API_KEY`        | Optional bearer token                   | none                                         |
-| `BARE_AI_CONTEXT_WINDOW` | Model context window in tokens          | — (window unknown)                           |
-| `BARE_AI_CONSTITUTION`   | Path to the system prompt markdown file | —                                            |
-| `BARE_AI_LEAN_TOOLS`     | Force tool pruning on/off               | auto-detected                                |
-| `BARE_AI_NO_TOOLS`       | Disable tool use (thinker/reasoning)    | auto (by model capability)                   |
-| `DEBUG_BARE_AI`          | Verbose tracing                         | false                                        |
-| `BARE_AI_SEARCH_URL`     | Self-hosted SearXNG instance URL        | — (falls back to Google Search)              |
-| `COUNCIL_API_BASE_URL`   | Council model-catalog API base URL      | `https://api.bare-ai.net`                    |
+| Variable                 | Purpose                                                                                                                                        | Default                                      |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `BARE_AI_ENDPOINT`       | Chat completions URL                                                                                                                           | `http://localhost:11434/v1/chat/completions` |
+| `BARE_AI_MODEL`          | Model string (e.g., `granite4:tiny-h`)                                                                                                         | —                                            |
+| `BARE_AI_API_KEY`        | Optional bearer token                                                                                                                          | none                                         |
+| `BARE_AI_CONTEXT_WINDOW` | Model context window in tokens                                                                                                                 | — (window unknown)                           |
+| `BARE_AI_CONSTITUTION`   | Path to the system prompt markdown file                                                                                                        | —                                            |
+| `BARE_AI_LEAN_TOOLS`     | Force tool pruning on/off                                                                                                                      | auto-detected                                |
+| `BARE_AI_NO_TOOLS`       | Hard tool-policy override for this execution: `true` withholds tools, `false` forces them on. Set by the caller; outranks the model catalogue. | auto (by model capability)                   |
+| `BARE_AI_TOOLS_OVERRIDE` | Records the caller override in force (`tools` / `no-tools`); set automatically, locked per execution.                                          | -                                            |
+| `DEBUG_BARE_AI`          | Verbose tracing                                                                                                                                | false                                        |
+| `BARE_AI_SEARCH_URL`     | Self-hosted SearXNG instance URL                                                                                                               | — (falls back to Google Search)              |
+| `COUNCIL_API_BASE_URL`   | Council model-catalog API base URL                                                                                                             | `https://api.bare-ai.net`                    |
+
+### Tool policy (per execution)
+
+Whether a model may use tools is decided once per execution, in this order:
+
+1. `--disable-tools` / `--tools` (explicit flags for this run)
+2. `BARE_AI_NO_TOOLS=true|false` supplied by the caller at launch
+3. the catalogue row for the model (`tool_capability`: `thinker` = no tools,
+   `doer` = tools allowed)
+
+Whichever of 1-2 applies is recorded in `BARE_AI_TOOLS_OVERRIDE` and is then
+frozen for the execution: a `/model` hot-swap updates `BARE_AI_NO_TOOLS` to
+match it, but can never flip it, because a swap is a routing decision and not a
+new statement of caller intent. A caller that must guarantee a tool-free run
+(for example a Council API pod using `--approval-mode plan`, which auto-approves
+read-only tools) should pass `--disable-tools` or `BARE_AI_NO_TOOLS=true`.
 
 Vault/OpenBao credentials:
 

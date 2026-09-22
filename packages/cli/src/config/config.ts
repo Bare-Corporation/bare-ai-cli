@@ -63,6 +63,7 @@ import { requestConsentNonInteractive } from './extensions/consent.js';
 import { promptForSetting } from './extensions/extensionSettings.js';
 import type { EventEmitter } from 'node:stream';
 import { runExitCleanup } from '../utils/cleanup.js';
+import { applyToolFlags } from './toolPolicy.js';
 
 export interface CliArgs {
   query: string | undefined;
@@ -78,6 +79,8 @@ export interface CliArgs {
   adminPolicy: string[] | undefined;
   allowedMcpServerNames: string[] | undefined;
   allowedTools: string[] | undefined;
+  disableTools?: boolean;
+  tools?: boolean;
   acp?: boolean;
   experimentalAcp?: boolean;
   extensions: string[] | undefined;
@@ -186,6 +189,18 @@ export async function parseArguments(
           choices: ['default', 'auto_edit', 'yolo', 'plan'],
           description:
             'Set the approval mode: default (prompt for approval), auto_edit (auto-approve edit tools), yolo (auto-approve all tools), plan (read-only mode)',
+        })
+        .option('disable-tools', {
+          type: 'boolean',
+          description:
+            'Hard override for this execution: never expose tools to the model, ignoring the catalogue tool_capability (thinker/doer) default. Equivalent to BARE_AI_NO_TOOLS=true.',
+          default: false,
+        })
+        .option('tools', {
+          type: 'boolean',
+          description:
+            'Hard override for this execution: expose tools to the model even when the catalogue marks it a thinker. Equivalent to BARE_AI_NO_TOOLS=false.',
+          default: false,
         })
         .option('policy', {
           type: 'array',
@@ -350,6 +365,11 @@ export async function parseArguments(
       if (argv['yolo'] && argv['approvalMode']) {
         return 'Cannot use both --yolo (-y) and --approval-mode together. Use --approval-mode=yolo instead.';
       }
+      // The two tool-policy flags state opposite intent; yargs sets both the
+      // kebab-case and the camelCase key, so check whichever is populated.
+      if ((argv['disable-tools'] || argv['disableTools']) && argv['tools']) {
+        return 'Cannot use both --disable-tools and --tools together: they state opposite tool policies for this execution.';
+      }
       if (
         argv['outputFormat'] &&
         !['text', 'json', 'stream-json'].includes(
@@ -456,6 +476,20 @@ export async function parseArguments(
       process.exit(1);
     }
   }
+  // Freeze this execution's tool policy BEFORE anything can hot-swap models.
+  // Parsed flags win over a caller-supplied BARE_AI_NO_TOOLS, which in turn
+  // wins over the catalogue's per-model tool_capability (see toolPolicy.ts).
+  // Doing it here matters: a /model swap writes BARE_AI_NO_TOOLS too, so the
+  // caller's intent has to be recorded while it is still unambiguous.
+  const toolMode = applyToolFlags(result);
+  if (toolMode) {
+    startupMessages.push(
+      `Tool policy locked by the caller for this execution: ${
+        toolMode === 'no-tools' ? 'tools disabled' : 'tools enabled'
+      } (the model catalogue's tool_capability default is ignored).`,
+    );
+  }
+
   // Keep CliArgs.query as a string for downstream typing.
   //
   // Object.assign rather than `(result as Record<string, unknown>)['x'] = ...`:
