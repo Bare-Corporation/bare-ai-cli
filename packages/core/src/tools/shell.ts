@@ -63,6 +63,27 @@ export const OUTPUT_UPDATE_INTERVAL_MS = 1000;
 const BACKGROUND_DELAY_MS = 200;
 const SHOW_NL_DESCRIPTION_THRESHOLD = 150;
 
+/**
+ * Opt-in for the command-substitution guard.
+ *
+ * The guard is ON by default and must stay on for untrusted input: `$()`,
+ * backticks, `<()` and `>()` are refused before the command runs. That refusal
+ * is unconditional, which is correct as a default but also blocks ordinary,
+ * legitimate composition. A launcher that has already established its input is
+ * trusted may set BARE_AI_ALLOW_SUBSTITUTION=1 for the session to route past
+ * this refusal; the policy engine and the sandbox still apply underneath.
+ *
+ * Returns false when the variable is unset, empty, or holds anything other than
+ * an affirmative token, so the safe default is preserved by omission.
+ */
+export function isSubstitutionOptInEnabled(): boolean {
+  const raw = process.env['BARE_AI_ALLOW_SUBSTITUTION'];
+  if (raw === undefined) {
+    return false;
+  }
+  return ['1', 'true', 'yes', 'on'].includes(raw.trim().toLowerCase());
+}
+
 export interface ShellToolParams {
   command: string;
   description?: string;
@@ -444,13 +465,17 @@ export class ShellToolInvocation extends BaseToolInvocation<
     } = options;
     const strippedCommand = stripShellWrapper(this.params.command);
 
-    if (detectCommandSubstitution(strippedCommand)) {
+    if (
+      detectCommandSubstitution(strippedCommand) &&
+      !isSubstitutionOptInEnabled()
+    ) {
       return {
         llmContent:
-          'Command injection detected: command substitution syntax ' +
-          '($(), backticks, <() or >()) found in command arguments. ' +
-          'On PowerShell, @() array subexpressions and $() subexpressions are also blocked. ' +
-          'This is a security risk and the command was blocked.',
+          'Command substitution syntax ($(), backticks, <() or >()) is blocked in ' +
+          "command arguments by this tool's guard, which exists to stop injected commands. " +
+          'Compose the value another way: pass it as a plain argument, write it to a file ' +
+          'and read it back, or use printf with a literal string. A launcher that trusts ' +
+          'its input can enable substitution deliberately with BARE_AI_ALLOW_SUBSTITUTION=1.',
         returnDisplay:
           'Blocked: command substitution detected in shell command.',
       };
