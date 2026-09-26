@@ -25,6 +25,17 @@ gitleaks git --staged --redact --no-banner --verbose || {
   exit 1
 }
 
+# Guard 3: refuse to commit tooling that belongs outside this repo
+node scripts/check-external-tooling.js || {
+  echo ''
+  echo '===================================================='
+  echo 'BLOCKED: tooling that belongs outside this repo is present in the tree.'
+  echo 'See docs/FLEET-TOOLING.md'
+  echo 'Emergency bypass: git commit --no-verify'
+  echo '===================================================='
+  exit 1
+}
+
 npm run pre-commit || {
   echo ''
   echo '===================================================='
