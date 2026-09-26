@@ -197,6 +197,26 @@ function isNativeMessageResponse(obj: unknown): obj is NativeMessageResponse {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
+/**
+ * Split a constitution file into its cache-stable band and its volatile band at
+ * the first marker line. No marker means the whole file is stable, which keeps
+ * every existing constitution file working unchanged.
+ */
+function splitVolatileBand(content: string): {
+  stable: string;
+  volatile: string;
+} {
+  const marker = BareAiClient.VOLATILE_MARKER;
+  const at = content.indexOf(marker);
+  if (at < 0) return { stable: content, volatile: '' };
+  const lineEnd = content.indexOf('\n', at);
+  const volatileStart = lineEnd < 0 ? content.length : lineEnd + 1;
+  return {
+    stable: content.slice(0, at).replace(/\n?$/, ''),
+    volatile: content.slice(volatileStart),
+  };
+}
+
 function isNativeStreamEvent(obj: unknown): obj is NativeStreamEvent {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
@@ -244,7 +264,12 @@ const logWarn = (...args: unknown[]): void => writeTrace('[WARN] ⚠️', ...arg
 
 export class BareAiClient {
   private systemPrompt: string | null;
+  static readonly VOLATILE_MARKER = '<!-- BARE_AI_VOLATILE -->';
   private readonly LEAN_TOOL_MODELS = ['tiny', 'small', 'mini', '1b', '3b'];
+  // Everything after this marker line in the constitution file is volatile:
+  // it is NOT part of the cached system block, it travels in the tail of the
+  // last user message instead.
+  private volatileTail = '';
 
   constructor() {
     try {
@@ -272,10 +297,13 @@ export class BareAiClient {
     try {
       if (fs.existsSync(resolvedPath)) {
         const content = fs.readFileSync(resolvedPath, 'utf8');
+        const split = splitVolatileBand(content);
+        this.volatileTail = split.volatile;
         logSuccess(
-          `Constitution loaded: ${resolvedPath} (${content.length} bytes)`,
+          `Constitution loaded: ${resolvedPath} (${content.length} bytes; ` +
+            `stable ${split.stable.length}, volatile ${split.volatile.length})`,
         );
-        return content;
+        return split.stable;
       }
       logWarn(`Constitution not found at ${resolvedPath}`);
       return null;
@@ -559,7 +587,12 @@ export class BareAiClient {
 
     // Append dynamic session context to the LAST user message so the static
     // system prompt prefix stays byte-identical across calls for caching.
-    const sessionTag = `\n\n[Session: ${new Date().toLocaleDateString()}]`;
+    // Volatile band first, then the session stamp: both sit in the LAST user
+    // message so the cached system prefix stays byte-identical across calls.
+    const volatileBand = this.volatileTail.trim();
+    const sessionTag =
+      (volatileBand ? `\n\n${volatileBand}` : '') +
+      `\n\n[Session: ${new Date().toLocaleDateString()}]`;
     const enrichedMessages = [...sanitisedMessages];
     const lastUserIdx = enrichedMessages.map((m) => m.role).lastIndexOf('user');
     if (lastUserIdx >= 0) {
@@ -708,11 +741,16 @@ export class BareAiClient {
         // (input + cache buckets) and message_delta (output_tokens).
         let startUsage: NativeUsage | null = null;
         let deltaUsage: NativeUsage | null = null;
+        // SSE lines can be split across reads. Parsing each chunk on its own
+        // drops the event that straddles the boundary - and message_start is the
+        // first event, so losing it silently zeroes the prompt counters.
+        let lineBuffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          lineBuffer += decoder.decode(value, { stream: true });
+          const lines = lineBuffer.split('\n');
+          lineBuffer = lines.pop() ?? '';
           for (const line of lines) {
             const trimmed = line.trim();
             if (trimmed.startsWith('event:')) continue;
@@ -728,6 +766,7 @@ export class BareAiClient {
               continue;
             }
             if (!parsed) continue;
+            logDebug('native event:', String(parsed.type ?? 'unknown'));
             if (parsed.type === 'message_start' && parsed.message?.usage) {
               startUsage = parsed.message.usage;
             } else if (
@@ -746,10 +785,23 @@ export class BareAiClient {
             }
           }
         }
-        const inputTokens = startUsage?.input_tokens ?? 0;
-        const outputTokens = deltaUsage?.output_tokens ?? 0;
-        const cachedRead = startUsage?.cache_read_input_tokens ?? 0;
-        const cachedWrite = startUsage?.cache_creation_input_tokens ?? 0;
+        // Merge both buckets: message_start carries input + cache figures,
+        // message_delta carries output. A missing start event must not turn the
+        // prompt counters into a silent zero.
+        const usageMerged: NativeUsage = {
+          ...(startUsage ?? {}),
+          ...(deltaUsage ?? {}),
+        };
+        const inputTokens = usageMerged.input_tokens ?? 0;
+        const outputTokens = usageMerged.output_tokens ?? 0;
+        const cachedRead = usageMerged.cache_read_input_tokens ?? 0;
+        const cachedWrite = usageMerged.cache_creation_input_tokens ?? 0;
+        if (inputTokens === 0) {
+          logWarn(
+            'native stream reported no input_tokens for this run: prompt size is unknown ' +
+              '(see the native event lines above for what the provider sent)',
+          );
+        }
         finalMetrics = {
           prompt_tokens: inputTokens,
           completion_tokens: outputTokens,

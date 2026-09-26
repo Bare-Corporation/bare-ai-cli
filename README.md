@@ -38,8 +38,10 @@ Bare AI CLI intercepts the Google SDK calls in the CLI's routing layer:
   local markdown file (`~/.bare-ai/constitution.md`).
 - **Vault / OpenBao integration** — endpoint URLs, model names, and API keys are
   injected at runtime via AppRole and are not written to shell history.
-- **Diagnostic tracing** — raw request payloads, token usage, and system state
-  are written to a persistent `bare-ai-trace.log`.
+- **Diagnostic tracing** — routing metadata, native event types and debug detail
+  are written to a persistent `bare-ai-trace.log`, which is overwritten at each
+  session start. It does NOT contain raw request payloads or token usage: token
+  counts are reported on the telemetry line in the terminal instead.
 - **Sovereign web search** — routes search through a self-hosted SearXNG
   instance (`BARE_AI_SEARCH_URL`), falling back to Google Search when unset.
 - **Multi-provider routing** — the provider is detected from the endpoint URL
