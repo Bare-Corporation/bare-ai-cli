@@ -475,7 +475,7 @@ export class ShellToolInvocation extends BaseToolInvocation<
           "command arguments by this tool's guard, which exists to stop injected commands. " +
           'Compose the value another way: pass it as a plain argument, write it to a file ' +
           'and read it back, or use printf with a literal string. A launcher that trusts ' +
-          'its input can enable substitution deliberately with BARE_AI_ALLOW_SUBSTITUTION=1.',
+          'its input can enable substitution deliberately via environment policy.',
         returnDisplay:
           'Blocked: command substitution detected in shell command.',
       };

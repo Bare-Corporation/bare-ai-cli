@@ -1280,12 +1280,15 @@ EOF`;
           abortSignal: new AbortController().signal,
         });
         expect(result.returnDisplay).not.toContain('Blocked');
+        // Prove the command actually ran, rather than merely that it was not
+        // refused: assert the mocked execution output reached the payload.
+        expect(String(result.llmContent)).toContain('probe-ok:2026');
       } finally {
         delete process.env['BARE_AI_ALLOW_SUBSTITUTION'];
       }
     });
 
-    it('should name the sanctioned alternative instead of accusing injection', async () => {
+    it('should not hand the model the exact variable name', async () => {
       delete process.env['BARE_AI_ALLOW_SUBSTITUTION'];
       const tool = new ShellTool(mockConfig, createMockMessageBus());
       const invocation = tool.build({ command: 'echo $(whoami)' });
@@ -1293,7 +1296,10 @@ EOF`;
         abortSignal: new AbortController().signal,
       });
       const content = String(result.llmContent);
-      expect(content).toContain('BARE_AI_ALLOW_SUBSTITUTION');
+      // Naming the variable would hand a model a concrete instruction for arming
+      // the bypass in a later session via a sourced profile. It must not.
+      expect(content).not.toContain('BARE_AI_ALLOW_SUBSTITUTION');
+      expect(content).toContain('environment policy');
       expect(content).not.toContain('Command injection detected');
     });
 
