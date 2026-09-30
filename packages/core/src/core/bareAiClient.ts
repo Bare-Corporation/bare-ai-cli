@@ -69,6 +69,13 @@ export interface GenerateResult {
   toolCalls?: ToolCall[];
   reasoning_content?: string | null; // added for deepseek V4 for tooluse
   usage?: UsageMetrics;
+  /**
+   * True when the streaming path already echoed each token to stdout as it
+   * arrived. A consumer that renders the returned text itself (client.ts ->
+   * non-interactive UI) must NOT re-emit it, or the whole answer is printed
+   * twice: the raw streamed copy plus the aggregated block.
+   */
+  streamed?: boolean;
 }
 
 interface UsageMetrics {
@@ -257,6 +264,62 @@ const logError = (...args: unknown[]): void =>
 const logSuccess = (...args: unknown[]): void =>
   writeTrace('[SUCCESS] ✅', ...args);
 const logWarn = (...args: unknown[]): void => writeTrace('[WARN] ⚠️', ...args);
+
+// =============================================================================
+// SSE STREAM RE-ASSEMBLY
+// =============================================================================
+
+/**
+ * Buffers raw Server-Sent-Events text across network reads so a line that
+ * straddles a chunk boundary is only parsed once it is complete.
+ *
+ * Parsing each `reader.read()` chunk in isolation drops the payload that
+ * straddles the boundary: JSON.parse throws on the truncated half, and the
+ * other half does not start with `data:`, so the token is lost and words
+ * arrive truncated (e.g. "conflates" -> "confl", "Commission" -> " ",
+ * "adequacy" -> "adequ").
+ */
+export class SseLineBuffer {
+  private buffer = '';
+
+  /** Append a raw chunk; return every now-COMPLETE line it completed. */
+  push(chunk: string): string[] {
+    this.buffer += chunk;
+    const lines = this.buffer.split('\n');
+    this.buffer = lines.pop() ?? '';
+    return lines;
+  }
+
+  /** Return a trailing incomplete line that has no newline (end-of-stream). */
+  flush(): string[] {
+    if (this.buffer.length === 0) return [];
+    const rest = this.buffer;
+    this.buffer = '';
+    return [rest];
+  }
+}
+
+/**
+ * Strip the `data:` prefix from one SSE line. Returns the payload for `data:`
+ * lines and null for everything else (blank lines, `event:` lines, comments).
+ */
+export function parseSseDataLine(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('data:')) return null;
+  return trimmed.slice('data:'.length).trim();
+}
+
+/**
+ * Decide whether a completed model result still needs to be rendered by the
+ * caller. The streaming path already wrote every delta to stdout as it arrived,
+ * so emitting the aggregated text again would print the whole answer twice;
+ * the static path wrote nothing, so its text must be emitted exactly once.
+ */
+export function shouldEmitFinalText(
+  result: Pick<GenerateResult, 'text' | 'streamed'>,
+): boolean {
+  return Boolean(result.text) && result.streamed !== true;
+}
 
 // =============================================================================
 // BARE-AI CLIENT
@@ -813,22 +876,20 @@ export class BareAiClient {
         logSuccess('Streaming response completed successfully (native)');
         return {
           text: fullText,
+          streamed: true,
           ...(finalMetrics ? { usage: finalMetrics } : {}),
         };
       }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk
-          .split('\n')
-          .filter((line) => line.trim().startsWith('data: '));
-
+      // SSE lines can be split across network reads. Keep the trailing partial
+      // line buffered until the next chunk completes it: parsing each chunk in
+      // isolation drops the token whose JSON payload straddles the boundary, so
+      // words arrive truncated ("conflates" -> "confl").
+      const sseBuffer = new SseLineBuffer();
+      const handleSseLines = (lines: string[]): void => {
         for (const line of lines) {
-          const dataStr = line.replace('data: ', '').trim();
-          if (dataStr === '[DONE]') continue;
+          const dataStr = parseSseDataLine(line);
+          if (dataStr === null || dataStr === '[DONE]') continue;
 
           try {
             const parsed: unknown = JSON.parse(dataStr);
@@ -851,7 +912,15 @@ export class BareAiClient {
             logDebug('Failed to parse streaming chunk:', dataStr);
           }
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        handleSseLines(sseBuffer.push(decoder.decode(value, { stream: true })));
       }
+      // Flush a final frame that arrived without a trailing newline.
+      handleSseLines(sseBuffer.flush());
 
       // Write telemetry if metrics were received (Ollama and some generic providers)
       // Anthropic does not send streaming usage — just write a newline for clean output
@@ -864,6 +933,7 @@ export class BareAiClient {
       logSuccess('Streaming response completed successfully');
       return {
         text: fullText,
+        streamed: true,
         ...(finalMetrics ? { usage: finalMetrics } : {}),
       };
     } catch (error: unknown) {

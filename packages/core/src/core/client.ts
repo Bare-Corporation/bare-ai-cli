@@ -45,7 +45,7 @@ import type { Config } from '../config/config.js';
 import { getCoreSystemPrompt } from './prompts.js';
 import { checkNextSpeaker } from '../utils/nextSpeakerChecker.js';
 import { reportError } from '../utils/errorReporting.js';
-import { BareAiClient } from './bareAiClient.js';
+import { BareAiClient, shouldEmitFinalText } from './bareAiClient.js';
 import { GeminiChat } from './geminiChat.js';
 import type { Message } from './bareAiClient.js';
 import {
@@ -1044,7 +1044,12 @@ export class GeminiClient {
         }
 
         const finalText = currentResult.text || '';
-        if (finalText) {
+        // The BareAiClient streaming path already wrote every token to stdout
+        // as it arrived. Re-emitting the aggregated text here would print the
+        // whole answer twice (live stream + this block) - the duplicated
+        // round / consensus block defect. Emit only when the client did NOT
+        // stream it (static path).
+        if (shouldEmitFinalText(currentResult)) {
           yield {
             type: GeminiEventType.Content,
             value: finalText,
