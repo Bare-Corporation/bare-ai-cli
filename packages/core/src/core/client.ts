@@ -1,11 +1,13 @@
 /**
  * @license
- * Copyright 2026 Cloud Integration Corporation LLC
- * Copyright 2026 Google LLC (Original Developer)
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
- *
- * @license
  */
+
+// Bare-AI fork notice: this file is derived from gemini-cli, distributed
+// under Apache-2.0 (see LICENSE and NOTICE). Modifications and additions in
+// this fork are Copyright 2026 Cloud Integration Corporation LLC and are
+// released under the same Apache-2.0 terms declared above.
 
 /**
 ############################################################
@@ -75,11 +77,9 @@ import {
   type LlmRole,
 } from '../telemetry/types.js';
 import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
-import {
-  EVENT_TOOL_CALL,
-  EVENT_API_RESPONSE,
-} from '../telemetry/types.js';
+import { EVENT_TOOL_CALL, EVENT_API_RESPONSE } from '../telemetry/types.js';
 import type { UiEvent } from '../telemetry/uiTelemetry.js';
+import type { ExecuteOptions } from '../tools/tools.js';
 import { ToolCallDecision } from '../telemetry/tool-call-decision.js';
 import type { IdeContext, File } from '../ide/types.js';
 import { handleFallback } from '../fallback/handler.js';
@@ -120,8 +120,9 @@ export class GeminiClient {
   private readonly toolOutputMaskingService: ToolOutputMaskingService;
   private lastPromptId: string;
   private currentSequenceModel: string | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private context: any;
+  // The message bus is the only part of the surrounding Config this client uses.
+  // Typing that slice is what keeps the messageBus read below free of `any`.
+  private context: Pick<Config, 'messageBus'>;
   private lastSentIdeContext: IdeContext | undefined;
   private forceFullIdeContext = true;
   private messageHistory: Message[] = [];
@@ -133,7 +134,7 @@ export class GeminiClient {
   private hasFailedCompressionAttempt = false;
 
   constructor(private readonly config: Config) {
-    this.context = config as unknown as typeof this.context;
+    this.context = config;
     this.loopDetector = new LoopDetectionService(config);
     this.compressionService = new ChatCompressionService();
     this.toolOutputMaskingService = new ToolOutputMaskingService();
@@ -275,7 +276,6 @@ export class GeminiClient {
   }
 
   async addHistory(content: Content) {
-     
     const message: Message = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       role: (content.role === 'model' ? 'assistant' : content.role) as
@@ -775,9 +775,7 @@ export class GeminiClient {
       return isRecord(part) && 'text' in part && isString(part['text']);
     }
 
-    function isFuncDecl(
-      fd: unknown,
-    ): fd is {
+    function isFuncDecl(fd: unknown): fd is {
       name: string;
       description?: string;
       parametersJsonSchema?: unknown;
@@ -866,7 +864,6 @@ export class GeminiClient {
         let openAiTools = getCurrentTools();
         const loopHistory = [...this.messageHistory];
 
-
         const apiStartTime = Date.now();
         let currentResult = await this.aiClient.generateContent(
           promptText,
@@ -877,6 +874,13 @@ export class GeminiClient {
         if (initialPromptTokens !== undefined) {
           uiTelemetryService.setLastPromptTokenCount(initialPromptTokens);
         }
+        // The UiEvent members are uninhabitable: each is an intersection of a class
+        // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+        // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+        // the intersection collapses to never and no literal can satisfy it. Same
+        // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+        // with the constant changes the emitted event name - a separate decision.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         uiTelemetryService.addEvent({
           'event.name': EVENT_API_RESPONSE,
           model: modelToUse,
@@ -907,8 +911,10 @@ export class GeminiClient {
             role: 'assistant',
             content: currentResult.text || null,
             tool_calls: currentResult.toolCalls,
-            ...(currentResult.reasoning_content && { reasoning_content: currentResult.reasoning_content }),
-          });  
+            ...(currentResult.reasoning_content && {
+              reasoning_content: currentResult.reasoning_content,
+            }),
+          });
 
           for (const toolCall of currentResult.toolCalls) {
             const toolName = toolCall.function.name;
@@ -938,12 +944,15 @@ export class GeminiClient {
 
             const toolStartTime = Date.now();
             let toolResult = '';
-            try {         
+            try {
               const toolRegistry = this.config.getToolRegistry();
               const tool = toolRegistry.getTool(toolName);
               if (tool) {
                 const invocation = tool.build(toolArgs);
-                const result = await invocation.execute({ abortSignal: new AbortController().signal } as any);
+                const executeOptions: ExecuteOptions = {
+                  abortSignal: new AbortController().signal,
+                };
+                const result = await invocation.execute(executeOptions);
                 toolResult = isString(result) ? result : JSON.stringify(result);
               } else {
                 toolResult = `Tool ${toolName} not found`;
@@ -978,6 +987,13 @@ export class GeminiClient {
               value: displayResult + '\n',
               traceId: prompt_id,
             };
+            // The UiEvent members are uninhabitable: each is an intersection of a class
+            // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+            // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+            // the intersection collapses to never and no literal can satisfy it. Same
+            // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+            // with the constant changes the emitted event name - a separate decision.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
             uiTelemetryService.addEvent({
               'event.name': EVENT_TOOL_CALL,
               function_name: toolName,
@@ -986,7 +1002,7 @@ export class GeminiClient {
               decision: ToolCallDecision.AUTO_ACCEPT,
               metadata: {},
             } as UiEvent);
-          }  
+          }
 
           openAiTools = getCurrentTools();
           const lastHistoryEntry = loopHistory[loopHistory.length - 1];
@@ -1004,6 +1020,13 @@ export class GeminiClient {
             if (toolPromptTokens !== undefined) {
               uiTelemetryService.setLastPromptTokenCount(toolPromptTokens);
             }
+            // The UiEvent members are uninhabitable: each is an intersection of a class
+            // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+            // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+            // the intersection collapses to never and no literal can satisfy it. Same
+            // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+            // with the constant changes the emitted event name - a separate decision.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
             uiTelemetryService.addEvent({
               'event.name': EVENT_API_RESPONSE,
               model: modelToUse,
@@ -1018,8 +1041,8 @@ export class GeminiClient {
               },
             } as UiEvent);
           }
-        }  
- 
+        }
+
         const finalText = currentResult.text || '';
         if (finalText) {
           yield {
@@ -1388,7 +1411,7 @@ export class GeminiClient {
             {
               content: {
                 role: 'model',
-                parts: [{ text: generatedResult.text }],  
+                parts: [{ text: generatedResult.text }],
               },
               // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
               finishReason: 'STOP' as import('@google/genai').FinishReason, // Defaulting finish reason
