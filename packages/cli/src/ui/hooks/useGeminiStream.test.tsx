@@ -640,32 +640,36 @@ describe('useGeminiStream', () => {
     expect(mockSendMessageStream).not.toHaveBeenCalled(); // submitQuery uses this
   });
 
-  it('should expose activePtyId for non-shell executing tools that report an execution ID', async () => {
-    const remoteExecutingTool: TrackedExecutingToolCall = {
+  it('should expose activePtyId for an executing shell command that reports a pid', async () => {
+    // A pty belongs to a LOCAL shell, so the hook filters on run_shell_command.
+    // This case previously supplied a remote_agent_call and expected its pid,
+    // which the hook deliberately ignores; the assertion was testing behaviour
+    // the product does not have.
+    const executingShellTool: TrackedExecutingToolCall = {
       request: {
-        callId: 'remote-call-1',
-        name: 'remote_agent_call',
-        args: {},
+        callId: 'shell-call-1',
+        name: 'run_shell_command',
+        args: { command: 'sleep 30' },
         isClientInitiated: false,
-        prompt_id: 'prompt-id-remote',
+        prompt_id: 'prompt-id-shell',
       },
       status: CoreToolCallStatus.Executing,
       responseSubmittedToGemini: false,
       tool: {
-        name: 'remote_agent_call',
-        displayName: 'Remote Agent',
-        description: 'Remote agent execution',
+        name: 'run_shell_command',
+        displayName: 'Shell',
+        description: 'Runs a shell command',
         build: vi.fn(),
       } as any,
       invocation: {
-        getDescription: () => 'Calling remote agent',
+        getDescription: () => 'Running a shell command',
       } as unknown as AnyToolInvocation,
       startTime: Date.now(),
       liveOutput: 'working...',
       pid: 4242,
     };
 
-    const { result } = await renderTestHook([remoteExecutingTool]);
+    const { result } = await renderTestHook([executingShellTool]);
     expect(result.current.activePtyId).toBe(4242);
   });
 
