@@ -59,7 +59,7 @@ interface RunNonInteractiveParams {
 export async function runNonInteractive(
   params: RunNonInteractiveParams,
 ): Promise<void> {
-  const useAgentSession = false /* getAgentSessionNoninteractiveEnabled stub */;
+  const useAgentSession = false; /* getAgentSessionNoninteractiveEnabled stub */
   if (useAgentSession) {
     return runNonInteractiveAgentSession(params);
   }
@@ -77,9 +77,8 @@ export async function runNonInteractive(
     });
 
     if (process.env['GEMINI_CLI_ACTIVITY_LOG_TARGET']) {
-      const { setupInitialActivityLogger } = await import(
-        './utils/devtoolsService.js'
-      );
+      const { setupInitialActivityLogger } =
+        await import('./utils/devtoolsService.js');
       setupInitialActivityLogger(config);
     }
 
@@ -360,12 +359,40 @@ export async function runNonInteractive(
               });
             }
           } else if (event.type === GeminiEventType.MaxSessionTurns) {
+            const limit = event.value?.limit ?? config.getMaxSessionTurns();
+            const limitName =
+              event.value?.source === 'turn_cap'
+                ? 'the hardcoded maximum-turn limit for a single prompt'
+                : 'maxSessionTurns';
+            const message =
+              `Turn limit reached: the agent loop stopped because ` +
+              `${limitName} (${limit}) was exhausted.`;
+            if (config.getOutputFormat() === OutputFormat.TEXT) {
+              process.stderr.write(`[WARNING] ${message}\n`);
+            }
             if (streamFormatter) {
               streamFormatter.emitEvent({
                 type: JsonStreamEventType.ERROR,
                 timestamp: new Date().toISOString(),
                 severity: 'error',
-                message: 'Maximum session turns exceeded',
+                message,
+              });
+            }
+          } else if (event.type === GeminiEventType.InvalidStream) {
+            // No branch handled this before, so the loop fell through to the
+            // completion path and exited 0 as though the turn had succeeded.
+            const terminationMessage =
+              'The model response stream ended unexpectedly (invalid stream / ' +
+              'connection terminated), so this turn was discarded.';
+            if (config.getOutputFormat() === OutputFormat.TEXT) {
+              process.stderr.write(`[WARNING] ${terminationMessage}\n`);
+            }
+            if (streamFormatter) {
+              streamFormatter.emitEvent({
+                type: JsonStreamEventType.ERROR,
+                timestamp: new Date().toISOString(),
+                severity: 'error',
+                message: terminationMessage,
               });
             }
           } else if (event.type === GeminiEventType.Error) {
@@ -444,6 +471,18 @@ export async function runNonInteractive(
 
             if (toolResponse.responseParts) {
               toolResponseParts.push(...toolResponse.responseParts);
+            } else {
+              // These parts become the next message sent to the model. An
+              // absent payload would send an EMPTY message, so the agent would
+              // never learn that the tool failed and why.
+              toolResponseParts.push({
+                text:
+                  `Tool "${requestInfo.name}" returned no response payload ` +
+                  `(status: ${completedToolCall.status}).` +
+                  (toolResponse.error
+                    ? ` Error: ${toolResponse.error.message}`
+                    : ' Treat the call as failed and try a different approach.'),
+              });
             }
           }
 

@@ -195,8 +195,25 @@ export type ServerGeminiChatCompressedEvent = {
   value: ChatCompressionInfo | null;
 };
 
+/**
+ * Emitted when the agent loop halts because a turn limit was reached.
+ *
+ * There are two independent circuit breakers, and they must be reported
+ * differently because only one of them is user-configurable:
+ *
+ * - 'session_limit': the maxSessionTurns setting (config.getMaxSessionTurns()).
+ * - 'turn_cap': the hardcoded MAX_TURNS ceiling on the recursive continuation
+ *   budget for a single prompt (see MAX_TURNS in core/client.ts).
+ *
+ * `value` is optional so that emitters which predate it - and test fixtures
+ * that build a bare `{ type }` event - keep working.
+ */
 export type ServerGeminiMaxSessionTurnsEvent = {
   type: GeminiEventType.MaxSessionTurns;
+  value?: {
+    source: 'session_limit' | 'turn_cap';
+    limit: number;
+  };
 };
 
 export type ServerGeminiFinishedEvent = {

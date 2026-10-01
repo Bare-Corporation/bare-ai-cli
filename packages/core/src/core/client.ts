@@ -638,11 +638,27 @@ export class GeminiClient {
       this.config.getMaxSessionTurns() > 0 &&
       this.sessionTurnCount > this.config.getMaxSessionTurns()
     ) {
-      yield { type: GeminiEventType.MaxSessionTurns };
+      yield {
+        type: GeminiEventType.MaxSessionTurns,
+        value: {
+          source: 'session_limit',
+          limit: this.config.getMaxSessionTurns(),
+        },
+      };
       return turn;
     }
 
     if (!boundedTurns) {
+      // Hardcoded circuit breaker on the recursive continuation budget for a
+      // single prompt (see MAX_TURNS). This used to `return turn` with no
+      // event at all, which is indistinguishable from "the model simply had
+      // nothing more to say": the caller sees an empty turn and the loop
+      // stops with no explanation. Emit the event so every consumer can say
+      // the limit was reached.
+      yield {
+        type: GeminiEventType.MaxSessionTurns,
+        value: { source: 'turn_cap', limit: MAX_TURNS },
+      };
       return turn;
     }
 
@@ -708,7 +724,10 @@ export class GeminiClient {
       return turn;
     } else if (loopResult.count === 1) {
       if (boundedTurns <= 1) {
-        yield { type: GeminiEventType.MaxSessionTurns };
+        yield {
+          type: GeminiEventType.MaxSessionTurns,
+          value: { source: 'turn_cap', limit: MAX_TURNS },
+        };
         return turn;
       }
       return yield* this._recoverFromLoop(
@@ -1096,7 +1115,10 @@ export class GeminiClient {
         break;
       } else if (loopResult.count === 1) {
         if (boundedTurns <= 1) {
-          yield { type: GeminiEventType.MaxSessionTurns };
+          yield {
+            type: GeminiEventType.MaxSessionTurns,
+            value: { source: 'turn_cap', limit: MAX_TURNS },
+          };
           loopDetectedAbort = true;
           break;
         }

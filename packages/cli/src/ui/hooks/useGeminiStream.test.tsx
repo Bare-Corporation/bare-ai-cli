@@ -3814,6 +3814,12 @@ describe('useGeminiStream', () => {
       mockSendMessageStream.mockReturnValue(
         (async function* () {
           yield { type: ServerGeminiEventType.Content, value: 'test content' };
+          // The real client always ends a successful turn with Finished; without
+          // it this mock represents a truncated stream.
+          yield {
+            type: ServerGeminiEventType.Finished,
+            value: { reason: 'STOP', usageMetadata: undefined },
+          };
         })(),
       );
 
@@ -3862,6 +3868,12 @@ describe('useGeminiStream', () => {
       mockSendMessageStream.mockReturnValue(
         (async function* () {
           yield { type: ServerGeminiEventType.Content, value: '   content' };
+          // Matches the real client, which always ends a successful turn with
+          // Finished; without it this mock looks like a truncated stream.
+          yield {
+            type: ServerGeminiEventType.Finished,
+            value: { reason: 'STOP', usageMetadata: undefined },
+          };
         })(),
       );
 
