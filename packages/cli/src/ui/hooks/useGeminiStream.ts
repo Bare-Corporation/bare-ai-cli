@@ -326,15 +326,13 @@ export const useGeminiStream = (
     return (executingShellTool as TrackedExecutingToolCall | undefined)?.pid;
   }, [toolCalls]);
 
-  const onExec = useCallback(
-    async (done: Promise<void>) => {
-      setIsResponding(true);
-      await done;
-      setIsResponding(false);
-    },
-    [setIsResponding],
-  );
-
+  // The shell surface is a typed placeholder that makes every member a safe
+  // no-op; see shellCommandProcessor.ts for why, and for what a real wiring
+  // still needs. This call site previously passed addItem, setPendingHistoryItem,
+  // an onExec wrapper around setIsResponding, onDebugMessage, config,
+  // geminiClient, setShellInputFocused, terminalWidth, terminalHeight and
+  // activeToolPtyId to a stub that ignored all ten. The onExec wrapper existed
+  // only for that call, so it is removed with the arguments.
   const {
     handleShellCommand,
     activeShellPtyId,
@@ -346,18 +344,7 @@ export const useGeminiStream = (
     registerBackgroundShell,
     dismissBackgroundShell,
     backgroundShells,
-  } = useShellCommandProcessor(
-    addItem,
-    setPendingHistoryItem,
-    onExec,
-    onDebugMessage,
-    config,
-    geminiClient,
-    setShellInputFocused,
-    terminalWidth,
-    terminalHeight,
-    activeToolPtyId,
-  );
+  } = useShellCommandProcessor();
 
   const streamingState = useMemo(
     () => calculateStreamingState(isResponding, toolCalls),
