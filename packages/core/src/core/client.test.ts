@@ -404,13 +404,12 @@ describe('Gemini Client (client.ts)', () => {
       const newChat = client.getChat();
       const newHistory = client.getHistory();
 
-      // 4. Assert that the chat session was rebuilt. NOTE, flagged rather than
-      // hidden: resetChat does NOT clear the client's own messageHistory, so the
-      // old message is still there afterwards. That is asserted as the current
-      // reality so the leak is visible in the suite; whether resetChat SHOULD
-      // clear its own history is a behaviour decision for the liege.
+      // 4. Assert that the chat session was rebuilt and the client's own
+      // history was cleared. resetChat used to leave its messageHistory
+      // populated, so a reset session still replayed the previous conversation
+      // to the provider; the liege ruled that it must clear it.
       expect(newChat).not.toBe(initialChat);
-      expect(JSON.stringify(newHistory)).toContain('some old message');
+      expect(newHistory).toEqual([]);
     });
 
     it('should refresh MemoryContextManager to reset JIT loaded paths', async () => {

@@ -346,6 +346,11 @@ export class GeminiClient {
   async resetChat(): Promise<void> {
     this.chat = await this.startChat();
     this.aiClient = new BareAiClient();
+    // Clear this client's own history too. It is the array BareAiClient replays
+    // to the provider, so leaving it populated meant a reset session still sent
+    // the previous conversation. startChat above rebuilds the SDK chat; nothing
+    // else clears this array.
+    this.messageHistory = [];
     this.updateTelemetryTokenCount();
     // Reset JIT context loaded paths so subdirectory context can be
     // re-discovered in the new session.

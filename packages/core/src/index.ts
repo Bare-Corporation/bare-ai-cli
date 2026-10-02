@@ -284,9 +284,22 @@ export * from './core/coreToolScheduler.js';
 export * from './context/memoryContextManager.js';
 export { sessionId } from './utils/session.js';
 export * from './context/memoryContextManager.js';
-export function displayContentToString(c: any): string { return typeof c === 'string' ? c : JSON.stringify(c); }
-export function shouldHideToolCall(_tool: any): boolean { return false; }
+// The real implementation lives in agent/tool-display-utils.ts. This used to be
+// a local stub that JSON.stringify'd any non-string, so a text DisplayContent
+// reached the user as raw JSON such as {"type":"text","text":"Execution failed"}
+// instead of its text. Non-interactive consumers depend on this fallback.
+export { displayContentToString } from './agent/tool-display-utils.js';
+export function shouldHideToolCall(_tool: unknown): boolean {
+  return false;
+}
+// These two aliases stand in for an upstream tool-display surface this fork
+// does not implement; the CLI consumes them as opaque pass-through types. They
+// are the last two explicit-any declarations in this aggregator and are
+// annotated rather than retyped, because narrowing them would change the public
+// shape that the CLI's types.ts and historyUtils.ts depend on.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ToolDisplay = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ToolVisibilityContext = any;
 export { isProjectSkillPatchTarget } from './services/memoryPatchUtils.js';
 export { applyInboxPatch, dismissInboxPatch } from './commands/memory.js';
