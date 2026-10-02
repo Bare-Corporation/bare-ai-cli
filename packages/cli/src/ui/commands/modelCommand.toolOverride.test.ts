@@ -18,7 +18,15 @@
  * when no caller intent was recorded.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from 'vitest';
 import * as http from 'node:http';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -40,6 +48,21 @@ const DOER_ROW = {
   base_url: 'http://127.0.0.1:9',
   tool_capability: 'doer',
 };
+
+// Mirrors the real local catalogue row 013 (deepseek-v4-flash-local), whose
+// base_url is a VERSIONED ROOT ending in /v1 rather than a bare host:port.
+const V1_ROOT_ROW = {
+  shortcut: '013',
+  model_id: 'v1-root-test-model',
+  provider: 'Bare-AI',
+  is_cloud: false,
+  base_url: 'http://127.0.0.1:9/v1',
+  tool_capability: 'doer',
+};
+
+// Every variable these cases write; restored after each one so an assertion in
+// one test cannot leak into the next.
+const MANAGED_ENV = [NO_TOOLS_ENV, TOOL_OVERRIDE_ENV, 'BARE_AI_ENDPOINT'];
 
 describe('modelCommand tool-policy override', () => {
   let modelCommand: typeof import('./modelCommand.js').modelCommand;
@@ -63,7 +86,7 @@ describe('modelCommand tool-policy override', () => {
       if (req.url === '/v1/models') {
         catalogueHits += 1;
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ models: [DOER_ROW], count: 1 }));
+        res.end(JSON.stringify({ models: [DOER_ROW, V1_ROOT_ROW], count: 2 }));
         return;
       }
       res.writeHead(404);
@@ -96,7 +119,7 @@ describe('modelCommand tool-policy override', () => {
   beforeEach(() => {
     catalogueHits = 0;
     savedEnv = {};
-    for (const key of [NO_TOOLS_ENV, TOOL_OVERRIDE_ENV]) {
+    for (const key of MANAGED_ENV) {
       savedEnv[key] = process.env[key];
       delete process.env[key];
     }
@@ -153,5 +176,32 @@ describe('modelCommand tool-policy override', () => {
     );
     expect(process.env[NO_TOOLS_ENV]).toBe('false');
     expect(isToolModeLocked()).toBe(false);
+  });
+
+  it('does not double the version segment for a base_url that already ends in /v1', async () => {
+    const context = createMockCommandContext();
+
+    await modelCommand.action!(context, '013');
+
+    // The swap must have reached the endpoint step, not failed earlier.
+    expect(catalogueHits).toBeGreaterThan(0);
+    expect(context.ui.addItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: MessageType.INFO,
+        text: expect.stringContaining('Hot-swap successful'),
+      }),
+    );
+    // Control: the resolved row really is V1_ROOT_ROW, so a green result here
+    // is about that row's base_url and not about some other resolution.
+    expect(context.ui.addItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: MessageType.INFO,
+        text: expect.stringContaining('v1-root-test-model'),
+      }),
+    );
+    expect(process.env['BARE_AI_ENDPOINT']).toBe(
+      'http://127.0.0.1:9/v1/chat/completions',
+    );
+    expect(process.env['BARE_AI_ENDPOINT']).not.toContain('/v1/v1/');
   });
 });

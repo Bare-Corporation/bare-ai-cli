@@ -289,7 +289,15 @@ async function resolveTarget(modelId) {
   if (modelId) {
     const rows = await loadCatalog();
     if (rows) {
-      const row = rows.find((r) => r.model_id === modelId);
+      // WHY shortcut equality as well as model_id: the generated launcher
+      // resolves a catalogue number to its model_id before calling this file,
+      // but a DIRECT caller (node sovereign.js --model 013) and the M2M bus do
+      // not. Matching only model_id dropped those callers through to the legacy
+      // VAULT_SECRET_PATH route, so a sovereign local model could be sent to a
+      // cloud vendor by the name-prefix heuristic below.
+      const row = rows.find(
+        (r) => r.model_id === modelId || r.shortcut === modelId,
+      );
       if (row && !row.is_cloud) {
         return {
           vaultPath: VAULT_SECRET_PATH,

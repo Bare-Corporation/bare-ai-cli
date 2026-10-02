@@ -222,6 +222,15 @@ function normalizeEndpoint(entry: CatalogEntry): string {
   if (base.endsWith('/chat/completions')) {
     return base;
   }
+  // WHY the /v1 branch: the catalogue carries versioned roots as well as bare
+  // hosts. A local engine publishes "http://100.64.0.20:8002/v1", so appending
+  // "/v1/chat/completions" unconditionally produced
+  // ".../v1/v1/chat/completions" and the in-session /model hot-swap refused to
+  // connect. Mirrors toCompletionsUrl() in sovereign.js, which needed the same
+  // normalisation for the launch-time route.
+  if (base.endsWith('/v1')) {
+    return base + '/chat/completions';
+  }
   if (entry.provider === 'ollama' || entry.is_cloud === false) {
     return base + '/v1/chat/completions';
   }
