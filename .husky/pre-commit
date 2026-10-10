@@ -25,11 +25,23 @@ gitleaks git --staged --redact --no-banner --verbose || {
   exit 1
 }
 
-# Guard 3: refuse to commit tooling that belongs outside this repo
+# Guard 3: refuse to commit tooling that belongs outside this repo (generic shape rule)
 node scripts/check-external-tooling.js || {
   echo ''
   echo '===================================================='
   echo 'BLOCKED: tooling that belongs outside this repo is present in the tree.'
+  echo 'See docs/EXTERNAL-TOOLING.md'
+  echo 'Emergency bypass: git commit --no-verify'
+  echo '===================================================='
+  exit 1
+}
+
+# Guard 4: refuse to commit fleet tooling that belongs outside this repo
+# (fleet-specific names and content; scans the whole tree, tracked and untracked)
+node scripts/check-no-fleet-tooling.js || {
+  echo ''
+  echo '===================================================='
+  echo 'BLOCKED: fleet tooling that belongs outside this repo is present in the tree.'
   echo 'See docs/FLEET-TOOLING.md'
   echo 'Emergency bypass: git commit --no-verify'
   echo '===================================================='
