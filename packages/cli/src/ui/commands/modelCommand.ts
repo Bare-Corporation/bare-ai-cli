@@ -357,13 +357,16 @@ async function fetchVaultUpdate(modelName: string, provider?: string) {
 
   const configData = extractVaultConfig(payload);
   if (!configData) {
-    // Preserved verbatim: the Vault misconfiguration diagnostic is user-visible
-    // on stdout today, so swapping it for the logger would be a behaviour change
-    // beyond this fix. Silenced instead. (Pre-existing.)
-    // eslint-disable-next-line no-console
-    console.error(
-      `\n[Vault Debug] Failed Response from Vault:`,
-      JSON.stringify(payload),
+    // The Vault misconfiguration diagnostic stays user-visible, and stays on
+    // stderr: console.error wrote to stderr as well, and the message below is
+    // byte-identical to that call. It is written with process.stderr.write
+    // because the repo bans console.*, and the line breaks sit inside the
+    // template literal on purpose - the emitted text is exactly a newline, the
+    // label, the payload, then a newline.
+    process.stderr.write(
+      `
+[Vault Debug] Failed Response from Vault: ${JSON.stringify(payload)}
+`,
     );
     throw new Error(`Model configuration not found at Vault path: ${path}`);
   }

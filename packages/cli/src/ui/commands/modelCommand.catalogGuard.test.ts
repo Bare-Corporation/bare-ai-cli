@@ -294,14 +294,23 @@ describe('modelCommand catalogue narrowing (ticket 208)', () => {
     process.env['VAULT_ADDR'] = stubBase;
     process.env['VAULT_TOKEN'] = 'test-token';
     vaultBody = { errors: ['permission denied'] };
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // The diagnostic is written to stderr, as console.error wrote it before the
+    // suppression was lifted. Spying keeps it out of the test output and proves
+    // it still fires.
+    const stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true);
     const context = createMockCommandContext();
 
     await modelCommand.action!(context, '991');
 
     // The diagnostic still fires, with the payload that could not be read...
-    expect(errorSpy).toHaveBeenCalled();
-    expect(String(errorSpy.mock.calls[0]?.[1])).toContain('permission denied');
+    expect(stderrSpy).toHaveBeenCalled();
+    const written = stderrSpy.mock.calls
+      .map((call) => String(call[0]))
+      .join('');
+    expect(written).toContain('[Vault Debug]');
+    expect(written).toContain('permission denied');
     // ...and the swap still lands on the catalogue row.
     expect(vaultHits).toBe(1);
     expect(process.env['BARE_AI_ENDPOINT']).toBe(
