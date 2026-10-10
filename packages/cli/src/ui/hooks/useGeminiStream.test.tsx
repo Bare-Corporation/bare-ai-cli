@@ -5,10 +5,14 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable vitest/no-disabled-tests -- the seven skipped cases below are
-   blocked on a heap-limit crash, documented at the first skip and tracked in
-   td-a0066a95cf8c. The rule would have them converted to .todo(), which drops
-   the body and loses the scenarios. */
+
+// The seven cases that used to be skipped here (four User Cancellation, two
+// Retry Handling, one concurrent-submitQuery guard) are ENABLED again. They
+// were blocked by an unbounded render loop in the hook that killed the worker
+// with a heap-limit fatal error; the hook's idle-branch tracking reset wrote
+// state on every pass, and only the unfaithful useStateAndRef mock - which
+// could not re-render - kept the suite green. With the reset made idempotent
+// and the mock made faithful, all 75 cases run.
 import {
   describe,
   it,
@@ -197,29 +201,35 @@ vi.mock('../utils/markdownUtilities.js', () => ({
   findLastSafeSplitPoint: vi.fn((s: string) => s.length),
 }));
 
-// KNOWN DEFECT (see todo td-8f45743fd72d): this mock is not faithful. It
-// returns a closure value that no render can update, so the isResponding
-// state stays false forever and every test that waits for the Responding
-// state - the four User Cancellation cases, both Retry Handling cases and
-// the concurrent submitQuery guard - fails against the mock rather than
-// against the hook. The real useStateAndRef is a correct useState plus
-// useRef pair. Removing the mock outright was tried and it crashes the
-// vitest worker, so the repair needs its own pass rather than a deletion.
-vi.mock('./useStateAndRef.js', () => ({
-  useStateAndRef: vi.fn((initial) => {
-    let val = initial;
-    const ref = { current: val };
-    const setVal = vi.fn((updater) => {
-      if (typeof updater === 'function') {
-        val = updater(val);
-      } else {
-        val = updater;
-      }
-      ref.current = val;
-    });
-    return [val, ref, setVal];
-  }),
-}));
+// A mock standing in for a hook that has its own contract must BE that
+// contract. The previous version kept the value in a closure and returned a
+// fresh ref object and a fresh setter on every render, so no render could
+// observe a state update and any effect listing the ref or setter in its deps
+// re-ran every render. This version mirrors useStateAndRef.ts exactly:
+// useState for the value, useRef for a STABLE ref, useCallback with empty deps
+// for a STABLE setter, and a functional updater applied against ref.current so
+// two sets in one tick both land.
+vi.mock('./useStateAndRef.js', async () => {
+  const React = await import('react');
+  return {
+    useStateAndRef: (initial: unknown) => {
+      const [state, setState] = React.useState(initial);
+      const ref = React.useRef(initial);
+      const setStateInternal = React.useCallback(
+        (newStateOrCallback: unknown) => {
+          const newValue =
+            typeof newStateOrCallback === 'function'
+              ? (newStateOrCallback as (prev: unknown) => unknown)(ref.current)
+              : newStateOrCallback;
+          setState(newValue);
+          ref.current = newValue;
+        },
+        [],
+      );
+      return [state, ref, setStateInternal] as const;
+    },
+  };
+});
 
 vi.mock('./useLogger.js', () => ({
   useLogger: vi.fn().mockReturnValue({
@@ -1428,7 +1438,7 @@ describe('useGeminiStream', () => {
       });
     };
 
-    it.skip('should cancel an in-progress stream when escape is pressed', async () => {
+    it('should cancel an in-progress stream when escape is pressed', async () => {
       const mockStream = (async function* () {
         yield { type: 'content', value: 'Part 1' };
         // Keep the stream open
@@ -1464,7 +1474,7 @@ describe('useGeminiStream', () => {
       expect(result.current.streamingState).toBe(StreamingState.Idle);
     });
 
-    it.skip('should call onCancelSubmit handler when escape is pressed', async () => {
+    it('should call onCancelSubmit handler when escape is pressed', async () => {
       const cancelSubmitSpy = vi.fn();
       const mockStream = (async function* () {
         yield { type: 'content', value: 'Part 1' };
@@ -1506,7 +1516,7 @@ describe('useGeminiStream', () => {
       expect(cancelSubmitSpy).toHaveBeenCalledWith(false);
     });
 
-    it.skip('should call setShellInputFocused(false) when escape is pressed', async () => {
+    it('should call setShellInputFocused(false) when escape is pressed', async () => {
       const setShellInputFocusedSpy = vi.fn();
       const mockStream = (async function* () {
         yield { type: 'content', value: 'Part 1' };
@@ -1563,7 +1573,7 @@ describe('useGeminiStream', () => {
       );
     });
 
-    it.skip('should prevent further processing after cancellation', async () => {
+    it('should prevent further processing after cancellation', async () => {
       let continueStream: () => void;
       const streamPromise = new Promise<void>((resolve) => {
         continueStream = resolve;
@@ -1704,8 +1714,8 @@ describe('useGeminiStream', () => {
   });
 
   describe('Retry Handling', () => {
-    it.skip('should update retryStatus when CoreEvent.RetryAttempt is emitted', async () => {
-      const { result } = await renderHookWithDefaults();
+    it('should update retryStatus when CoreEvent.RetryAttempt is emitted during a turn', async () => {
+      const { result } = await renderTestHook();
 
       const retryPayload = {
         model: 'gemini-2.5-pro',
@@ -1714,6 +1724,32 @@ describe('useGeminiStream', () => {
         delayMs: 1000,
       };
 
+      // Negative control first: the hook guards its RetryAttempt subscription on
+      // isRespondingRef, so a retry reported while nothing is in flight must NOT
+      // raise a banner over an idle prompt. Asserting this before the positive
+      // case stops a loosened guard from producing a green result below.
+      await act(async () => {
+        coreEvents.emit(CoreEvent.RetryAttempt, retryPayload);
+      });
+      expect(result.current.retryStatus).toBeNull();
+
+      // Now drive a turn, and emit again while it is responding.
+      const mockStream = (async function* () {
+        yield { type: ServerGeminiEventType.Content, value: 'Part 1' };
+        // Keep the stream open so the turn stays in flight.
+        await new Promise(() => {});
+      })();
+      mockSendMessageStream.mockReturnValue(mockStream);
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        result.current.submitQuery('test query');
+      });
+
+      await waitFor(() => {
+        expect(result.current.streamingState).toBe(StreamingState.Responding);
+      });
+
       await act(async () => {
         coreEvents.emit(CoreEvent.RetryAttempt, retryPayload);
       });
@@ -1721,7 +1757,7 @@ describe('useGeminiStream', () => {
       expect(result.current.retryStatus).toEqual(retryPayload);
     });
 
-    it.skip('should reset retryStatus when isResponding becomes false', async () => {
+    it('should reset retryStatus when isResponding becomes false', async () => {
       const { result } = await renderTestHook();
 
       const retryPayload = {
@@ -3600,15 +3636,13 @@ describe('useGeminiStream', () => {
     });
 
     describe('Race Condition Prevention', () => {
-      // SKIPPED (test-hardening sprint, tracked in td-a0066a95cf8c): every case in
-      // this group waits for the isResponding state to become true, which needs the
-      // useStateAndRef mock to drive real React state. Making that mock stateful -
-      // and, separately, deleting it so the real hook loads - both put the suite into
-      // an unbounded update loop that dies with "FATAL ERROR: Reached heap limit
-      // Allocation failed - JavaScript heap out of memory" and Channel closed. The
-      // crash is in the live-state and suite interaction, not in the mock shape, so
-      // the repair needs its own pass rather than a bigger sample of the same idea.
-      it.skip('should reject concurrent submitQuery when already responding', async () => {
+      // These cases wait for isResponding to become true, so they need the
+      // useStateAndRef mock to drive real React state. They were skipped for a
+      // while because doing so put the suite into an unbounded render loop
+      // ("FATAL ERROR: Reached heap limit") - the hook's idle-branch tracking
+      // reset wrote state on every pass. With that reset made idempotent
+      // (useGeminiStream.ts) and the mock made faithful, they run again.
+      it('should reject concurrent submitQuery when already responding', async () => {
         // Stream that stays open (simulates "still responding")
         mockSendMessageStream.mockReturnValue(
           (async function* () {

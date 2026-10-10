@@ -362,13 +362,29 @@ export const useGeminiStream = (
         setIsFirstToolInGroup(true);
       }
     } else if (streamingState === StreamingState.Idle) {
-      // Clear when idle to be ready for next turn
-      setPushedToolCallIds(new Set());
-      setIsFirstToolInGroup(true);
+      // Clear when idle to be ready for next turn.
+      //
+      // WHY the guards: these two setters used to run unconditionally on every
+      // pass, and setPushedToolCallIds always received a NEW Set (new identity).
+      // While the hook rests in Idle with no tool calls - the normal resting
+      // state - any change in this effect's dependency identities re-ran it,
+      // which wrote state again, which re-rendered, which re-armed it. That is
+      // an unbounded render loop; it is the heap-limit crash tracked in
+      // td-a0066a95cf8c, and it stayed hidden only because the tests mocked
+      // state in a way that no render could observe. Writing only when the ref
+      // says there is something to clear makes a settled hook perform no state
+      // write at all, so the loop cannot start.
+      if (pushedToolCallIdsRef.current.size > 0) {
+        setPushedToolCallIds(new Set());
+      }
+      if (!isFirstToolInGroupRef.current) {
+        setIsFirstToolInGroup(true);
+      }
     }
   }, [
     toolCalls,
     pushedToolCallIdsRef,
+    isFirstToolInGroupRef,
     setPushedToolCallIds,
     setIsFirstToolInGroup,
     streamingState,
