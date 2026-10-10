@@ -15,7 +15,19 @@ import { MessageType } from '../types.js';
 
 const execFileAsync = promisify(execFile);
 
-const COUNCIL_BIN = process.env['BARE_COUNCIL_BIN'] || 'council.py';
+// The Council client is now the TypeScript runner. The .ts extension is
+// load-bearing: it is what makes Node's loader strip the types on the fly. The
+// path is resolved under the home directory rather than through a /usr/local/bin
+// symlink because creating that link needs an interactive sudo password, which a
+// worker install cannot supply; pointing the installer at this file is a
+// follow-up. BARE_COUNCIL_BIN still overrides, so rolling back to council.py is
+// one environment variable and no release.
+const COUNCIL_BIN =
+  process.env['BARE_COUNCIL_BIN'] ||
+  path.join(
+    os.homedir(),
+    'bare-necessities-workspace/scripts/bare-typescript-scripts/council-cli.ts',
+  );
 const COUNCIL_TIMEOUT_MS = 15 * 60 * 1000;
 const NL = String.fromCharCode(10);
 
@@ -216,7 +228,10 @@ function parseCouncilArgs(input: string): CouncilArgs {
   };
 }
 
-// Run council.py once (submitting to the Council API) and return the parsed JSON.
+// Run the Council client once (submitting to the Council API) and return the
+// parsed JSON. The client is the TypeScript runner, and BARE_COUNCIL_BIN can
+// point it back at the older Python one; both print the same JSON under the same
+// "[council] ..." progress lines.
 async function runCouncil(argv: string[]): Promise<CouncilResult> {
   const { stdout } = await execFileAsync(COUNCIL_BIN, argv, {
     timeout: COUNCIL_TIMEOUT_MS,
@@ -224,13 +239,13 @@ async function runCouncil(argv: string[]): Promise<CouncilResult> {
   });
   const parsed = parseJsonObject(stdout);
   if (!parsed) {
-    throw new Error('council.py returned unparseable output');
+    throw new Error(COUNCIL_BIN + ' returned unparseable output');
   }
   return parsed as CouncilResult;
 }
 
 // Extract the first JSON object from free-form output (tolerates markdown fences
-// and surrounding prose, e.g. council.py's "[council] ..." progress lines).
+// and surrounding prose, e.g. the client's "[council] ..." progress lines).
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
