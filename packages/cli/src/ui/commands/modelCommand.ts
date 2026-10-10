@@ -36,40 +36,97 @@ const CACHE_DIR = path.join(os.homedir(), '.gemini');
 const CACHE_FILE = path.join(CACHE_DIR, 'models.cache.json');
 const LOCAL_FILE = path.join(CACHE_DIR, 'model.local.json');
 
-interface ModelsResponse {
-  models?: CatalogEntry[];
-  count?: number;
-}
-
 interface VaultConfig {
   api_key?: string;
   model_name?: string;
   base_url?: string;
 }
 
-interface VaultResponse {
-  data?: { data: VaultConfig } | VaultConfig;
-}
-
-interface LocalModelsFile {
-  models?: Array<{
-    shortcut?: string;
-    model_id?: string;
-    provider?: string;
-    base_url?: string;
-    tool_capability?: string;
-  }>;
-}
-
+// A row from the /v1/models catalogue (or from model.local.json). Only the two
+// fields resolveShortcut matches on are required: these rows are external JSON,
+// and a row can legitimately arrive without a base_url (normalizeEndpoint
+// reports that case) or without an is_cloud flag. The guards below keep
+// "absent" absent instead of fabricating a default for it.
 interface CatalogEntry {
   shortcut: string;
   model_id: string;
   display_name?: string;
-  provider: string;
-  is_cloud: boolean;
-  base_url: string;
-  tool_capability: string; // 'thinker' | 'doer'
+  provider?: string;
+  is_cloud?: boolean;
+  base_url?: string;
+  tool_capability?: string; // 'thinker' | 'doer'
   is_free_tier?: boolean;
+}
+
+// ── Untrusted-payload narrowing ─────────────────────────────────────────────
+// The catalogue, both on-disk caches and the Vault response are external JSON,
+// and res.json() / JSON.parse() are typed any. Their payloads are narrowed here
+// rather than asserted, which is what the no-unsafe-type-assertion rule asks
+// for. Mirrors the isRecord / isCatalogEntry / extractCatalogEntries trio in
+// councilCommand.ts.
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function optionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+// Narrow one catalogue row. A row without a string shortcut or model_id can
+// never be matched by resolveShortcut, so it is dropped rather than kept as a
+// half-populated entry that later fails somewhere less obvious.
+function toCatalogEntry(value: unknown): CatalogEntry | undefined {
+  if (!isRecord(value)) return undefined;
+  const shortcut = optionalString(value['shortcut']);
+  const modelId = optionalString(value['model_id']);
+  if (shortcut === undefined || modelId === undefined) return undefined;
+  return {
+    shortcut,
+    model_id: modelId,
+    display_name: optionalString(value['display_name']),
+    provider: optionalString(value['provider']),
+    is_cloud: optionalBoolean(value['is_cloud']),
+    base_url: optionalString(value['base_url']),
+    tool_capability: optionalString(value['tool_capability']),
+    is_free_tier: optionalBoolean(value['is_free_tier']),
+  };
+}
+
+// Accept both shapes the two sources use: /v1/models wraps its rows in
+// { models: [...] } while models.cache.json holds the bare array. Anything else
+// yields no rows, so a corrupt or stale cache degrades to "unknown model"
+// instead of throwing out of the slash command.
+function extractCatalogEntries(value: unknown): CatalogEntry[] {
+  const list = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value['models'])
+      ? value['models']
+      : [];
+  const out: CatalogEntry[] = [];
+  for (const item of list) {
+    const entry = toCatalogEntry(item);
+    if (entry) out.push(entry);
+  }
+  return out;
+}
+
+// Vault KV v2 answers with { data: { data: {...}, metadata: {...} } }; the
+// legacy v1 path serves the fields directly under { data: {...} }. Anything
+// else returns undefined, which is the "not found" case the caller reports.
+function extractVaultConfig(value: unknown): VaultConfig | undefined {
+  if (!isRecord(value)) return undefined;
+  const raw = value['data'];
+  if (!isRecord(raw)) return undefined;
+  const inner = isRecord(raw['data']) ? raw['data'] : raw;
+  return {
+    api_key: optionalString(inner['api_key']),
+    model_name: optionalString(inner['model_name']),
+    base_url: optionalString(inner['base_url']),
+  };
 }
 
 // Baked fallback: minimal local sovereign entries used when the central
@@ -120,14 +177,8 @@ async function loadCatalog(): Promise<CatalogEntry[]> {
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`catalog HTTP ${res.status}`);
-    // Pre-existing debt, unrelated to the tool-policy fix: res.json() is `any`
-    // and this file narrows external payloads with assertions instead of type
-    // guards, which the repo's own pre-commit ESLint gate rejects. Silenced
-    // here so the file can pass that gate; a guard-based rewrite is tracked in
-    // the todo system rather than smuggled into a security fix.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    const json = (await res.json()) as ModelsResponse;
-    const models: CatalogEntry[] = json.models ?? [];
+    // Untrusted JSON: narrowed, never asserted (ticket 208).
+    const models = extractCatalogEntries(await res.json());
     // atomic cache write: temp + rename
     try {
       if (!fs.existsSync(CACHE_DIR))
@@ -140,10 +191,13 @@ async function loadCatalog(): Promise<CatalogEntry[]> {
     }
     return models;
   } catch {
-    // offline / endpoint down: fall back to cached snapshot
+    // offline / endpoint down: fall back to the cached snapshot. The cache is
+    // untrusted as well: JSON.parse is any, and an older CLI could have written
+    // the whole response instead of the bare array, so narrow it rather than
+    // assert it. A payload in neither shape reads as "no catalogue".
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- pre-existing (see loadCatalog)
-      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) as CatalogEntry[];
+      const cached: unknown = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+      return extractCatalogEntries(cached);
     } catch {
       return [];
     }
@@ -159,24 +213,32 @@ function loadLocalModels(
 ): CatalogEntry[] {
   try {
     if (!fs.existsSync(LOCAL_FILE)) return [];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- pre-existing (see loadCatalog)
-    const parsed = JSON.parse(
-      fs.readFileSync(LOCAL_FILE, 'utf8'),
-    ) as LocalModelsFile;
-    const list = parsed.models ?? [];
+    // Untrusted JSON too: each row goes through the same guard the catalogue
+    // uses (so a row without a string shortcut or model_id is dropped instead
+    // of being stringified), then the Ollama-only rules are applied.
+    const parsed: unknown = JSON.parse(fs.readFileSync(LOCAL_FILE, 'utf8'));
+    const list =
+      isRecord(parsed) && Array.isArray(parsed['models'])
+        ? parsed['models']
+        : [];
     const out: CatalogEntry[] = [];
-    for (const m of list) {
-      if ((m?.provider || 'ollama') !== 'ollama') continue; // local file is Ollama-only
-      if (!m?.shortcut || !m?.model_id) continue;
-      if (centralShortcuts.has(m.shortcut) || centralIds.has(m.model_id))
+    for (const item of list) {
+      const entry = toCatalogEntry(item);
+      if (!entry) continue;
+      if ((entry.provider || 'ollama') !== 'ollama') continue; // local file is Ollama-only
+      if (
+        centralShortcuts.has(entry.shortcut) ||
+        centralIds.has(entry.model_id)
+      )
         continue; // central wins
       out.push({
-        shortcut: String(m.shortcut),
-        model_id: String(m.model_id),
+        shortcut: entry.shortcut,
+        model_id: entry.model_id,
         provider: 'ollama',
         is_cloud: false,
-        base_url: String(m.base_url || 'http://127.0.0.1:11434'),
-        tool_capability: m.tool_capability === 'thinker' ? 'thinker' : 'doer',
+        base_url: entry.base_url || 'http://127.0.0.1:11434',
+        tool_capability:
+          entry.tool_capability === 'thinker' ? 'thinker' : 'doer',
       });
     }
     return out;
@@ -281,21 +343,19 @@ async function fetchVaultUpdate(modelName: string, provider?: string) {
   let res = await fetch(`${addr}/v1/${path}`, {
     headers: { 'X-Vault-Token': vaultToken },
   });
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- pre-existing (see loadCatalog)
-  let json = (await res.json()) as VaultResponse;
+  // res.json() is any: keep it unknown for the diagnostic below and narrow it
+  // with extractVaultConfig instead of asserting the response shape.
+  let payload: unknown = await res.json();
 
   if (res.status === 404 || res.status === 403) {
     path = `secret/${modelName}/config`;
     res = await fetch(`${addr}/v1/${path}`, {
       headers: { 'X-Vault-Token': vaultToken },
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- pre-existing (see loadCatalog)
-    json = (await res.json()) as VaultResponse;
+    payload = await res.json();
   }
 
-  const raw = json?.data;
-  const configData: VaultConfig | undefined =
-    raw && 'data' in raw ? raw.data : raw;
+  const configData = extractVaultConfig(payload);
   if (!configData) {
     // Preserved verbatim: the Vault misconfiguration diagnostic is user-visible
     // on stdout today, so swapping it for the logger would be a behaviour change
@@ -303,7 +363,7 @@ async function fetchVaultUpdate(modelName: string, provider?: string) {
     // eslint-disable-next-line no-console
     console.error(
       `\n[Vault Debug] Failed Response from Vault:`,
-      JSON.stringify(json),
+      JSON.stringify(payload),
     );
     throw new Error(`Model configuration not found at Vault path: ${path}`);
   }
