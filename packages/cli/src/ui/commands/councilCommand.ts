@@ -36,6 +36,11 @@ const NL = String.fromCharCode(10);
 // council model pool are derived from it rather than hardcoded.
 const COUNCIL_API_BASE_URL =
   process.env['COUNCIL_API_BASE_URL'] || 'https://api.bare-ai.net';
+
+// Cloudflare answers 403 (error 1010) to a Council API request that arrives
+// without this header, so the catalogue fetch needs it as much as the
+// run/status/result calls do. Same value the shared Council client sends.
+const COUNCIL_USER_AGENT = 'bare-ai-council-agent/1.0';
 const CACHE_DIR = path.join(os.homedir(), '.gemini');
 const CACHE_FILE = path.join(CACHE_DIR, 'models.cache.json');
 
@@ -87,6 +92,7 @@ function extractCatalogEntries(value: unknown): CatalogEntry[] {
 async function loadCatalog(): Promise<CatalogEntry[]> {
   try {
     const res = await fetch(`${COUNCIL_API_BASE_URL}/v1/models`, {
+      headers: { 'User-Agent': COUNCIL_USER_AGENT },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`catalog HTTP ${res.status}`);
