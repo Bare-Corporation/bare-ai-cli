@@ -44,6 +44,7 @@ import { spawn } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Agent } from 'undici';
 
 // TLS verification bypass intentionally removed: the Vault certificate carries a
@@ -525,9 +526,45 @@ async function getVaultContext(vaultPath) {
     headers: { 'X-Vault-Token': token },
     ...vaultFetchOptions,
   });
-  const secretData = await secretRes.json();
-  if (!secretData?.data?.data)
-    throw new Error(`Path ${vaultPath} returned no data.`);
+  const secretData = await secretRes.json().catch(() => null);
+
+  // DISTINGUISH DENIAL FROM ABSENCE (row 495). A denied read (403) and a missing path
+  // (404) both used to fall through to "returned no data", which sends the operator to the
+  // wrong subsystem: 403 means the credential is fine and the POLICY does not grant this
+  // path, while 404 means the path itself is wrong. Only a 200 whose payload carries no
+  // data is genuinely "no data", and that is the only case that may say so.
+  if (!secretRes.ok) {
+    const status = secretRes.status;
+    const body = JSON.stringify(secretData || {});
+    let hint;
+    if (status === 403) {
+      hint =
+        "Access Denied - the credential is valid but holds no read capability on this " +
+        "path (Vault policy). The path may well exist; check the AppRole policy for " +
+        "this node, not the path.";
+    } else if (status === 404) {
+      hint =
+        "Not Found - no secret exists at this path. Check the path itself, not the policy.";
+    } else {
+      hint = "unexpected status from Vault";
+    }
+    const err = new Error(
+      `Path ${vaultPath} -> HTTP ${status} ${hint} (body: ${body})`,
+    );
+    err.vaultStatus = status;
+    throw err;
+  }
+  const payload = secretData?.data?.data;
+  // "no data" is reserved for a 200 whose payload cannot supply a credential: either there
+  // is no data object at all, or it carries no api_key. Before this, an empty 200 fell
+  // through and the caller launched with the literal key "none", which surfaced later as a
+  // confusing 401 instead of a clear "the secret is empty".
+  if (!payload || Object.keys(payload).length === 0 || !payload.api_key) {
+    throw new Error(
+      `Path ${vaultPath} -> HTTP 200 but the payload carries no data ` +
+        `(no api_key field). This is the only case that is genuinely "no data".`,
+    );
+  }
 
   return {
     config: secretData.data.data,
@@ -700,4 +737,14 @@ async function main() {
   }
 }
 
-main();
+// Entry-point guard + exports (row 495): the Vault error paths can only be
+// verified behaviourally if the resolver can be called directly. Running the
+// file still launches the CLI exactly as before.
+const invokedDirectly =
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  main();
+}
+
+export { getVaultContext, getVaultContextOrFallback };
