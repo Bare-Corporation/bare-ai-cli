@@ -62,8 +62,7 @@ const terminalNotificationsMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     coreEvents: mockCoreEvents,
@@ -719,7 +718,7 @@ describe('AppContainer State Management', () => {
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'session_complete',
-          detail: 'Gemini CLI finished responding.',
+          detail: 'Bare AI CLI finished responding.',
         }),
       );
       expect(terminalNotificationsMocks.notifyViaTerminal).toHaveBeenCalled();
@@ -750,7 +749,7 @@ describe('AppContainer State Management', () => {
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'session_complete',
-          detail: 'Gemini CLI finished responding.',
+          detail: 'Bare AI CLI finished responding.',
         }),
       );
 
@@ -1441,7 +1440,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${'Gemini CLI (workspace)'.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${'Bare AI CLI (workspace)'.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -2558,11 +2557,9 @@ describe('AppContainer State Management', () => {
         });
         rerender();
 
-        if (shouldEnable) {
-          expect(disableMouseEvents).toHaveBeenCalled();
-        } else {
-          expect(disableMouseEvents).not.toHaveBeenCalled();
-        }
+        // Unconditional: toHaveBeenCalled() is calls.length > 0, so this asserts
+        // exactly what the removed if/else did, in both directions at once.
+        expect(disableMouseEvents.mock.calls.length > 0).toBe(shouldEnable);
         unmount();
       });
 
@@ -3134,9 +3131,8 @@ describe('AppContainer State Management', () => {
 
   describe('Submission Handling', () => {
     it('resets expansion state on submission when not in alternate buffer', async () => {
-      const { checkPermissions } = await import(
-        './hooks/atCommandProcessor.js'
-      );
+      const { checkPermissions } =
+        await import('./hooks/atCommandProcessor.js');
       vi.mocked(checkPermissions).mockResolvedValue([]);
 
       const { unmount } = await act(async () =>
@@ -3164,9 +3160,8 @@ describe('AppContainer State Management', () => {
     });
 
     it('resets expansion state on submission when in alternate buffer without clearing terminal', async () => {
-      const { checkPermissions } = await import(
-        './hooks/atCommandProcessor.js'
-      );
+      const { checkPermissions } =
+        await import('./hooks/atCommandProcessor.js');
       vi.mocked(checkPermissions).mockResolvedValue([]);
 
       vi.spyOn(mockConfig, 'getUseTerminalBuffer').mockReturnValue(false);
@@ -3448,9 +3443,8 @@ describe('AppContainer State Management', () => {
 
   describe('Permission Handling', () => {
     it('shows permission dialog when checkPermissions returns paths', async () => {
-      const { checkPermissions } = await import(
-        './hooks/atCommandProcessor.js'
-      );
+      const { checkPermissions } =
+        await import('./hooks/atCommandProcessor.js');
       vi.mocked(checkPermissions).mockResolvedValue(['/test/file.txt']);
 
       const { unmount } = await act(async () => renderAppContainer());
@@ -3471,9 +3465,8 @@ describe('AppContainer State Management', () => {
     it.each([true, false])(
       'handles permissions when allowed is %s',
       async (allowed) => {
-        const { checkPermissions } = await import(
-          './hooks/atCommandProcessor.js'
-        );
+        const { checkPermissions } =
+          await import('./hooks/atCommandProcessor.js');
         vi.mocked(checkPermissions).mockResolvedValue(['/test/file.txt']);
         const addReadOnlyPathSpy = vi.spyOn(
           mockConfig.getWorkspaceContext(),
@@ -3495,11 +3488,12 @@ describe('AppContainer State Management', () => {
           }),
         );
 
-        if (allowed) {
-          expect(addReadOnlyPathSpy).toHaveBeenCalledWith('/test/file.txt');
-        } else {
-          expect(addReadOnlyPathSpy).not.toHaveBeenCalled();
-        }
+        // Unconditional: the recorded arguments must be ['/test/file.txt'] when the
+        // permission was allowed and [] when it was denied - presence, argument and
+        // absence all asserted by one comparison.
+        expect(addReadOnlyPathSpy.mock.calls.map((call) => call[0])).toEqual(
+          allowed ? ['/test/file.txt'] : [],
+        );
         expect(submitQuery).toHaveBeenCalledWith('read @file.txt');
         expect(capturedUIState.permissionConfirmationRequest).toBeNull();
         unmount();
