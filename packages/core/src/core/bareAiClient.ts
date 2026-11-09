@@ -183,6 +183,44 @@ function isNativeAnthropicEndpoint(endpoint: string): boolean {
   const url = endpoint.toLowerCase();
   return url.includes('/v1/messages');
 }
+/**
+ * Resolve BARE_AI_ENDPOINT into the URL the client actually POSTs to.
+ *
+ * WHY: the endpoint was used verbatim, so a base URL such as
+ * https://api.bare-ai.net/v1 was requested directly. The gateway answered
+ * with its HTML landing page and the JSON parse failed with an unhelpful
+ * "Unexpected token" error. Normalise here rather than trusting the caller,
+ * and refuse anything that cannot become a real route with a message that
+ * names the accepted forms.
+ *
+ * Accepted (a trailing slash is ignored):
+ *   .../chat/completions   used as-is - the OpenAI-compatible dialect
+ *   .../v1/messages        used as-is - the Anthropic native dialect
+ *   .../v1                 -> .../v1/chat/completions
+ * Anything else is a configuration error, reported with the value given.
+ */
+function normaliseEndpoint(raw: string): string {
+  const trimmed = raw.trim().replace(/[/]+$/, '');
+  if (trimmed === '') {
+    throw new Error(
+      'BARE_AI_ENDPOINT is empty. Set it to a chat completions URL, for example ' +
+        'https://api.example.com/v1/chat/completions.',
+    );
+  }
+  const lower = trimmed.toLowerCase();
+  if (lower.endsWith('/chat/completions') || lower.endsWith('/v1/messages')) {
+    return trimmed;
+  }
+  if (lower.endsWith('/v1')) {
+    return trimmed + '/chat/completions';
+  }
+  throw new Error(
+    'BARE_AI_ENDPOINT is not a chat completions endpoint: ' +
+      raw +
+      '. Accepted forms are .../v1 (a base URL; /chat/completions is appended), ' +
+      '.../v1/chat/completions, or .../v1/messages for the Anthropic native API.',
+  );
+}
 
 // =============================================================================
 // TYPE GUARDS
@@ -623,9 +661,10 @@ export class BareAiClient {
     messages: Message[],
     tools?: OpenAITool[],
   ): Promise<GenerateResult> {
-    const activeEndpoint =
+    const activeEndpoint = normaliseEndpoint(
       process.env['BARE_AI_ENDPOINT'] ??
-      'http://localhost:11434/v1/chat/completions';
+        'http://localhost:11434/v1/chat/completions',
+    );
     const activeApiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
     const activeModel = process.env['BARE_AI_MODEL'] ?? 'default';
 

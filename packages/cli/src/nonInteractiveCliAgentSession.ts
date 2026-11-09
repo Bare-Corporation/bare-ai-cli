@@ -77,9 +77,8 @@ export async function runNonInteractive({
     });
 
     if (process.env['GEMINI_CLI_ACTIVITY_LOG_TARGET']) {
-      const { setupInitialActivityLogger } = await import(
-        './utils/devtoolsService.js'
-      );
+      const { setupInitialActivityLogger } =
+        await import('./utils/devtoolsService.js');
       setupInitialActivityLogger(config);
     }
 
@@ -123,9 +122,18 @@ export async function runNonInteractive({
       // Save original raw mode state
       stdinWasRaw = process.stdin.isRaw || false;
 
-      // Enable raw mode to capture individual keypresses
-      process.stdin.setRawMode(true);
-      process.stdin.resume();
+      // Enable raw mode to capture individual keypresses.
+      //
+      // isTTY is necessary but not sufficient: setRawMode throws EIO when stdin
+      // is a TTY whose terminal is unusable (a background process group, a closed
+      // or revoked pty, some containers). Losing Ctrl-C detection is much better
+      // than aborting the run, so degrade instead of throwing.
+      try {
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+      } catch {
+        return;
+      }
 
       // Setup readline to emit keypress events
       rl = readline.createInterface({
@@ -177,10 +185,15 @@ export async function runNonInteractive({
       // Remove keypress listener
       process.stdin.removeAllListeners('keypress');
 
-      // Restore stdin to original state
+      // Restore stdin to original state. setRawMode can throw here for the same
+      // reason it can above, and a failed restore must not mask the result.
       if (process.stdin.isTTY) {
-        process.stdin.setRawMode(stdinWasRaw);
-        process.stdin.pause();
+        try {
+          process.stdin.setRawMode(stdinWasRaw);
+          process.stdin.pause();
+        } catch {
+          // best effort - the process is on its way out
+        }
       }
     };
 

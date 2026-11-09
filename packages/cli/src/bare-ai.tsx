@@ -263,12 +263,8 @@ export async function startInteractiveUI(
     return (
       <SettingsContext.Provider value={settings}>
         <KeyMatchersProvider value={matchers}>
-          <KeypressProvider
-            config={config}
-          >
-            <MouseProvider
-              mouseEventsEnabled={mouseEventsEnabled}
-            >
+          <KeypressProvider config={config}>
+            <MouseProvider mouseEventsEnabled={mouseEventsEnabled}>
               <TerminalProvider>
                 <ScrollProvider>
                   <OverflowProvider>
@@ -612,10 +608,11 @@ export async function main() {
     adminControlsListner.setConfig(config);
 
     if (config.isInteractive() && settings.merged.general.devtools) {
-      const { setupInitialActivityLogger } = await import(
-        './utils/devtoolsService.js'
-      );
-      await setupInitialActivityLogger(config);
+      const { setupInitialActivityLogger } =
+        await import('./utils/devtoolsService.js');
+      // Synchronous: devtoolsService.setupInitialActivityLogger returns void, so an
+      // await here was a no-op that the repo's await-thenable rule rejects.
+      setupInitialActivityLogger(config);
     }
 
     // Register config for telemetry shutdown
@@ -681,12 +678,25 @@ export async function main() {
     if (config.isInteractive() && !wasRaw && process.stdin.isTTY) {
       // Set this as early as possible to avoid spurious characters from
       // input showing up in the output.
-      process.stdin.setRawMode(true);
+      //
+      // A TTY is not a guarantee: setRawMode throws EIO on a terminal that is
+      // unusable (backgrounded process group, closed or revoked pty). The
+      // interactive UI still runs without raw mode; only key-level handling is
+      // affected, so a failure here must not take the session down.
+      try {
+        process.stdin.setRawMode(true);
 
-      // This cleanup isn't strictly needed but may help in certain situations.
-      registerSyncCleanup(() => {
-        process.stdin.setRawMode(wasRaw);
-      });
+        // This cleanup isn't strictly needed but may help in certain situations.
+        registerSyncCleanup(() => {
+          try {
+            process.stdin.setRawMode(wasRaw);
+          } catch {
+            // best effort
+          }
+        });
+      } catch {
+        // leave stdin alone and continue
+      }
     }
 
     await setupTerminalAndTheme(config, settings);
