@@ -28,8 +28,13 @@
  * REQUIRED Environment Variables (Set in your shell/profile):
  * export VAULT_ADDR="https://your-vault-ip:8200"
  * export VAULT_ROLE_ID="your-role-id"
- * export VAULT_SECRET_ID="your-secret-id"
  * export VAULT_SECRET_PATH="secret/data/models/gemini-flash"
+ *
+ * OPTIONAL, and only for a NON-CIDR-bound AppRole:
+ * export VAULT_SECRET_ID="your-secret-id"
+ * A CIDR-bound AppRole (bind_secret_id=false) authenticates with role_id
+ * alone, and the node-local vault.env retires this line once that binding is
+ * in place. Leave it unset rather than exporting an empty string.
  *
  * OPTIONAL system-prompt handoff (PREFERRED - see loadSystemPrompt):
  * export BARE_AI_SYSTEM_PROMPT_FILE="/run/user/1000/bare_prompt.md"
@@ -103,11 +108,20 @@ const vaultFetchOptions = vaultDispatcher
 const { VAULT_ADDR, VAULT_ROLE_ID, VAULT_SECRET_ID, VAULT_SECRET_PATH } =
   process.env;
 
-// Halt if mandatory security variables are missing
-if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
+// Halt if the mandatory security variables are missing.
+//
+// VAULT_SECRET_ID is deliberately NOT required. A CIDR-bound AppRole
+// (bind_secret_id=false) authenticates with its role_id alone, and a node that has
+// completed that transition retires the secret_id line from its vault.env - so
+// requiring it here made the launcher refuse to start on exactly the nodes that had
+// migrated. The login body below presents secret_id only when it is actually set,
+// which is the same contract the agent repo adopted in c42313b
+// (fix(poller): support role_id-only AppRole login, 2026-11-05).
+if (!VAULT_ROLE_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
   console.error('[sovereign] ERROR: Missing Vault environment variables.');
   console.error(
-    '[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.',
+    '[sovereign] Ensure VAULT_ADDR, VAULT_ROLE_ID and VAULT_SECRET_PATH are exported. ' +
+      'VAULT_SECRET_ID is optional, and needed only for a non-CIDR-bound AppRole.',
   );
   process.exit(1);
 }
@@ -478,10 +492,14 @@ async function getVaultContext(vaultPath) {
       const loginRes = await fetch(VAULT_ADDR + '/v1/auth/approle/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role_id: VAULT_ROLE_ID,
-          secret_id: VAULT_SECRET_ID,
-        }),
+        // Present secret_id only when it is set: JSON.stringify would drop an
+        // undefined value anyway, but doing it explicitly keeps the role_id-only
+        // path visible and keeps an EMPTY string from being sent as a credential.
+        body: JSON.stringify(
+          VAULT_SECRET_ID
+            ? { role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }
+            : { role_id: VAULT_ROLE_ID },
+        ),
         ...vaultFetchOptions,
       });
       const body = await loginRes.json().catch(() => null);
@@ -539,14 +557,14 @@ async function getVaultContext(vaultPath) {
     let hint;
     if (status === 403) {
       hint =
-        "Access Denied - the credential is valid but holds no read capability on this " +
-        "path (Vault policy). The path may well exist; check the AppRole policy for " +
-        "this node, not the path.";
+        'Access Denied - the credential is valid but holds no read capability on this ' +
+        'path (Vault policy). The path may well exist; check the AppRole policy for ' +
+        'this node, not the path.';
     } else if (status === 404) {
       hint =
-        "Not Found - no secret exists at this path. Check the path itself, not the policy.";
+        'Not Found - no secret exists at this path. Check the path itself, not the policy.';
     } else {
-      hint = "unexpected status from Vault";
+      hint = 'unexpected status from Vault';
     }
     const err = new Error(
       `Path ${vaultPath} -> HTTP ${status} ${hint} (body: ${body})`,
@@ -741,8 +759,7 @@ async function main() {
 // verified behaviourally if the resolver can be called directly. Running the
 // file still launches the CLI exactly as before.
 const invokedDirectly =
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (invokedDirectly) {
   main();
 }
