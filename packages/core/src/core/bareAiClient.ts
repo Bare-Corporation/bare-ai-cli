@@ -363,6 +363,17 @@ export function shouldEmitFinalText(
 // BARE-AI CLIENT
 // =============================================================================
 
+/**
+ * Default completion cap for requests that do not set one.
+ *
+ * A non-streaming request has no natural upper bound on how long the engine may
+ * hold the socket open. On a slow local engine (~2.5 tok/s on the CPU node) an
+ * uncapped generation runs past Cloudflare's ~100s origin-proxy limit, and the
+ * client is handed an HTML 524 instead of a completion. 512 tokens finishes
+ * inside that envelope; BARE_AI_MAX_TOKENS overrides it.
+ */
+const DEFAULT_MAX_TOKENS = 512;
+
 export class BareAiClient {
   private systemPrompt: string | null;
   static readonly VOLATILE_MARKER = '<!-- BARE_AI_VOLATILE -->';
@@ -516,6 +527,10 @@ export class BareAiClient {
     const base: Record<string, string> = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
+      // The fleet gateway authenticates on X-API-Key. Bearer alone is not
+      // enough there, so send both: Bearer keeps every OpenAI-compatible
+      // vendor happy, X-API-Key satisfies the gateway contract.
+      'X-API-Key': apiKey,
     };
 
     if (provider === 'anthropic') {
@@ -529,6 +544,27 @@ export class BareAiClient {
     }
 
     return base;
+  }
+
+  // ---------------------------------------------------------------------------
+  // COMPLETION TOKEN CAP
+  // BARE_AI_MAX_TOKENS overrides DEFAULT_MAX_TOKENS. A value that is empty or
+  // not a positive integer is ignored rather than sent onward: a NaN would be
+  // either rejected by the provider or read as "no limit", which is the exact
+  // behaviour this cap exists to prevent.
+  // ---------------------------------------------------------------------------
+
+  private resolveMaxTokens(): number {
+    const raw = process.env['BARE_AI_MAX_TOKENS'];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed > 0) return parsed;
+      logWarn(
+        `BARE_AI_MAX_TOKENS is not a positive integer (${raw}); ` +
+          `using default ${DEFAULT_MAX_TOKENS}`,
+      );
+    }
+    return DEFAULT_MAX_TOKENS;
   }
 
   // ---------------------------------------------------------------------------
@@ -594,6 +630,12 @@ export class BareAiClient {
     } else {
       // OPENAI CHAT-COMPLETIONS DIALECT (all providers incl. Anthropic compat)
       body['messages'] = allMessages;
+    }
+
+    // Cap the completion when nothing above set a limit. Applied only when the
+    // key is absent, so the native Anthropic branch keeps its own 4096.
+    if (body['max_tokens'] === undefined || body['max_tokens'] === null) {
+      body['max_tokens'] = this.resolveMaxTokens();
     }
 
     // stream_options: Ollama only — sends usage metrics on final streaming chunk
@@ -753,8 +795,21 @@ export class BareAiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // A gateway or proxy failure (Cloudflare 502/524) arrives as an HTML
+        // page, not JSON. Reading the body is fine; feeding it to .json() is
+        // not. Branch on content-type so the operator sees the real status
+        // instead of a SyntaxError from parsing the proxy's landing page.
+        const contentType = response.headers.get('content-type') ?? '';
+        const isJson = contentType.toLowerCase().includes('application/json');
         const errText = await response.text();
         logError(`API Failed (${response.status}):`, errText);
+        if (!isJson) {
+          throw new Error(
+            `HTTP ${response.status} ${response.statusText || 'Error'} from ` +
+              `${activeEndpoint}: Upstream returned non-JSON body ` +
+              `(Cloudflare/Gateway timeout or proxy error).`,
+          );
+        }
         throw new Error(
           `BareAiClient request failed (${response.status}): ${errText.substring(0, 500)}`,
         );

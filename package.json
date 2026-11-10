@@ -1,6 +1,6 @@
 {
   "name": "@bare-ai/cli",
-  "version": "0.1.0-bare-ai",
+  "version": "0.1.1-bare-ai",
   "engines": {
     "node": ">=20.0.0"
   },

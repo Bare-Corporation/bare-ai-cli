@@ -1,6 +1,6 @@
 {
   "name": "@bare-ai/cli-a2a-server",
-  "version": "0.1.0-bare-ai",
+  "version": "0.1.1-bare-ai",
   "description": "Bare AI CLI A2A Server",
   "repository": {
     "type": "git",

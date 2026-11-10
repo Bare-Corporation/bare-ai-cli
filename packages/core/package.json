@@ -1,6 +1,6 @@
 {
   "name": "@bare-ai/core",
-  "version": "0.1.0-bare-ai",
+  "version": "0.1.1-bare-ai",
   "description": "Bare AI CLI Core",
   "license": "Apache-2.0",
   "repository": {
