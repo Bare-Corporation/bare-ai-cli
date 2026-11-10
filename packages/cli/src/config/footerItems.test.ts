@@ -26,6 +26,7 @@ describe('footerItems', () => {
         'context-used',
         'quota',
         'token-count',
+        'cli-commit',
       ]);
     });
 
@@ -41,6 +42,7 @@ describe('footerItems', () => {
         'model-name',
         'quota',
         'token-count',
+        'cli-commit',
       ]);
     });
 
@@ -110,6 +112,7 @@ describe('footerItems', () => {
         'context-used',
         'memory-usage',
         'token-count',
+        'cli-commit',
       ]);
     });
   });
@@ -140,6 +143,7 @@ describe('footerItems', () => {
         'session-id',
         'code-changes',
         'token-count',
+        'cli-commit',
       ]);
     });
 

@@ -17,6 +17,7 @@ import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
 import { MemoryUsageDisplay } from './MemoryUsageDisplay.js';
 import { ContextUsageDisplay } from './ContextUsageDisplay.js';
+import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
 import { QuotaDisplay } from './QuotaDisplay.js';
 import { DebugProfiler } from './DebugProfiler.js';
 import { useUIState } from '../contexts/UIStateContext.js';
@@ -201,7 +202,6 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
     promptTokenCount,
     isTrustedFolder,
     terminalWidth,
-    quotaStats,
   } = {
     model: uiState.currentModel,
     targetDir: config.getTargetDir(),
@@ -214,8 +214,23 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
     promptTokenCount: uiState.sessionStats.lastPromptTokenCount,
     isTrustedFolder: uiState.isTrustedFolder,
     terminalWidth: uiState.terminalWidth,
-    quotaStats: uiState.quota.stats,
   };
+
+  // UIStateContext types quota as any (pre-existing debt). Coerce through
+  // Number/String, which accept any without an assertion, and map undefined to
+  // undefined so QuotaDisplay still knows when to hide itself.
+  const quotaRemaining: number | undefined =
+    uiState.quota?.stats?.remaining === undefined
+      ? undefined
+      : Number(uiState.quota?.stats?.remaining);
+  const quotaLimit: number | undefined =
+    uiState.quota?.stats?.limit === undefined
+      ? undefined
+      : Number(uiState.quota?.stats?.limit);
+  const quotaResetTime: string | undefined =
+    uiState.quota?.stats?.resetTime === undefined
+      ? undefined
+      : String(uiState.quota?.stats?.resetTime);
 
   const isFullErrorVerbosity = settings.merged.ui.errorVerbosity === 'full';
   const showErrorSummary =
@@ -299,6 +314,18 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
         }
         break;
       }
+      case 'cli-commit': {
+        // Always rendered, never conditioned on state: the whole point is that
+        // an operator can look at any session and see which build is running.
+        const label = 'CLI: ' + GIT_COMMIT_INFO;
+        addCol(
+          id,
+          header,
+          () => <Text color={itemColor}>{label}</Text>,
+          label.length,
+        );
+        break;
+      }
       case 'sandbox': {
         let str = 'no sandbox';
         const sandbox = process.env['SANDBOX'];
@@ -341,15 +368,15 @@ export const Footer: React.FC<{ copyModeEnabled?: boolean }> = ({
         break;
       }
       case 'quota': {
-        if (quotaStats?.remaining !== undefined && quotaStats.limit) {
+        if (quotaRemaining !== undefined && quotaLimit) {
           addCol(
             id,
             header,
             () => (
               <QuotaDisplay
-                remaining={quotaStats.remaining}
-                limit={quotaStats.limit}
-                resetTime={quotaStats.resetTime}
+                remaining={quotaRemaining}
+                limit={quotaLimit}
+                resetTime={quotaResetTime}
                 terse={true}
                 forceShow={true}
                 lowercase={true}

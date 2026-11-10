@@ -62,6 +62,11 @@ export const ALL_ITEMS = [
     header: 'tokens',
     description: 'Total tokens used in the session (not shown when zero)',
   },
+  {
+    id: 'cli-commit',
+    header: 'cli',
+    description: 'Short git commit the running CLI was built from',
+  },
 ] as const;
 
 export type FooterItemId = (typeof ALL_ITEMS)[number]['id'];
@@ -78,6 +83,7 @@ export const DEFAULT_ORDER = [
   'auth',
   'code-changes',
   'token-count',
+  'cli-commit',
 ];
 
 export function deriveItemsFromLegacySettings(
@@ -117,6 +123,10 @@ export function deriveItemsFromLegacySettings(
   // token-count has no legacy boolean toggle; include it by default so fresh
   // configs and /footer resets show the session token count.
   items.push('token-count');
+
+  // cli-commit is diagnostic, not cosmetic: it is how an operator tells a stale
+  // node from a current one at a glance. On by default for the same reason.
+  items.push('cli-commit');
 
   return items;
 }
