@@ -76,6 +76,30 @@ function jsonFailure(status: number, statusText: string): object {
   };
 }
 
+/**
+ * A 200 response with an immediately-empty stream. Non-tool turns take the
+ * streaming path, so they need a readable body or the client throws before any
+ * assertion about the request body can run.
+ */
+function streamResponse(): object {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    headers: {
+      get: (name: string) =>
+        name.toLowerCase() === 'content-type' ? 'application/json' : null,
+    },
+    body: {
+      getReader: () => ({
+        read: async () => ({ done: true, value: undefined }),
+      }),
+    },
+    text: async () => '',
+    json: async () => ({}),
+  };
+}
+
 function stubFetch(response: object): void {
   captured = null;
   jsonCalls = 0;
@@ -98,6 +122,7 @@ const KEYS = [
   'BARE_AI_API_KEY',
   'BARE_AI_MODEL',
   'BARE_AI_MAX_TOKENS',
+  'BARE_AI_MAX_TOKENS_TOOLS',
   'BARE_AI_CONSTITUTION',
 ];
 
@@ -123,29 +148,47 @@ afterEach(() => {
 });
 
 describe('completion cap', () => {
-  it('defaults max_tokens to 512 when neither the caller nor the env sets one', async () => {
+  it('gives a tool-calling turn the tool cap, not the text cap', async () => {
+    // Regression guard for row 581: capping a tool turn at the text default
+    // truncates the arguments JSON, which surfaces as a schema failure
+    // ("params must have required property 'command'") rather than as truncation.
     stubFetch(jsonResponse({ choices: [{ message: { content: 'hi' } }] }));
     const client = new BareAiClient();
     await client.generateContent('hello', [], [TOOL]);
 
     expect(captured).not.toBeNull();
+    expect(captured?.body['max_tokens']).toBe(4096);
+  });
+
+  it('still caps a non-tool (streaming) turn at the text default', async () => {
+    stubFetch(streamResponse());
+    const client = new BareAiClient();
+    await client.generateContent('hello', []);
     expect(captured?.body['max_tokens']).toBe(512);
+  });
+
+  it('honours BARE_AI_MAX_TOKENS_TOOLS for tool turns', async () => {
+    process.env['BARE_AI_MAX_TOKENS_TOOLS'] = '2048';
+    stubFetch(jsonResponse({ choices: [{ message: { content: 'hi' } }] }));
+    const client = new BareAiClient();
+    await client.generateContent('hello', [], [TOOL]);
+    expect(captured?.body['max_tokens']).toBe(2048);
   });
 
   it('honours BARE_AI_MAX_TOKENS when it is a positive integer', async () => {
     process.env['BARE_AI_MAX_TOKENS'] = '128';
-    stubFetch(jsonResponse({ choices: [{ message: { content: 'hi' } }] }));
+    stubFetch(streamResponse());
     const client = new BareAiClient();
-    await client.generateContent('hello', [], [TOOL]);
+    await client.generateContent('hello', []);
 
     expect(captured?.body['max_tokens']).toBe(128);
   });
 
   it('falls back to 512 when BARE_AI_MAX_TOKENS is not a positive integer', async () => {
     process.env['BARE_AI_MAX_TOKENS'] = 'not-a-number';
-    stubFetch(jsonResponse({ choices: [{ message: { content: 'hi' } }] }));
+    stubFetch(streamResponse());
     const client = new BareAiClient();
-    await client.generateContent('hello', [], [TOOL]);
+    await client.generateContent('hello', []);
 
     expect(captured?.body['max_tokens']).toBe(512);
   });

@@ -943,14 +943,23 @@ export class GeminiClient {
           for (const toolCall of currentResult.toolCalls) {
             const toolName = toolCall.function.name;
             let toolArgs: Record<string, unknown> = {};
+            // A parse failure must never degrade to an empty object: {} is
+            // indistinguishable from a model that sent no arguments, so the turn
+            // loop then reports a schema violation instead of the truncation that
+            // actually happened. Record it and surface it to the model.
+            let argsParseError: string | null = null;
 
             try {
               const parsed: unknown = JSON.parse(toolCall.function.arguments);
               if (isRecord(parsed)) {
                 toolArgs = parsed;
+              } else {
+                argsParseError = 'tool call arguments were not a JSON object';
               }
             } catch {
-              toolArgs = {};
+              argsParseError =
+                'tool call arguments were not valid JSON (the response was most ' +
+                'likely truncated mid-call)';
             }
 
             // Handle Granite's array quirks
@@ -962,13 +971,19 @@ export class GeminiClient {
 
             yield {
               type: GeminiEventType.Content,
-              value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}\n`,
+              value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}${argsParseError ? ' (arguments failed to parse)' : ''}\n`,
               traceId: prompt_id,
             };
 
             const toolStartTime = Date.now();
             let toolResult = '';
             try {
+              if (argsParseError) {
+                // Reaches the catch below, so the reason travels back to the model
+                // as a tool result and it can re-issue the call, instead of the
+                // session sitting on a call that can never succeed.
+                throw new Error(argsParseError);
+              }
               const toolRegistry = this.config.getToolRegistry();
               const tool = toolRegistry.getTool(toolName);
               if (tool) {

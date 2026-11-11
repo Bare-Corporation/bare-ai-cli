@@ -278,7 +278,10 @@ class WriteFileToolInvocation extends BaseToolInvocation<
     const validationError = this.config.validatePathAccess(this.resolvedPath);
     if (validationError) {
       return {
-        llmContent: validationError,
+        llmContent:
+          validationError +
+          ' To work in another directory, add it to context.includeDirectories ' +
+          'in settings.json, or launch with --include-directories.',
         returnDisplay: 'Error: Path not in workspace.',
         error: {
           message: validationError,

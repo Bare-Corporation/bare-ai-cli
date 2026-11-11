@@ -112,7 +112,10 @@ class ReadFileToolInvocation extends BaseToolInvocation<
     );
     if (validationError) {
       return {
-        llmContent: validationError,
+        llmContent:
+          validationError +
+          ' To work in another directory, add it to context.includeDirectories ' +
+          'in settings.json, or launch with --include-directories.',
         returnDisplay: 'Path not in workspace.',
         error: {
           message: validationError,

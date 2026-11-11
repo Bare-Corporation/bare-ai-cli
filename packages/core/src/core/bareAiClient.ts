@@ -374,6 +374,18 @@ export function shouldEmitFinalText(
  */
 const DEFAULT_MAX_TOKENS = 512;
 
+/**
+ * Completion cap for a TOOL-CALLING turn.
+ *
+ * A tool call is not a short answer: the completion carries the function name plus
+ * a JSON argument object, and it is only useful if it arrives complete. Truncating
+ * it does not shorten the reply, it produces invalid JSON - which the turn loop then
+ * reports as a schema failure (the required command property being absent), pointing
+ * at the wrong problem entirely. Tool turns therefore get their own, much larger
+ * bound: still well inside the proxy envelope, far above any realistic tool payload.
+ */
+const DEFAULT_TOOL_MAX_TOKENS = 4096;
+
 export class BareAiClient {
   private systemPrompt: string | null;
   static readonly VOLATILE_MARKER = '<!-- BARE_AI_VOLATILE -->';
@@ -554,6 +566,19 @@ export class BareAiClient {
   // behaviour this cap exists to prevent.
   // ---------------------------------------------------------------------------
 
+  private resolveToolMaxTokens(): number {
+    const raw = process.env['BARE_AI_MAX_TOKENS_TOOLS'];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed > 0) return parsed;
+      logWarn(
+        `BARE_AI_MAX_TOKENS_TOOLS is not a positive integer (${raw}); ` +
+          `using default ${DEFAULT_TOOL_MAX_TOKENS}`,
+      );
+    }
+    return DEFAULT_TOOL_MAX_TOKENS;
+  }
+
   private resolveMaxTokens(): number {
     const raw = process.env['BARE_AI_MAX_TOKENS'];
     if (raw !== undefined && raw.trim() !== '') {
@@ -635,7 +660,11 @@ export class BareAiClient {
     // Cap the completion when nothing above set a limit. Applied only when the
     // key is absent, so the native Anthropic branch keeps its own 4096.
     if (body['max_tokens'] === undefined || body['max_tokens'] === null) {
-      body['max_tokens'] = this.resolveMaxTokens();
+      // A tool-call turn must not be capped at the text default: truncation there
+      // corrupts the arguments JSON instead of shortening a reply.
+      body['max_tokens'] = resolvedTools
+        ? this.resolveToolMaxTokens()
+        : this.resolveMaxTokens();
     }
 
     // stream_options: Ollama only — sends usage metrics on final streaming chunk
