@@ -98,6 +98,15 @@ import { coreEvents, CoreEvent } from '../utils/events.js';
 
 const MAX_TURNS = 100;
 
+// Fleet-endpoint (BARE_AI_ENDPOINT / BareAiClient) tool-round budget for one
+// prompt. Each round is one model call plus the tool calls it asked for. The
+// Math.min clamp keeps an environment override from ever disabling the bound:
+// MAX_TURNS stays the hard ceiling for the whole prompt.
+const MAX_TOOL_ITERATIONS = Math.min(
+  Number.parseInt(process.env['BARE_AI_MAX_TOOL_ITERATIONS'] ?? '', 10) || 32,
+  MAX_TURNS,
+);
+
 type BeforeAgentHookReturn =
   | {
       type: GeminiEventType.AgentExecutionStopped;
@@ -921,165 +930,224 @@ export class GeminiClient {
         // Track user prompt locally AFTER the call
         loopHistory.push({ role: 'user', content: promptText });
 
-        const MAX_ITERATIONS = 10;
         let iteration = 0;
+        let continuationRounds = 0;
+        let capExhausted = false;
+        let continueTurn = true;
 
-        while (
-          currentResult.toolCalls &&
-          currentResult.toolCalls.length > 0 &&
-          iteration < MAX_ITERATIONS
-        ) {
-          iteration++;
+        // The budget is a checkpoint, not a stop. Exhaustion with tool calls
+        // still pending is reported; a text-only finish asks the next-speaker
+        // check whether the agent should carry on, exactly as the SDK path does.
+        while (continueTurn) {
+          continueTurn = false;
 
-          loopHistory.push({
-            role: 'assistant',
-            content: currentResult.text || null,
-            tool_calls: currentResult.toolCalls,
-            ...(currentResult.reasoning_content && {
-              reasoning_content: currentResult.reasoning_content,
-            }),
-          });
-
-          for (const toolCall of currentResult.toolCalls) {
-            const toolName = toolCall.function.name;
-            let toolArgs: Record<string, unknown> = {};
-            // A parse failure must never degrade to an empty object: {} is
-            // indistinguishable from a model that sent no arguments, so the turn
-            // loop then reports a schema violation instead of the truncation that
-            // actually happened. Record it and surface it to the model.
-            let argsParseError: string | null = null;
-
-            try {
-              const parsed: unknown = JSON.parse(toolCall.function.arguments);
-              if (isRecord(parsed)) {
-                toolArgs = parsed;
-              } else {
-                argsParseError = 'tool call arguments were not a JSON object';
-              }
-            } catch {
-              argsParseError =
-                'tool call arguments were not valid JSON (the response was most ' +
-                'likely truncated mid-call)';
-            }
-
-            // Handle Granite's array quirks
-            if (Array.isArray(toolArgs)) {
-              toolArgs = { command: toolArgs.join(' ') };
-            } else if (Array.isArray(toolArgs['command'])) {
-              toolArgs['command'] = toolArgs['command'].join(' ');
-            }
-
-            yield {
-              type: GeminiEventType.Content,
-              value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}${argsParseError ? ' (arguments failed to parse)' : ''}\n`,
-              traceId: prompt_id,
-            };
-
-            const toolStartTime = Date.now();
-            let toolResult = '';
-            try {
-              if (argsParseError) {
-                // Reaches the catch below, so the reason travels back to the model
-                // as a tool result and it can re-issue the call, instead of the
-                // session sitting on a call that can never succeed.
-                throw new Error(argsParseError);
-              }
-              const toolRegistry = this.config.getToolRegistry();
-              const tool = toolRegistry.getTool(toolName);
-              if (tool) {
-                const invocation = tool.build(toolArgs);
-                const executeOptions: ExecuteOptions = {
-                  abortSignal: new AbortController().signal,
-                };
-                const result = await invocation.execute(executeOptions);
-                toolResult = isString(result) ? result : JSON.stringify(result);
-              } else {
-                toolResult = `Tool ${toolName} not found`;
-              }
-            } catch (toolErr) {
-              toolResult = `Tool execution error: ${String(toolErr)}`;
-            }
+          while (
+            currentResult.toolCalls &&
+            currentResult.toolCalls.length > 0 &&
+            iteration < MAX_TOOL_ITERATIONS
+          ) {
+            iteration++;
 
             loopHistory.push({
-              role: 'tool',
-              content: toolResult,
-              tool_call_id: toolCall.id,
-              name: toolName,
+              role: 'assistant',
+              content: currentResult.text || null,
+              tool_calls: currentResult.toolCalls,
+              ...(currentResult.reasoning_content && {
+                reasoning_content: currentResult.reasoning_content,
+              }),
             });
 
-            let displayResult = toolResult;
-            try {
-              const parsedOutput: unknown = JSON.parse(toolResult);
-              if (isRecord(parsedOutput)) {
-                if (isString(parsedOutput['returnDisplay'])) {
-                  displayResult = parsedOutput['returnDisplay'];
-                } else if (isString(parsedOutput['llmContent'])) {
-                  displayResult = parsedOutput['llmContent'];
+            for (const toolCall of currentResult.toolCalls) {
+              const toolName = toolCall.function.name;
+              let toolArgs: Record<string, unknown> = {};
+              // A parse failure must never degrade to an empty object: {} is
+              // indistinguishable from a model that sent no arguments, so the turn
+              // loop then reports a schema violation instead of the truncation that
+              // actually happened. Record it and surface it to the model.
+              let argsParseError: string | null = null;
+
+              try {
+                const parsed: unknown = JSON.parse(toolCall.function.arguments);
+                if (isRecord(parsed)) {
+                  toolArgs = parsed;
+                } else {
+                  argsParseError = 'tool call arguments were not a JSON object';
                 }
+              } catch {
+                argsParseError =
+                  'tool call arguments were not valid JSON (the response was most ' +
+                  'likely truncated mid-call)';
               }
+
+              // Handle Granite's array quirks
+              if (Array.isArray(toolArgs)) {
+                toolArgs = { command: toolArgs.join(' ') };
+              } else if (Array.isArray(toolArgs['command'])) {
+                toolArgs['command'] = toolArgs['command'].join(' ');
+              }
+
+              yield {
+                type: GeminiEventType.Content,
+                value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}${argsParseError ? ' (arguments failed to parse)' : ''}\n`,
+                traceId: prompt_id,
+              };
+
+              const toolStartTime = Date.now();
+              let toolResult = '';
+              try {
+                if (argsParseError) {
+                  // Reaches the catch below, so the reason travels back to the model
+                  // as a tool result and it can re-issue the call, instead of the
+                  // session sitting on a call that can never succeed.
+                  throw new Error(argsParseError);
+                }
+                const toolRegistry = this.config.getToolRegistry();
+                const tool = toolRegistry.getTool(toolName);
+                if (tool) {
+                  const invocation = tool.build(toolArgs);
+                  const executeOptions: ExecuteOptions = {
+                    abortSignal: new AbortController().signal,
+                  };
+                  const result = await invocation.execute(executeOptions);
+                  toolResult = isString(result)
+                    ? result
+                    : JSON.stringify(result);
+                } else {
+                  toolResult = `Tool ${toolName} not found`;
+                }
+              } catch (toolErr) {
+                toolResult = `Tool execution error: ${String(toolErr)}`;
+              }
+
+              loopHistory.push({
+                role: 'tool',
+                content: toolResult,
+                tool_call_id: toolCall.id,
+                name: toolName,
+              });
+
+              let displayResult = toolResult;
+              try {
+                const parsedOutput: unknown = JSON.parse(toolResult);
+                if (isRecord(parsedOutput)) {
+                  if (isString(parsedOutput['returnDisplay'])) {
+                    displayResult = parsedOutput['returnDisplay'];
+                  } else if (isString(parsedOutput['llmContent'])) {
+                    displayResult = parsedOutput['llmContent'];
+                  }
+                }
+              } catch {
+                // Not JSON, use as-is
+              }
+
+              yield {
+                type: GeminiEventType.Content,
+                value: displayResult + '\n',
+                traceId: prompt_id,
+              };
+              // The UiEvent members are uninhabitable: each is an intersection of a class
+              // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+              // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+              // the intersection collapses to never and no literal can satisfy it. Same
+              // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+              // with the constant changes the emitted event name - a separate decision.
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+              uiTelemetryService.addEvent({
+                'event.name': EVENT_TOOL_CALL,
+                function_name: toolName,
+                duration_ms: Date.now() - toolStartTime,
+                success: !toolResult.startsWith('Tool execution error'),
+                decision: ToolCallDecision.AUTO_ACCEPT,
+                metadata: {},
+              } as UiEvent);
+            }
+
+            openAiTools = getCurrentTools();
+            const lastHistoryEntry = loopHistory[loopHistory.length - 1];
+
+            if (lastHistoryEntry) {
+              const toolApiStartTime = Date.now();
+              currentResult = await this.aiClient.sendToolResult(
+                loopHistory.slice(0, -1),
+                lastHistoryEntry.tool_call_id ?? '',
+                lastHistoryEntry.name ?? '',
+                String(lastHistoryEntry.content ?? ''),
+                openAiTools,
+              );
+              const toolPromptTokens = currentResult.usage?.prompt_tokens;
+              if (toolPromptTokens !== undefined) {
+                uiTelemetryService.setLastPromptTokenCount(toolPromptTokens);
+              }
+              // The UiEvent members are uninhabitable: each is an intersection of a class
+              // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+              // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+              // the intersection collapses to never and no literal can satisfy it. Same
+              // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+              // with the constant changes the emitted event name - a separate decision.
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+              uiTelemetryService.addEvent({
+                'event.name': EVENT_API_RESPONSE,
+                model: modelToUse,
+                duration_ms: Date.now() - toolApiStartTime,
+                usage: {
+                  input_token_count: currentResult.usage?.prompt_tokens ?? 0,
+                  output_token_count:
+                    currentResult.usage?.completion_tokens ?? 0,
+                  total_token_count: currentResult.usage?.total_tokens ?? 0,
+                  cached_content_token_count: 0,
+                  thoughts_token_count: 0,
+                  tool_token_count: 0,
+                },
+              } as UiEvent);
+            }
+          }
+
+          // The inner loop ended: either the model stopped asking for tools,
+          // or the round budget ran out with tool calls still pending.
+          if (
+            currentResult.toolCalls &&
+            currentResult.toolCalls.length > 0 &&
+            iteration >= MAX_TOOL_ITERATIONS
+          ) {
+            // Truncation must be distinguishable from a finished answer.
+            capExhausted = true;
+          } else if (
+            continuationRounds < MAX_TOOL_ITERATIONS &&
+            signal &&
+            !signal.aborted
+          ) {
+            // Text-only finish: the SDK path continues such a turn, so mirror
+            // it here. The check is advisory and must never break a turn.
+            let keepGoing = false;
+            try {
+              const nextSpeakerCheck = await checkNextSpeaker(
+                this.getChat(),
+                this.config.getBaseLlmClient(),
+                signal,
+                prompt_id,
+              );
+              keepGoing = nextSpeakerCheck?.next_speaker === 'model';
             } catch {
-              // Not JSON, use as-is
+              keepGoing = false;
             }
-
-            yield {
-              type: GeminiEventType.Content,
-              value: displayResult + '\n',
-              traceId: prompt_id,
-            };
-            // The UiEvent members are uninhabitable: each is an intersection of a class
-            // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
-            // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
-            // the intersection collapses to never and no literal can satisfy it. Same
-            // idiom and same reason as telemetry/loggers.ts. Aligning the class field
-            // with the constant changes the emitted event name - a separate decision.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-            uiTelemetryService.addEvent({
-              'event.name': EVENT_TOOL_CALL,
-              function_name: toolName,
-              duration_ms: Date.now() - toolStartTime,
-              success: !toolResult.startsWith('Tool execution error'),
-              decision: ToolCallDecision.AUTO_ACCEPT,
-              metadata: {},
-            } as UiEvent);
-          }
-
-          openAiTools = getCurrentTools();
-          const lastHistoryEntry = loopHistory[loopHistory.length - 1];
-
-          if (lastHistoryEntry) {
-            const toolApiStartTime = Date.now();
-            currentResult = await this.aiClient.sendToolResult(
-              loopHistory.slice(0, -1),
-              lastHistoryEntry.tool_call_id ?? '',
-              lastHistoryEntry.name ?? '',
-              String(lastHistoryEntry.content ?? ''),
-              openAiTools,
-            );
-            const toolPromptTokens = currentResult.usage?.prompt_tokens;
-            if (toolPromptTokens !== undefined) {
-              uiTelemetryService.setLastPromptTokenCount(toolPromptTokens);
+            if (keepGoing) {
+              continuationRounds++;
+              loopHistory.push({ role: 'user', content: 'Please continue.' });
+              currentResult = await this.aiClient.generateContent(
+                'Please continue.',
+                loopHistory,
+                openAiTools,
+              );
+              continueTurn = true;
             }
-            // The UiEvent members are uninhabitable: each is an intersection of a class
-            // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
-            // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
-            // the intersection collapses to never and no literal can satisfy it. Same
-            // idiom and same reason as telemetry/loggers.ts. Aligning the class field
-            // with the constant changes the emitted event name - a separate decision.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-            uiTelemetryService.addEvent({
-              'event.name': EVENT_API_RESPONSE,
-              model: modelToUse,
-              duration_ms: Date.now() - toolApiStartTime,
-              usage: {
-                input_token_count: currentResult.usage?.prompt_tokens ?? 0,
-                output_token_count: currentResult.usage?.completion_tokens ?? 0,
-                total_token_count: currentResult.usage?.total_tokens ?? 0,
-                cached_content_token_count: 0,
-                thoughts_token_count: 0,
-                tool_token_count: 0,
-              },
-            } as UiEvent);
           }
+        }
+
+        if (capExhausted) {
+          yield {
+            type: GeminiEventType.MaxSessionTurns,
+            value: { source: 'turn_cap', limit: MAX_TOOL_ITERATIONS },
+          };
         }
 
         const finalText = currentResult.text || '';
