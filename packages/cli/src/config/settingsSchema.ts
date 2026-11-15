@@ -963,6 +963,16 @@ const SETTINGS_SCHEMA = {
           'Maximum number of user/model/tool turns to keep in a session. -1 means unlimited.',
         showInDialog: true,
       },
+      maxToolIterations: {
+        type: 'number',
+        label: 'Max Tool Iterations',
+        category: 'Model',
+        requiresRestart: false,
+        default: 32,
+        description:
+          'Tool-call rounds allowed for one prompt on the fleet endpoint path, before the turn reports the cap. 1-256, default 32.',
+        showInDialog: true,
+      },
       summarizeToolOutput: {
         type: 'object',
         label: 'Summarize Tool Output',

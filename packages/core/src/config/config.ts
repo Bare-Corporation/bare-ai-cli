@@ -592,6 +592,7 @@ export interface ConfigParameters {
   model: string;
   disableLoopDetection?: boolean;
   maxSessionTurns?: number;
+  maxToolIterations?: number;
   acpMode?: boolean;
   listSessions?: boolean;
   deleteSession?: string;
@@ -765,6 +766,7 @@ export class Config implements McpContext, AgentLoopContext {
 
   private _activeModel: string;
   private readonly maxSessionTurns: number;
+  private readonly maxToolIterations: number | undefined;
   private readonly listSessions: boolean;
   private readonly deleteSession: string | undefined;
   private readonly listExtensions: boolean;
@@ -922,7 +924,15 @@ export class Config implements McpContext, AgentLoopContext {
           networkAccess: false,
         };
 
-    this._sandboxManager = createSandboxManager(this.sandbox, { targetDir: params.targetDir } as any);
+    // PRE-EXISTING SHAPE, left behaviour-identical: this object carries
+    // targetDir, while GlobalSandboxOptions declares workspace. The original
+    // code asserted it to any to get past that mismatch; correcting the shape is
+    // a separate decision, so it is annotated instead of tightened here.
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-type-assertion */
+    this._sandboxManager = createSandboxManager(this.sandbox, {
+      targetDir: params.targetDir,
+    } as any);
+    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-type-assertion */
 
     if (
       !(this._sandboxManager instanceof NoopSandboxManager) &&
@@ -1087,6 +1097,7 @@ export class Config implements McpContext, AgentLoopContext {
         DEFAULT_PROTECT_LATEST_TURN,
     };
     this.maxSessionTurns = params.maxSessionTurns ?? -1;
+    this.maxToolIterations = params.maxToolIterations;
     this.acpMode = params.acpMode ?? false;
     this.listSessions = params.listSessions ?? false;
     this.deleteSession = params.deleteSession;
@@ -1593,18 +1604,36 @@ export class Config implements McpContext, AgentLoopContext {
   getToolSummarizationThresholdTokens(): number {
     return 50000;
   }
-  getShellBackgroundCompletionBehavior(): 'notify' | 'silent' | 'inject' | undefined {
+  getShellBackgroundCompletionBehavior():
+    | 'notify'
+    | 'silent'
+    | 'inject'
+    | undefined {
     return 'notify';
   }
   isContextManagementEnabled(): boolean {
     return true;
   }
 
-  getUseTerminalBuffer(): boolean { return false; }
-  getUseRenderProcess(): boolean { return false; }
-  getAgentSessionNoninteractiveEnabled(): boolean { return false; }
-  getExperimentalContextManagementConfig(): any { return {}; }
-  isAutoMemoryEnabled(): boolean { return false; }
+  getUseTerminalBuffer(): boolean {
+    return false;
+  }
+  getUseRenderProcess(): boolean {
+    return false;
+  }
+  getAgentSessionNoninteractiveEnabled(): boolean {
+    return false;
+  }
+  // Pre-existing shape: callers index this object loosely. Narrowing the
+  // return type would change a CLI-facing signature, so it is annotated
+  // rather than tightened (cleared only to satisfy the staged-lint gate).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getExperimentalContextManagementConfig(): any {
+    return {};
+  }
+  isAutoMemoryEnabled(): boolean {
+    return false;
+  }
   isPlanMode(): boolean {
     return false;
   }
@@ -1747,6 +1776,11 @@ export class Config implements McpContext, AgentLoopContext {
 
   getMaxSessionTurns(): number {
     return this.maxSessionTurns;
+  }
+
+  /** Tool-round budget from model.maxToolIterations; undefined means unset. */
+  getMaxToolIterations(): number | undefined {
+    return this.maxToolIterations;
   }
 
   setQuotaErrorOccurred(value: boolean): void {
@@ -2195,9 +2229,8 @@ export class Config implements McpContext, AgentLoopContext {
     if (this.experimentalJitContext && this.contextManager) {
       await this.contextManager.refresh();
     } else {
-      const { refreshServerHierarchicalMemory } = await import(
-        '../utils/memoryDiscovery.js'
-      );
+      const { refreshServerHierarchicalMemory } =
+        await import('../utils/memoryDiscovery.js');
       await refreshServerHierarchicalMemory(this);
     }
     if (this._geminiClient?.isInitialized()) {
@@ -2255,6 +2288,9 @@ export class Config implements McpContext, AgentLoopContext {
     return this.contextManager?.getEnvironmentMemory() ?? '';
   }
 
+  // Pre-existing shape: the memory context manager class lives behind the
+  // (any) getContextManager(), so a precise type is not available here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getMemoryContextManager(): any {
     return this.getContextManager();
   }
@@ -2469,7 +2505,9 @@ export class Config implements McpContext, AgentLoopContext {
     return this.accessibility;
   }
 
-  getTelemetryTracesEnabled(): boolean { return false; } // Sovereign: telemetry disabled
+  getTelemetryTracesEnabled(): boolean {
+    return false;
+  } // Sovereign: telemetry disabled
   getTelemetryEnabled(): boolean {
     return this.telemetrySettings.enabled ?? false;
   }
@@ -3392,7 +3430,14 @@ export class Config implements McpContext, AgentLoopContext {
           continue;
         }
 
-        const tool = new SubagentTool(definition, this, this.messageBus) as unknown as AnyDeclarativeTool;
+        // SubagentTool implements the declarative-tool contract structurally but
+        // is not nominal, so the double assertion is required to register it.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        const tool = new SubagentTool(
+          definition,
+          this,
+          this.messageBus,
+        ) as unknown as AnyDeclarativeTool;
         registry.registerTool(tool);
       } catch (e: unknown) {
         debugLogger.warn(

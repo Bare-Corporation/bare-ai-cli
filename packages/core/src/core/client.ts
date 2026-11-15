@@ -99,13 +99,34 @@ import { coreEvents, CoreEvent } from '../utils/events.js';
 const MAX_TURNS = 100;
 
 // Fleet-endpoint (BARE_AI_ENDPOINT / BareAiClient) tool-round budget for one
-// prompt. Each round is one model call plus the tool calls it asked for. The
-// Math.min clamp keeps an environment override from ever disabling the bound:
-// MAX_TURNS stays the hard ceiling for the whole prompt.
-const MAX_TOOL_ITERATIONS = Math.min(
-  Number.parseInt(process.env['BARE_AI_MAX_TOOL_ITERATIONS'] ?? '', 10) || 32,
-  MAX_TURNS,
-);
+// prompt: each round is one model call plus the tool calls it asked for.
+export const DEFAULT_MAX_TOOL_ITERATIONS = 32;
+export const MAX_TOOL_ITERATIONS_CEILING = 256;
+
+/**
+ * Resolve the tool-round budget.
+ *
+ * Precedence: the model.maxToolIterations setting, then
+ * BARE_AI_MAX_TOOL_ITERATIONS, then the default. Every source is clamped to
+ * 1..MAX_TOOL_ITERATIONS_CEILING, so neither a settings file nor an
+ * environment variable can disable the bound.
+ */
+export function resolveMaxToolIterations(configured?: number): number {
+  const candidates = [
+    configured,
+    Number.parseInt(process.env['BARE_AI_MAX_TOOL_ITERATIONS'] ?? '', 10),
+  ];
+  for (const candidate of candidates) {
+    if (
+      typeof candidate === 'number' &&
+      Number.isFinite(candidate) &&
+      candidate > 0
+    ) {
+      return Math.min(Math.floor(candidate), MAX_TOOL_ITERATIONS_CEILING);
+    }
+  }
+  return DEFAULT_MAX_TOOL_ITERATIONS;
+}
 
 type BeforeAgentHookReturn =
   | {
@@ -930,6 +951,9 @@ export class GeminiClient {
         // Track user prompt locally AFTER the call
         loopHistory.push({ role: 'user', content: promptText });
 
+        const maxToolIterations = resolveMaxToolIterations(
+          this.config.getMaxToolIterations(),
+        );
         let iteration = 0;
         let continuationRounds = 0;
         let capExhausted = false;
@@ -944,7 +968,7 @@ export class GeminiClient {
           while (
             currentResult.toolCalls &&
             currentResult.toolCalls.length > 0 &&
-            iteration < MAX_TOOL_ITERATIONS
+            iteration < maxToolIterations
           ) {
             iteration++;
 
@@ -1107,12 +1131,12 @@ export class GeminiClient {
           if (
             currentResult.toolCalls &&
             currentResult.toolCalls.length > 0 &&
-            iteration >= MAX_TOOL_ITERATIONS
+            iteration >= maxToolIterations
           ) {
             // Truncation must be distinguishable from a finished answer.
             capExhausted = true;
           } else if (
-            continuationRounds < MAX_TOOL_ITERATIONS &&
+            continuationRounds < maxToolIterations &&
             signal &&
             !signal.aborted
           ) {
@@ -1146,7 +1170,7 @@ export class GeminiClient {
         if (capExhausted) {
           yield {
             type: GeminiEventType.MaxSessionTurns,
-            value: { source: 'turn_cap', limit: MAX_TOOL_ITERATIONS },
+            value: { source: 'turn_cap', limit: maxToolIterations },
           };
         }
 
