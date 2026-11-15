@@ -153,6 +153,12 @@ function buildSettingSchema(
   if (definition.default !== undefined) {
     base.default = definition.default as JsonValue;
   }
+  if (definition.min !== undefined) {
+    base.minimum = definition.min;
+  }
+  if (definition.max !== undefined) {
+    base.maximum = definition.max;
+  }
 
   const schemaShape = definition.ref
     ? buildRefSchema(definition.ref, defs)

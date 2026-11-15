@@ -122,6 +122,13 @@ export interface SettingDefinition {
    */
   unit?: string;
   /**
+   * Inclusive bounds for a numeric setting. The settings dialog REJECTS an
+   * out-of-range entry instead of storing it, so a bound here is enforced at
+   * the point of input rather than corrected later.
+   */
+  min?: number;
+  max?: number;
+  /**
    * Optional reference identifier for generators that emit a `$ref`.
    */
   ref?: string;
@@ -970,8 +977,10 @@ const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: 32,
         description:
-          'Tool-call rounds allowed for one prompt on the fleet endpoint path, before the turn reports the cap. 1-256, default 32.',
+          'Tool-call rounds allowed for one prompt on the fleet endpoint path, before the turn reports the cap. Out-of-range entries are rejected. Default 32.',
         showInDialog: true,
+        min: 1,
+        max: 256,
       },
       summarizeToolOutput: {
         type: 'object',

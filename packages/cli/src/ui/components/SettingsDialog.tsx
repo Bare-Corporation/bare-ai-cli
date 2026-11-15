@@ -320,7 +320,10 @@ export function SettingsDialog({
     (key: string, newValue: string, _item: SettingsDialogItem) => {
       const definition = getSettingDefinition(key);
       const type: SettingsType = definition?.type ?? 'string';
-      const parsed = parseEditedValue(type, newValue);
+      const parsed = parseEditedValue(type, newValue, {
+        min: definition?.min,
+        max: definition?.max,
+      });
 
       if (parsed === null) {
         return;
