@@ -1126,9 +1126,10 @@ export const useGeminiStream = (
       // from the payload rather than assumed.
       const text =
         value?.source === 'turn_cap'
-          ? `Agent loop stopped: the hardcoded maximum-turn limit of ` +
-            `${value.limit} was reached for this prompt, so the agent will not ` +
-            `continue on its own. Send a message to resume.`
+          ? `Agent loop stopped: the per-prompt tool-round limit of ` +
+            `${value.limit} was reached, so the agent will not continue on its ` +
+            `own. Raise model.maxToolIterations in settings (default 32, max ` +
+            `256) or send a message to resume.`
           : `The session has reached the maximum number of turns: ` +
             `${value?.limit ?? config.getMaxSessionTurns()}. ` +
             `The agent loop has stopped — send a message to resume, or update ` +

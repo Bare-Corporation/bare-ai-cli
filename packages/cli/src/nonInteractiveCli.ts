@@ -376,7 +376,7 @@ export async function runNonInteractive(
             const limit = event.value?.limit ?? config.getMaxSessionTurns();
             const limitName =
               event.value?.source === 'turn_cap'
-                ? 'the hardcoded maximum-turn limit for a single prompt'
+                ? 'the per-prompt tool-round limit (model.maxToolIterations)'
                 : 'maxSessionTurns';
             const message =
               `Turn limit reached: the agent loop stopped because ` +
