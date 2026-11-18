@@ -25,6 +25,12 @@ import {
   getToolOverride,
   isToolModeLocked,
 } from '../../config/toolPolicy.js';
+import {
+  isExpiredTokenResponse,
+  mintSessionToken,
+  readVaultEnv,
+  vaultFetch,
+} from './vaultRekey.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -327,12 +333,50 @@ function vaultKeyForProvider(provider?: string): string | null {
   return null;
 }
 
+// One Vault KV read, returning the status alongside the parsed payload so the
+// caller can react to a specific failure (ticket 691) instead of guessing from
+// a thrown error. The payload stays unknown: it is external JSON.
+async function vaultGet(
+  addr: string,
+  vaultPath: string,
+  token: string,
+): Promise<{ status: number; payload: unknown }> {
+  const res = await vaultFetch(`${addr}/v1/${vaultPath}`, {
+    headers: { 'X-Vault-Token': token },
+  });
+  const payload: unknown = await res.json();
+  return { status: res.status, payload };
+}
+
+// Re-mint the session token, or fail loudly with BOTH facts: why the re-mint
+// could not happen and what Vault originally answered. The original response is
+// part of the message on purpose - an expiry that cannot be repaired must never
+// be reported as an ordinary "not found".
+async function remintOrThrow(
+  addr: string,
+  original: { status: number; payload: unknown },
+): Promise<{ token: string; leaseSeconds: number }> {
+  try {
+    return await mintSessionToken(addr, readVaultEnv());
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      'Vault session token expired and could not be re-minted (' +
+        reason +
+        '). Original Vault response: HTTP ' +
+        String(original.status) +
+        ' ' +
+        JSON.stringify(original.payload),
+    );
+  }
+}
+
 // Fetch runtime config (api_key + model_name) from the USER's own Vault.
 // Cloud/council models use the per-PROVIDER path (one secret per provider,
 // since 2026-09-01). Legacy per-model paths remain only as a last resort.
-async function fetchVaultUpdate(modelName: string, provider?: string) {
+export async function fetchVaultUpdate(modelName: string, provider?: string) {
   const addr = process.env['VAULT_ADDR'];
-  const vaultToken = process.env['VAULT_TOKEN'];
+  let vaultToken = process.env['VAULT_TOKEN'];
   if (!addr || !vaultToken)
     throw new Error('Sovereign environment not initialized.');
 
@@ -340,20 +384,34 @@ async function fetchVaultUpdate(modelName: string, provider?: string) {
   let path = routeKey
     ? `secret/data/${routeKey}/config`
     : `secret/data/${modelName}/config`;
-  let res = await fetch(`${addr}/v1/${path}`, {
-    headers: { 'X-Vault-Token': vaultToken },
-  });
-  // res.json() is any: keep it unknown for the diagnostic below and narrow it
-  // with extractVaultConfig instead of asserting the response shape.
-  let payload: unknown = await res.json();
+  let result = await vaultGet(addr, path, vaultToken);
 
-  if (res.status === 404 || res.status === 403) {
-    path = `secret/${modelName}/config`;
-    res = await fetch(`${addr}/v1/${path}`, {
-      headers: { 'X-Vault-Token': vaultToken },
-    });
-    payload = await res.json();
+  // Ticket 691: an AppRole token lives for its lease (3600s here) and the
+  // launcher never renewed it, so a session older than the lease held a dead
+  // token and every read answered 403 with BOTH "permission denied" AND
+  // "invalid token". Re-mint ONCE through the same AppRole and retry ONCE.
+  // A 403 without "invalid token" is a policy denial and is left alone -
+  // re-minting there would hide a real authorisation failure.
+  if (isExpiredTokenResponse(result.status, result.payload)) {
+    const minted = await remintOrThrow(addr, result);
+    process.stderr.write(
+      '[vault] session token had expired - re-minted for this session (' +
+        String(minted.leaseSeconds) +
+        's lease)' +
+        String.fromCharCode(10),
+    );
+    // Keep the new token for the rest of the session: every later Vault read in
+    // this process (another /model swap, a council run) reuses it.
+    process.env['VAULT_TOKEN'] = minted.token;
+    vaultToken = minted.token;
+    result = await vaultGet(addr, path, vaultToken);
   }
+
+  if (result.status === 404 || result.status === 403) {
+    path = `secret/${modelName}/config`;
+    result = await vaultGet(addr, path, vaultToken);
+  }
+  const payload = result.payload;
 
   const configData = extractVaultConfig(payload);
   if (!configData) {
