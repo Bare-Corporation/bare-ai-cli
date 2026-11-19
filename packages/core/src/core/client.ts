@@ -396,6 +396,14 @@ export class GeminiClient {
     resumedSessionData?: ResumedSessionData,
   ): Promise<void> {
     this.chat = await this.startChat(history, resumedSessionData);
+    // Ticket 693: seed the provider-facing history from the resumed turns.
+    // startChat only builds the SDK chat object; on the fleet path
+    // BareAiClient replays THIS array, so leaving it empty meant a resumed
+    // turn was sent with no prior conversation even when the transcript was
+    // read back correctly.
+    for (const content of history) {
+      await this.addHistory(content);
+    }
     this.updateTelemetryTokenCount();
   }
 
@@ -1195,6 +1203,34 @@ export class GeminiClient {
           role: 'model',
           parts: [{ text: finalText }],
         });
+
+        // Ticket 693: persist the turn. The transcript writer is only ever
+        // called from GeminiChat.sendMessageStream, which this intercept
+        // bypasses, so session-*.jsonl was created (header only) and never
+        // filled - which is why --resume had nothing to load and silently
+        // started a fresh session. These are the same two records the SDK path
+        // writes, so a resumed session sees the same history either way.
+        try {
+          const recorder = this.getChat().getChatRecordingService();
+          recorder.recordMessage({
+            model: modelToUse,
+            type: 'user',
+            content: request,
+          });
+          if (finalText) {
+            recorder.recordMessage({
+              model: modelToUse,
+              type: 'gemini',
+              content: finalText,
+            });
+          }
+        } catch (recordingError) {
+          // Recording must never fail a turn: the answer is already streamed.
+          debugLogger.warn(
+            'Could not persist this turn to the session transcript: ' +
+              String(recordingError),
+          );
+        }
 
         yield {
           type: GeminiEventType.Finished,
