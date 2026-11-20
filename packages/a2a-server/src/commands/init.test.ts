@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { InitCommand } from './init.js';
 import {
   performInit,
@@ -58,7 +59,7 @@ describe('InitCommand', () => {
   let command: InitCommand;
   let context: CommandContext;
   let publishSpy: ReturnType<typeof vi.spyOn>;
-  let mockExecute: ReturnType<typeof vi.fn>;
+  let mockExecute: Mock<CoderAgentExecutor['execute']>;
   const mockWorkspacePath = path.resolve('/tmp');
 
   beforeEach(() => {
@@ -77,7 +78,7 @@ describe('InitCommand', () => {
       eventBus,
     } as CommandContext;
     publishSpy = vi.spyOn(eventBus, 'publish');
-    mockExecute = vi.fn();
+    mockExecute = vi.fn<CoderAgentExecutor['execute']>();
     vi.spyOn(mockExecutorInstance, 'execute').mockImplementation(mockExecute);
     vi.clearAllMocks();
   });

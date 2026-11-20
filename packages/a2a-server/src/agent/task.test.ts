@@ -451,7 +451,7 @@ describe('Task', () => {
 
       // It will be called for status updates, but not with final: true
       const finalCall = setTaskStateAndPublishUpdateSpy.mock.calls.find(
-        (call) => call[4] === true,
+        (call: unknown[]) => call[4] === true,
       );
       expect(finalCall).toBeUndefined();
     });
@@ -466,7 +466,7 @@ describe('Task', () => {
 
       // No final call yet
       let finalCall = setTaskStateAndPublishUpdateSpy.mock.calls.find(
-        (call) => call[4] === true,
+        (call: unknown[]) => call[4] === true,
       );
       expect(finalCall).toBeUndefined();
 
@@ -483,7 +483,7 @@ describe('Task', () => {
 
       // NOW we should get the final call
       finalCall = setTaskStateAndPublishUpdateSpy.mock.calls.find(
-        (call) => call[4] === true,
+        (call: unknown[]) => call[4] === true,
       );
       expect(finalCall).toBeDefined();
       expect(finalCall?.[0]).toBe('input-required');
@@ -499,7 +499,7 @@ describe('Task', () => {
       task._schedulerToolCallsUpdate(toolCalls);
 
       const finalCall = setTaskStateAndPublishUpdateSpy.mock.calls.find(
-        (call) => call[4] === true,
+        (call: unknown[]) => call[4] === true,
       );
       expect(finalCall).toBeUndefined();
     });
