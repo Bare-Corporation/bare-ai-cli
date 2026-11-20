@@ -1,23 +1,23 @@
-# Gemini CLI cheatsheet
+# Bare AI CLI cheatsheet
 
-This page provides a reference for commonly used Gemini CLI commands, options,
+This page provides a reference for commonly used Bare AI CLI commands, options,
 and parameters.
 
 ## CLI commands
 
-| Command                            | Description                        | Example                                                      |
-| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
-| `gemini`                           | Start interactive REPL             | `gemini`                                                     |
-| `gemini -p "query"`                | Query non-interactively            | `gemini -p "summarize README.md"`                            |
-| `gemini "query"`                   | Query and continue interactively   | `gemini "explain this project"`                              |
-| `cat file \| gemini`               | Process piped content              | `cat logs.txt \| gemini`<br>`Get-Content logs.txt \| gemini` |
-| `gemini -i "query"`                | Execute and continue interactively | `gemini -i "What is the purpose of this project?"`           |
-| `gemini -r "latest"`               | Continue most recent session       | `gemini -r "latest"`                                         |
-| `gemini -r "latest" "query"`       | Continue session with a new prompt | `gemini -r "latest" "Check for type errors"`                 |
-| `gemini -r "<session-id>" "query"` | Resume session by ID               | `gemini -r "abc123" "Finish this PR"`                        |
-| `gemini update`                    | Update to latest version           | `gemini update`                                              |
-| `gemini extensions`                | Manage extensions                  | See [Extensions Management](#extensions-management)          |
-| `gemini mcp`                       | Configure MCP servers              | See [MCP Server Management](#mcp-server-management)          |
+| Command                          | Description                        | Example                                                      |
+| -------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| `bare`                           | Start interactive REPL             | `bare`                                                       |
+| `bare -p "query"`                | Query non-interactively            | `bare -p "summarize README.md"`                              |
+| `bare "query"`                   | Query and continue interactively   | `bare "explain this project"`                                |
+| `cat file \| gemini`             | Process piped content              | `cat logs.txt \| gemini`<br>`Get-Content logs.txt \| gemini` |
+| `bare -i "query"`                | Execute and continue interactively | `bare -i "What is the purpose of this project?"`             |
+| `bare -r "latest"`               | Continue most recent session       | `bare -r "latest"`                                           |
+| `bare -r "latest" "query"`       | Continue session with a new prompt | `bare -r "latest" "Check for type errors"`                   |
+| `bare -r "<session-id>" "query"` | Resume session by ID               | `bare -r "abc123" "Finish this PR"`                          |
+| `bare update`                    | Update to latest version           | `bare update`                                                |
+| `bare extensions`                | Manage extensions                  | See [Extensions Management](#extensions-management)          |
+| `bare mcp`                       | Configure MCP servers              | See [MCP Server Management](#mcp-server-management)          |
 
 ### Positional arguments
 
@@ -29,16 +29,16 @@ and parameters.
 
 These commands are available within the interactive REPL.
 
-| Command              | Description                              |
-| -------------------- | ---------------------------------------- |
-| `/skills reload`     | Reload discovered skills from disk       |
-| `/agents reload`     | Reload the agent registry                |
-| `/commands reload`   | Reload custom slash commands             |
+| Command              | Description                               |
+| -------------------- | ----------------------------------------- |
+| `/skills reload`     | Reload discovered skills from disk        |
+| `/agents reload`     | Reload the agent registry                 |
+| `/commands reload`   | Reload custom slash commands              |
 | `/memory reload`     | Reload context files (e.g., `BARE_AI.md`) |
-| `/mcp reload`        | Restart and reload MCP servers           |
-| `/extensions reload` | Reload all active extensions             |
-| `/help`              | Show help for all commands               |
-| `/quit`              | Exit the interactive session             |
+| `/mcp reload`        | Restart and reload MCP servers            |
+| `/extensions reload` | Reload all active extensions              |
+| `/help`              | Show help for all commands                |
+| `/quit`              | Exit the interactive session              |
 
 ## CLI Options
 
@@ -86,48 +86,48 @@ These are convenient shortcuts that map to specific models:
 
 ## Extensions management
 
-| Command                                            | Description                                  | Example                                                                        |
-| -------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------ |
-| `gemini extensions install <source>`               | Install extension from Git URL or local path | `gemini extensions install https://github.com/user/my-extension`               |
-| `gemini extensions install <source> --ref <ref>`   | Install from specific branch/tag/commit      | `gemini extensions install https://github.com/user/my-extension --ref develop` |
-| `gemini extensions install <source> --auto-update` | Install with auto-update enabled             | `gemini extensions install https://github.com/user/my-extension --auto-update` |
-| `gemini extensions uninstall <name>`               | Uninstall one or more extensions             | `gemini extensions uninstall my-extension`                                     |
-| `gemini extensions list`                           | List all installed extensions                | `gemini extensions list`                                                       |
-| `gemini extensions update <name>`                  | Update a specific extension                  | `gemini extensions update my-extension`                                        |
-| `gemini extensions update --all`                   | Update all extensions                        | `gemini extensions update --all`                                               |
-| `gemini extensions enable <name>`                  | Enable an extension                          | `gemini extensions enable my-extension`                                        |
-| `gemini extensions disable <name>`                 | Disable an extension                         | `gemini extensions disable my-extension`                                       |
-| `gemini extensions link <path>`                    | Link local extension for development         | `gemini extensions link /path/to/extension`                                    |
-| `gemini extensions new <path>`                     | Create new extension from template           | `gemini extensions new ./my-extension`                                         |
-| `gemini extensions validate <path>`                | Validate extension structure                 | `gemini extensions validate ./my-extension`                                    |
+| Command                                          | Description                                  | Example                                                                      |
+| ------------------------------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| `bare extensions install <source>`               | Install extension from Git URL or local path | `bare extensions install https://github.com/user/my-extension`               |
+| `bare extensions install <source> --ref <ref>`   | Install from specific branch/tag/commit      | `bare extensions install https://github.com/user/my-extension --ref develop` |
+| `bare extensions install <source> --auto-update` | Install with auto-update enabled             | `bare extensions install https://github.com/user/my-extension --auto-update` |
+| `bare extensions uninstall <name>`               | Uninstall one or more extensions             | `bare extensions uninstall my-extension`                                     |
+| `bare extensions list`                           | List all installed extensions                | `bare extensions list`                                                       |
+| `bare extensions update <name>`                  | Update a specific extension                  | `bare extensions update my-extension`                                        |
+| `bare extensions update --all`                   | Update all extensions                        | `bare extensions update --all`                                               |
+| `bare extensions enable <name>`                  | Enable an extension                          | `bare extensions enable my-extension`                                        |
+| `bare extensions disable <name>`                 | Disable an extension                         | `bare extensions disable my-extension`                                       |
+| `bare extensions link <path>`                    | Link local extension for development         | `bare extensions link /path/to/extension`                                    |
+| `bare extensions new <path>`                     | Create new extension from template           | `bare extensions new ./my-extension`                                         |
+| `bare extensions validate <path>`                | Validate extension structure                 | `bare extensions validate ./my-extension`                                    |
 
 See [Extensions Documentation](../extensions/index.md) for more details.
 
 ## MCP server management
 
-| Command                                                       | Description                     | Example                                                                                              |
-| ------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `gemini mcp add <name> <command>`                             | Add stdio-based MCP server      | `gemini mcp add github npx -y @modelcontextprotocol/server-github`                                   |
-| `gemini mcp add <name> <url> --transport http`                | Add HTTP-based MCP server       | `gemini mcp add api-server http://localhost:3000 --transport http`                                   |
-| `gemini mcp add <name> <command> --env KEY=value`             | Add with environment variables  | `gemini mcp add slack node server.js --env SLACK_TOKEN=xoxb-xxx`                                     |
-| `gemini mcp add <name> <command> --scope user`                | Add with user scope             | `gemini mcp add db node db-server.js --scope user`                                                   |
-| `gemini mcp add <name> <command> --include-tools tool1,tool2` | Add with specific tools         | `gemini mcp add github npx -y @modelcontextprotocol/server-github --include-tools list_repos,get_pr` |
-| `gemini mcp remove <name>`                                    | Remove an MCP server            | `gemini mcp remove github`                                                                           |
-| `gemini mcp list`                                             | List all configured MCP servers | `gemini mcp list`                                                                                    |
+| Command                                                     | Description                     | Example                                                                                            |
+| ----------------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `bare mcp add <name> <command>`                             | Add stdio-based MCP server      | `bare mcp add github npx -y @modelcontextprotocol/server-github`                                   |
+| `bare mcp add <name> <url> --transport http`                | Add HTTP-based MCP server       | `bare mcp add api-server http://localhost:3000 --transport http`                                   |
+| `bare mcp add <name> <command> --env KEY=value`             | Add with environment variables  | `bare mcp add slack node server.js --env SLACK_TOKEN=xoxb-xxx`                                     |
+| `bare mcp add <name> <command> --scope user`                | Add with user scope             | `bare mcp add db node db-server.js --scope user`                                                   |
+| `bare mcp add <name> <command> --include-tools tool1,tool2` | Add with specific tools         | `bare mcp add github npx -y @modelcontextprotocol/server-github --include-tools list_repos,get_pr` |
+| `bare mcp remove <name>`                                    | Remove an MCP server            | `bare mcp remove github`                                                                           |
+| `bare mcp list`                                             | List all configured MCP servers | `bare mcp list`                                                                                    |
 
 See [MCP Server Integration](../tools/mcp-server.md) for more details.
 
 ## Skills management
 
-| Command                          | Description                           | Example                                           |
-| -------------------------------- | ------------------------------------- | ------------------------------------------------- |
-| `gemini skills list`             | List all discovered agent skills      | `gemini skills list`                              |
-| `gemini skills install <source>` | Install skill from Git, path, or file | `gemini skills install https://github.com/u/repo` |
-| `gemini skills link <path>`      | Link local agent skills via symlink   | `gemini skills link /path/to/my-skills`           |
-| `gemini skills uninstall <name>` | Uninstall an agent skill              | `gemini skills uninstall my-skill`                |
-| `gemini skills enable <name>`    | Enable an agent skill                 | `gemini skills enable my-skill`                   |
-| `gemini skills disable <name>`   | Disable an agent skill                | `gemini skills disable my-skill`                  |
-| `gemini skills enable --all`     | Enable all skills                     | `gemini skills enable --all`                      |
-| `gemini skills disable --all`    | Disable all skills                    | `gemini skills disable --all`                     |
+| Command                        | Description                           | Example                                         |
+| ------------------------------ | ------------------------------------- | ----------------------------------------------- |
+| `bare skills list`             | List all discovered agent skills      | `bare skills list`                              |
+| `bare skills install <source>` | Install skill from Git, path, or file | `bare skills install https://github.com/u/repo` |
+| `bare skills link <path>`      | Link local agent skills via symlink   | `bare skills link /path/to/my-skills`           |
+| `bare skills uninstall <name>` | Uninstall an agent skill              | `bare skills uninstall my-skill`                |
+| `bare skills enable <name>`    | Enable an agent skill                 | `bare skills enable my-skill`                   |
+| `bare skills disable <name>`   | Disable an agent skill                | `bare skills disable my-skill`                  |
+| `bare skills enable --all`     | Enable all skills                     | `bare skills enable --all`                      |
+| `bare skills disable --all`    | Disable all skills                    | `bare skills disable --all`                     |
 
 See [Agent Skills Documentation](./skills.md) for more details.

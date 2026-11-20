@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -36,13 +37,15 @@ vi.mock('../../config/extension-manager.js', async (importOriginal) => {
     await importOriginal<typeof import('../../config/extension-manager.js')>();
   return {
     ...actual,
-    ExtensionManager: vi.fn().mockImplementation(() => ({
-      uninstallExtension: mockUninstallExtension,
-      loadExtensions: mockLoadExtensions,
-      getExtensions: mockGetExtensions,
-      setRequestConsent: vi.fn(),
-      setRequestSetting: vi.fn(),
-    })),
+    ExtensionManager: vi.fn().mockImplementation(function () {
+      return {
+        uninstallExtension: mockUninstallExtension,
+        loadExtensions: mockLoadExtensions,
+        getExtensions: mockGetExtensions,
+        setRequestConsent: vi.fn(),
+        setRequestSetting: vi.fn(),
+      };
+    }),
   };
 });
 
@@ -58,8 +61,7 @@ const debugLogger = vi.hoisted(() => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     coreEvents: {

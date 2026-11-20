@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -80,7 +81,11 @@ vi.mock('simple-git', () => ({
   }),
 }));
 
-const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/mock-home'));
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/tmp/mock-home';
+  }),
+);
 
 vi.mock('os', async (importOriginal) => {
   const mockedOs = await importOriginal<typeof os>();
@@ -104,8 +109,7 @@ const mockLogExtensionUninstall = vi.hoisted(() => vi.fn());
 const mockLogExtensionUpdateEvent = vi.hoisted(() => vi.fn());
 const mockLogExtensionDisable = vi.hoisted(() => vi.fn());
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     logExtensionEnable: mockLogExtensionEnable,
@@ -118,16 +122,18 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
     ExtensionInstallEvent: vi.fn(),
     ExtensionUninstallEvent: vi.fn(),
     ExtensionDisableEvent: vi.fn(),
-    KeychainTokenStorage: vi.fn().mockImplementation(() => ({
-      getSecret: vi.fn(),
-      setSecret: vi.fn(),
-      deleteSecret: vi.fn(),
-      listSecrets: vi.fn(),
-      isAvailable: vi.fn().mockResolvedValue(true),
-    })),
-    loadAgentsFromDirectory: vi
-      .fn()
-      .mockImplementation(async () => ({ agents: [], errors: [] })),
+    KeychainTokenStorage: vi.fn().mockImplementation(function () {
+      return {
+        getSecret: vi.fn(),
+        setSecret: vi.fn(),
+        deleteSecret: vi.fn(),
+        listSecrets: vi.fn(),
+        isAvailable: vi.fn().mockResolvedValue(true),
+      };
+    }),
+    loadAgentsFromDirectory: vi.fn().mockImplementation(async function () {
+      return { agents: [], errors: [] };
+    }),
     loadSkillsFromDir: vi.fn().mockImplementation(async () => []),
   };
 });
@@ -183,7 +189,9 @@ describe('extension tests', () => {
     };
     (
       KeychainTokenStorage as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation(() => mockKeychainStorage);
+    ).mockImplementation(function () {
+      return mockKeychainStorage;
+    });
     vi.mocked(loadAgentsFromDirectory).mockResolvedValue({
       agents: [],
       errors: [],

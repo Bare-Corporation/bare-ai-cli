@@ -17,11 +17,7 @@ import {
 import { ConfigContext } from '../contexts/ConfigContext.js';
 import { SettingsContext } from '../contexts/SettingsContext.js';
 import { createMockSettings } from '../../test-utils/settings.js';
-import {
-  ApprovalMode,
-  tokenLimit,
-  CoreToolCallStatus,
-} from '@bare-ai/core';
+import { ApprovalMode, tokenLimit, CoreToolCallStatus } from '@bare-ai/core';
 import type { Config } from '@bare-ai/core';
 import { StreamingState } from '../types.js';
 import { TransientMessageType } from '../../utils/events.js';
@@ -31,17 +27,21 @@ import type { TextBuffer } from './shared/text-buffer.js';
 
 // Mock VimModeContext hook
 vi.mock('../contexts/VimModeContext.js', () => ({
-  useVimMode: vi.fn(() => ({
-    vimEnabled: false,
-    vimMode: 'INSERT',
-  })),
+  useVimMode: vi.fn(function () {
+    return {
+      vimEnabled: false,
+      vimMode: 'INSERT',
+    };
+  }),
 }));
 
 vi.mock('../hooks/useTerminalSize.js', () => ({
-  useTerminalSize: vi.fn(() => ({
-    columns: 100,
-    rows: 24,
-  })),
+  useTerminalSize: vi.fn(function () {
+    return {
+      columns: 100,
+      rows: 24,
+    };
+  }),
 }));
 
 const composerTestControls = vi.hoisted(() => ({
@@ -111,11 +111,13 @@ vi.mock('./InputPrompt.js', () => ({
 
     return <Text>InputPrompt: {placeholder}</Text>;
   },
-  calculatePromptWidths: vi.fn(() => ({
-    inputWidth: 80,
-    suggestionsWidth: 40,
-    containerWidth: 84,
-  })),
+  calculatePromptWidths: vi.fn(function () {
+    return {
+      inputWidth: 80,
+      suggestionsWidth: 40,
+      containerWidth: 84,
+    };
+  }),
 }));
 
 vi.mock('../hooks/useAlternateBuffer.js', () => ({
@@ -219,12 +221,24 @@ const createMockUIActions = (): UIActions =>
 
 const createMockConfig = (overrides = {}): Config =>
   ({
-    getModel: vi.fn(() => 'gemini-1.5-pro'),
-    getTargetDir: vi.fn(() => '/test/dir'),
-    getDebugMode: vi.fn(() => false),
-    getAccessibility: vi.fn(() => ({})),
-    getMcpServers: vi.fn(() => ({})),
-    isPlanEnabled: vi.fn(() => true),
+    getModel: vi.fn(function () {
+      return 'gemini-1.5-pro';
+    }),
+    getTargetDir: vi.fn(function () {
+      return '/test/dir';
+    }),
+    getDebugMode: vi.fn(function () {
+      return false;
+    }),
+    getAccessibility: vi.fn(function () {
+      return {};
+    }),
+    getMcpServers: vi.fn(function () {
+      return {};
+    }),
+    isPlanEnabled: vi.fn(function () {
+      return true;
+    }),
     getToolRegistry: () => ({
       getTool: vi.fn(),
     }),
@@ -349,9 +363,15 @@ describe('Composer', () => {
         },
       });
       const config = createMockConfig({
-        getModel: vi.fn(() => 'gemini-1.5-flash'),
-        getTargetDir: vi.fn(() => '/project/path'),
-        getDebugMode: vi.fn(() => true),
+        getModel: vi.fn(function () {
+          return 'gemini-1.5-flash';
+        }),
+        getTargetDir: vi.fn(function () {
+          return '/project/path';
+        }),
+        getDebugMode: vi.fn(function () {
+          return true;
+        }),
       });
       const settings = createMockSettings({
         ui: {

@@ -44,10 +44,12 @@ function createMockDeps(
     getMaxSessionTurns: vi.fn().mockReturnValue(-1),
     getModel: vi.fn().mockReturnValue('gemini-2.5-pro'),
     getGeminiClient: vi.fn().mockReturnValue(mockClient),
-    getMessageBus: vi.fn().mockImplementation(() => ({
-      subscribe: vi.fn(),
-      unsubscribe: vi.fn(),
-    })),
+    getMessageBus: vi.fn().mockImplementation(function () {
+      return {
+        subscribe: vi.fn(),
+        unsubscribe: vi.fn(),
+      };
+    }),
   };
 
   return {

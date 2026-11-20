@@ -1,9 +1,9 @@
-# Gemini CLI core
+# Bare AI CLI core
 
-Gemini CLI's core package (`packages/core`) is the backend portion of Gemini
+Bare AI CLI's core package (`packages/core`) is the backend portion of Gemini
 CLI, handling communication with the Gemini API, managing tools, and processing
-requests sent from `packages/cli`. For a general overview of Gemini CLI, see the
-[main documentation page](../index.md).
+requests sent from `packages/cli`. For a general overview of Bare AI CLI, see
+the [main documentation page](../index.md).
 
 ## Navigating this section
 
@@ -20,7 +20,7 @@ requests sent from `packages/cli`. For a general overview of Gemini CLI, see the
 
 ## Role of the core
 
-While the `packages/cli` portion of Gemini CLI provides the user interface,
+While the `packages/cli` portion of Bare AI CLI provides the user interface,
 `packages/core` is responsible for:
 
 - **Gemini API interaction:** Securely communicating with the Google Gemini API,
@@ -65,7 +65,7 @@ You can find the token limits for each model in the
 
 ## Model fallback
 
-Gemini CLI includes a model fallback mechanism to ensure that you can continue
+Bare AI CLI includes a model fallback mechanism to ensure that you can continue
 to use the CLI even if the default "pro" model is rate-limited.
 
 If you are using the default "pro" model and the CLI detects that you are being
@@ -85,9 +85,9 @@ tools that need to access files.
 ## Memory discovery service
 
 The memory discovery service is responsible for finding and loading the
-`BARE_AI.md` files that provide context to the model. It searches for these files
-in a hierarchical manner, starting from the current working directory and moving
-up to the project root and the user's home directory. It also searches in
+`BARE_AI.md` files that provide context to the model. It searches for these
+files in a hierarchical manner, starting from the current working directory and
+moving up to the project root and the user's home directory. It also searches in
 subdirectories.
 
 This lets you have global, project-level, and component-level context files,

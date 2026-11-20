@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,7 +13,7 @@
 import { type FunctionDeclaration } from '@google/genai';
 import * as os from 'node:os';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { zodSchemaToJsonSchema } from '../../utils/zodJsonSchema.js';
 import {
   SHELL_TOOL_NAME,
   EXIT_PLAN_MODE_TOOL_NAME,
@@ -210,7 +211,7 @@ export function getActivateSkillDeclaration(
   return {
     name: ACTIVATE_SKILL_TOOL_NAME,
     description: `Activates a specialized agent skill by name${availableSkillsHint}. Returns the skill's instructions wrapped in \`<activated_skill>\` tags. These provide specialized guidance for the current task. Use this when you identify a task that matches a skill's description. ONLY use names exactly as they appear in the \`<available_skills>\` section.`,
-    parametersJsonSchema: zodToJsonSchema(schema),
+    parametersJsonSchema: zodSchemaToJsonSchema(schema),
   };
 }
 

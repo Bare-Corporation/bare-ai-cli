@@ -20,9 +20,8 @@ vi.mock('../../config/extensions/consent.js', () => ({
 }));
 
 const { debugLogger, emitConsoleLog } = await vi.hoisted(async () => {
-  const { createMockDebugLogger } = await import(
-    '../../test-utils/mockDebugLogger.js'
-  );
+  const { createMockDebugLogger } =
+    await import('../../test-utils/mockDebugLogger.js');
   return createMockDebugLogger({ stripAnsi: true });
 });
 
@@ -38,7 +37,9 @@ import { handleInstall, installCommand } from './install.js';
 describe('skill install command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
     mockSkillsConsentString.mockResolvedValue('Mock Consent String');
     mockRequestConsentNonInteractive.mockResolvedValue(true);
   });

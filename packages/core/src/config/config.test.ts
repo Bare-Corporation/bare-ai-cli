@@ -90,18 +90,24 @@ vi.mock('../tools/tool-registry', () => {
   ToolRegistryMock.prototype.unregisterTool = vi.fn();
   ToolRegistryMock.prototype.discoverAllTools = vi.fn();
   ToolRegistryMock.prototype.sortTools = vi.fn();
-  ToolRegistryMock.prototype.getAllTools = vi.fn(() => []); // Mock methods if needed
+  ToolRegistryMock.prototype.getAllTools = vi.fn(function () {
+    return [];
+  }); // Mock methods if needed
   ToolRegistryMock.prototype.getTool = vi.fn();
-  ToolRegistryMock.prototype.getFunctionDeclarations = vi.fn(() => []);
+  ToolRegistryMock.prototype.getFunctionDeclarations = vi.fn(function () {
+    return [];
+  });
   return { ToolRegistry: ToolRegistryMock };
 });
 
 vi.mock('../tools/mcp-client-manager.js', () => ({
-  McpClientManager: vi.fn().mockImplementation(() => ({
-    startConfiguredMcpServers: vi.fn(),
-    getMcpInstructions: vi.fn().mockReturnValue('MCP Instructions'),
-    setMainRegistries: vi.fn(),
-  })),
+  McpClientManager: vi.fn().mockImplementation(function () {
+    return {
+      startConfiguredMcpServers: vi.fn(),
+      getMcpInstructions: vi.fn().mockReturnValue('MCP Instructions'),
+      setMainRegistries: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('../utils/memoryDiscovery.js', () => ({
@@ -125,7 +131,9 @@ vi.mock('../tools/read-many-files');
 vi.mock('../tools/memoryTool', () => ({
   MemoryTool: vi.fn(),
   setGeminiMdFilename: vi.fn(),
-  getCurrentGeminiMdFilename: vi.fn(() => 'BARE_AI.md'), // Mock the original filename
+  getCurrentGeminiMdFilename: vi.fn(function () {
+    return 'BARE_AI.md';
+  }), // Mock the original filename
   DEFAULT_CONTEXT_FILENAME: 'BARE_AI.md',
   BARE_AI_DIR: '.gemini',
 }));
@@ -133,13 +141,15 @@ vi.mock('../tools/memoryTool', () => ({
 vi.mock('../core/contentGenerator.js');
 
 vi.mock('../core/client.js', () => ({
-  GeminiClient: vi.fn().mockImplementation(() => ({
-    initialize: vi.fn().mockResolvedValue(undefined),
-    stripThoughtsFromHistory: vi.fn(),
-    isInitialized: vi.fn().mockReturnValue(false),
-    setTools: vi.fn().mockResolvedValue(undefined),
-    updateSystemInstruction: vi.fn(),
-  })),
+  GeminiClient: vi.fn().mockImplementation(function () {
+    return {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      stripThoughtsFromHistory: vi.fn(),
+      isInitialized: vi.fn().mockReturnValue(false),
+      setTools: vi.fn().mockResolvedValue(undefined),
+      updateSystemInstruction: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('../telemetry/index.js', async (importOriginal) => {
@@ -184,8 +194,12 @@ vi.mock('../ide/ide-client.js', () => ({
 vi.mock('../agents/registry.js', () => {
   const AgentRegistryMock = vi.fn();
   AgentRegistryMock.prototype.initialize = vi.fn();
-  AgentRegistryMock.prototype.getAllDefinitions = vi.fn(() => []);
-  AgentRegistryMock.prototype.getAllDiscoveredAgentNames = vi.fn(() => []);
+  AgentRegistryMock.prototype.getAllDefinitions = vi.fn(function () {
+    return [];
+  });
+  AgentRegistryMock.prototype.getAllDiscoveredAgentNames = vi.fn(function () {
+    return [];
+  });
   AgentRegistryMock.prototype.getDefinition = vi.fn();
   return { AgentRegistry: AgentRegistryMock };
 });
@@ -217,13 +231,15 @@ vi.mock('../utils/fetch.js', () => ({
 }));
 
 vi.mock('../services/contextManager.js', () => ({
-  ContextManager: vi.fn().mockImplementation(() => ({
-    refresh: vi.fn(),
-    getGlobalMemory: vi.fn().mockReturnValue(''),
-    getExtensionMemory: vi.fn().mockReturnValue(''),
-    getEnvironmentMemory: vi.fn().mockReturnValue(''),
-    getLoadedPaths: vi.fn().mockReturnValue(new Set()),
-  })),
+  ContextManager: vi.fn().mockImplementation(function () {
+    return {
+      refresh: vi.fn(),
+      getGlobalMemory: vi.fn().mockReturnValue(''),
+      getExtensionMemory: vi.fn().mockReturnValue(''),
+      getEnvironmentMemory: vi.fn().mockReturnValue(''),
+      getLoadedPaths: vi.fn().mockReturnValue(new Set()),
+    };
+  }),
 }));
 
 import { BaseLlmClient } from '../core/baseLlmClient.js';
@@ -402,22 +418,20 @@ describe('Server Config (config.ts)', () => {
         // interactive defaults to false
       });
 
-      const { McpClientManager } = await import(
-        '../tools/mcp-client-manager.js'
-      );
+      const { McpClientManager } =
+        await import('../tools/mcp-client-manager.js');
       let mcpStarted = false;
 
-      vi.mocked(McpClientManager).mockImplementation(
-        () =>
-          ({
-            startConfiguredMcpServers: vi.fn().mockImplementation(async () => {
-              await new Promise((resolve) => setTimeout(resolve, 50));
-              mcpStarted = true;
-            }),
-            getMcpInstructions: vi.fn(),
-            setMainRegistries: vi.fn(),
-          }) as Partial<McpClientManager> as McpClientManager,
-      );
+      vi.mocked(McpClientManager).mockImplementation(function () {
+        return {
+          startConfiguredMcpServers: vi.fn().mockImplementation(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            mcpStarted = true;
+          }),
+          getMcpInstructions: vi.fn(),
+          setMainRegistries: vi.fn(),
+        } as Partial<McpClientManager> as McpClientManager;
+      });
 
       await config.initialize();
 
@@ -432,26 +446,24 @@ describe('Server Config (config.ts)', () => {
         interactive: true,
       });
 
-      const { McpClientManager } = await import(
-        '../tools/mcp-client-manager.js'
-      );
+      const { McpClientManager } =
+        await import('../tools/mcp-client-manager.js');
       let mcpStarted = false;
       let resolveMcp: (value: unknown) => void;
       const mcpPromise = new Promise((resolve) => {
         resolveMcp = resolve;
       });
 
-      (McpClientManager as unknown as Mock).mockImplementation(
-        () =>
-          ({
-            startConfiguredMcpServers: vi.fn().mockImplementation(async () => {
-              await mcpPromise;
-              mcpStarted = true;
-            }),
-            getMcpInstructions: vi.fn(),
-            setMainRegistries: vi.fn(),
-          }) as Partial<McpClientManager> as McpClientManager,
-      );
+      (McpClientManager as unknown as Mock).mockImplementation(function () {
+        return {
+          startConfiguredMcpServers: vi.fn().mockImplementation(async () => {
+            await mcpPromise;
+            mcpStarted = true;
+          }),
+          getMcpInstructions: vi.fn(),
+          setMainRegistries: vi.fn(),
+        } as Partial<McpClientManager> as McpClientManager;
+      });
 
       await config.initialize();
 
@@ -2928,9 +2940,9 @@ describe('Config JIT Initialization', () => {
         .mockReturnValue('Environment Memory\n\nMCP Instructions'),
       getLoadedPaths: vi.fn().mockReturnValue(new Set(['/path/to/BARE_AI.md'])),
     } as unknown as ContextManager;
-    (ContextManager as unknown as Mock).mockImplementation(
-      () => mockContextManager,
-    );
+    (ContextManager as unknown as Mock).mockImplementation(function () {
+      return mockContextManager;
+    });
   });
 
   it('should initialize ContextManager, load memory, and delegate to it when experimentalJitContext is enabled', async () => {

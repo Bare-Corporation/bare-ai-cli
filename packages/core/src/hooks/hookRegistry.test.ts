@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -48,7 +49,9 @@ const { mockTrustedHooksManager, mockCoreEvents } = vi.hoisted(() => ({
 }));
 
 vi.mock('./trustedHooks.js', () => ({
-  TrustedHooksManager: vi.fn(() => mockTrustedHooksManager),
+  TrustedHooksManager: vi.fn(function () {
+    return mockTrustedHooksManager;
+  }),
 }));
 
 vi.mock('../utils/events.js', () => ({

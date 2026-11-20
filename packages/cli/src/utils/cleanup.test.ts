@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,10 +10,12 @@ import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 
 vi.mock('@bare-ai/core', () => ({
-  Storage: vi.fn().mockImplementation(() => ({
-    getProjectTempDir: vi.fn().mockReturnValue('/tmp/project'),
-    initialize: vi.fn().mockResolvedValue(undefined),
-  })),
+  Storage: vi.fn().mockImplementation(function () {
+    return {
+      getProjectTempDir: vi.fn().mockReturnValue('/tmp/project'),
+      initialize: vi.fn().mockResolvedValue(undefined),
+    };
+  }),
   shutdownTelemetry: vi.fn(),
   isTelemetrySdkInitialized: vi.fn().mockReturnValue(false),
   ExitCodes: { SUCCESS: 0 },

@@ -1,6 +1,6 @@
 # Agent Skills
 
-Agent Skills allow you to extend Gemini CLI with specialized expertise,
+Agent Skills allow you to extend Bare AI CLI with specialized expertise,
 procedural workflows, and task-specific resources. Based on the
 [Agent Skills](https://agentskills.io) open standard, a "skill" is a
 self-contained directory that packages instructions and assets into a
@@ -33,7 +33,7 @@ the full instructions and resources required to complete the task using the
 
 ## Skill Discovery Tiers
 
-Gemini CLI discovers skills from three primary locations:
+Bare AI CLI discovers skills from three primary locations:
 
 1.  **Workspace Skills**: Located in `.gemini/skills/` or the `.agents/skills/`
     alias. Workspace skills are typically committed to version control and
@@ -70,45 +70,45 @@ Use the `/skills` slash command to view and manage available expertise:
 
 ### From the Terminal
 
-The `gemini skills` command provides management utilities:
+The `bare skills` command provides management utilities:
 
 ```bash
 # List all discovered skills
-gemini skills list
+bare skills list
 
 # Link agent skills from a local directory via symlink
 # Discovers skills (SKILL.md or */SKILL.md) and creates symlinks in ~/.gemini/skills
 # (or ~/.agents/skills)
-gemini skills link /path/to/my-skills-repo
+bare skills link /path/to/my-skills-repo
 
 # Link to the workspace scope (.gemini/skills or .agents/skills)
-gemini skills link /path/to/my-skills-repo --scope workspace
+bare skills link /path/to/my-skills-repo --scope workspace
 
 # Install a skill from a Git repository, local directory, or zipped skill file (.skill)
 # Uses the user scope by default (~/.gemini/skills or ~/.agents/skills)
-gemini skills install https://github.com/user/repo.git
-gemini skills install /path/to/local/skill
-gemini skills install /path/to/local/my-expertise.skill
+bare skills install https://github.com/user/repo.git
+bare skills install /path/to/local/skill
+bare skills install /path/to/local/my-expertise.skill
 
 # Install a specific skill from a monorepo or subdirectory using --path
-gemini skills install https://github.com/my-org/my-skills.git --path skills/frontend-design
+bare skills install https://github.com/my-org/my-skills.git --path skills/frontend-design
 
 # Install to the workspace scope (.gemini/skills or .agents/skills)
-gemini skills install /path/to/skill --scope workspace
+bare skills install /path/to/skill --scope workspace
 
 # Uninstall a skill by name
-gemini skills uninstall my-expertise --scope workspace
+bare skills uninstall my-expertise --scope workspace
 
 # Enable a skill (globally)
-gemini skills enable my-expertise
+bare skills enable my-expertise
 
 # Disable a skill. Can use --scope to specify workspace or user (defaults to workspace)
-gemini skills disable my-expertise --scope workspace
+bare skills disable my-expertise --scope workspace
 ```
 
 ## How it Works
 
-1.  **Discovery**: At the start of a session, Gemini CLI scans the discovery
+1.  **Discovery**: At the start of a session, Bare AI CLI scans the discovery
     tiers and injects the name and description of all enabled skills into the
     system prompt.
 2.  **Activation**: When Gemini identifies a task matching a skill's

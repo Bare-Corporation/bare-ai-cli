@@ -14,28 +14,32 @@ import { coreEvents } from '../../utils/events.js';
 
 // Mock the MCP SDK
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
-  Client: vi.fn().mockImplementation(() => ({
-    connect: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    listTools: vi.fn().mockResolvedValue({
-      tools: [
-        { name: 'take_snapshot', description: 'Take a snapshot' },
-        { name: 'click', description: 'Click an element' },
-        { name: 'click_at', description: 'Click at coordinates' },
-        { name: 'take_screenshot', description: 'Take a screenshot' },
-      ],
-    }),
-    callTool: vi.fn().mockResolvedValue({
-      content: [{ type: 'text', text: 'Tool result' }],
-    }),
-  })),
+  Client: vi.fn().mockImplementation(function () {
+    return {
+      connect: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn().mockResolvedValue(undefined),
+      listTools: vi.fn().mockResolvedValue({
+        tools: [
+          { name: 'take_snapshot', description: 'Take a snapshot' },
+          { name: 'click', description: 'Click an element' },
+          { name: 'click_at', description: 'Click at coordinates' },
+          { name: 'take_screenshot', description: 'Take a screenshot' },
+        ],
+      }),
+      callTool: vi.fn().mockResolvedValue({
+        content: [{ type: 'text', text: 'Tool result' }],
+      }),
+    };
+  }),
 }));
 
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
-  StdioClientTransport: vi.fn().mockImplementation(() => ({
-    close: vi.fn().mockResolvedValue(undefined),
-    stderr: null,
-  })),
+  StdioClientTransport: vi.fn().mockImplementation(function () {
+    return {
+      close: vi.fn().mockResolvedValue(undefined),
+      stderr: null,
+    };
+  }),
 }));
 
 vi.mock('../../utils/debugLogger.js', () => ({
@@ -113,34 +117,32 @@ describe('BrowserManager', () => {
     });
 
     // Re-setup Client mock after reset
-    vi.mocked(Client).mockImplementation(
-      () =>
-        ({
-          connect: vi.fn().mockResolvedValue(undefined),
-          close: vi.fn().mockResolvedValue(undefined),
-          listTools: vi.fn().mockResolvedValue({
-            tools: [
-              { name: 'take_snapshot', description: 'Take a snapshot' },
-              { name: 'click', description: 'Click an element' },
-              { name: 'click_at', description: 'Click at coordinates' },
-              { name: 'take_screenshot', description: 'Take a screenshot' },
-            ],
-          }),
-          callTool: vi.fn().mockResolvedValue({
-            content: [{ type: 'text', text: 'Tool result' }],
-          }),
-        }) as unknown as InstanceType<typeof Client>,
-    );
+    vi.mocked(Client).mockImplementation(function () {
+      return {
+        connect: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+        listTools: vi.fn().mockResolvedValue({
+          tools: [
+            { name: 'take_snapshot', description: 'Take a snapshot' },
+            { name: 'click', description: 'Click an element' },
+            { name: 'click_at', description: 'Click at coordinates' },
+            { name: 'take_screenshot', description: 'Take a screenshot' },
+          ],
+        }),
+        callTool: vi.fn().mockResolvedValue({
+          content: [{ type: 'text', text: 'Tool result' }],
+        }),
+      } as unknown as InstanceType<typeof Client>;
+    });
 
-    vi.mocked(StdioClientTransport).mockImplementation(
-      () =>
-        ({
-          close: vi.fn().mockResolvedValue(undefined),
-          stderr: {
-            on: vi.fn(),
-          },
-        }) as unknown as InstanceType<typeof StdioClientTransport>,
-    );
+    vi.mocked(StdioClientTransport).mockImplementation(function () {
+      return {
+        close: vi.fn().mockResolvedValue(undefined),
+        stderr: {
+          on: vi.fn(),
+        },
+      } as unknown as InstanceType<typeof StdioClientTransport>;
+    });
   });
 
   afterEach(async () => {
@@ -541,15 +543,14 @@ describe('BrowserManager', () => {
 
     it('should throw actionable error when existing mode connection fails', async () => {
       // Make the Client mock's connect method reject
-      vi.mocked(Client).mockImplementation(
-        () =>
-          ({
-            connect: vi.fn().mockRejectedValue(new Error('Connection refused')),
-            close: vi.fn().mockResolvedValue(undefined),
-            listTools: vi.fn(),
-            callTool: vi.fn(),
-          }) as unknown as InstanceType<typeof Client>,
-      );
+      vi.mocked(Client).mockImplementation(function () {
+        return {
+          connect: vi.fn().mockRejectedValue(new Error('Connection refused')),
+          close: vi.fn().mockResolvedValue(undefined),
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+        } as unknown as InstanceType<typeof Client>;
+      });
 
       const existingConfig = makeFakeConfig({
         agents: {
@@ -589,21 +590,20 @@ describe('BrowserManager', () => {
     });
 
     it('should throw profile-lock remediation when persistent mode hits "already running"', async () => {
-      vi.mocked(Client).mockImplementation(
-        () =>
-          ({
-            connect: vi
-              .fn()
-              .mockRejectedValue(
-                new Error(
-                  'Could not connect to Chrome. The browser is already running for the current profile.',
-                ),
+      vi.mocked(Client).mockImplementation(function () {
+        return {
+          connect: vi
+            .fn()
+            .mockRejectedValue(
+              new Error(
+                'Could not connect to Chrome. The browser is already running for the current profile.',
               ),
-            close: vi.fn().mockResolvedValue(undefined),
-            listTools: vi.fn(),
-            callTool: vi.fn(),
-          }) as unknown as InstanceType<typeof Client>,
-      );
+            ),
+          close: vi.fn().mockResolvedValue(undefined),
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+        } as unknown as InstanceType<typeof Client>;
+      });
 
       // Default config = persistent mode
       const manager = new BrowserManager(mockConfig);
@@ -630,19 +630,18 @@ describe('BrowserManager', () => {
     });
 
     it('should throw timeout-specific remediation for persistent mode', async () => {
-      vi.mocked(Client).mockImplementation(
-        () =>
-          ({
-            connect: vi
-              .fn()
-              .mockRejectedValue(
-                new Error('Timed out connecting to chrome-devtools-mcp'),
-              ),
-            close: vi.fn().mockResolvedValue(undefined),
-            listTools: vi.fn(),
-            callTool: vi.fn(),
-          }) as unknown as InstanceType<typeof Client>,
-      );
+      vi.mocked(Client).mockImplementation(function () {
+        return {
+          connect: vi
+            .fn()
+            .mockRejectedValue(
+              new Error('Timed out connecting to chrome-devtools-mcp'),
+            ),
+          close: vi.fn().mockResolvedValue(undefined),
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+        } as unknown as InstanceType<typeof Client>;
+      });
 
       const manager = new BrowserManager(mockConfig);
 
@@ -663,17 +662,16 @@ describe('BrowserManager', () => {
     });
 
     it('should include sessionMode in generic fallback error', async () => {
-      vi.mocked(Client).mockImplementation(
-        () =>
-          ({
-            connect: vi
-              .fn()
-              .mockRejectedValue(new Error('Some unexpected error')),
-            close: vi.fn().mockResolvedValue(undefined),
-            listTools: vi.fn(),
-            callTool: vi.fn(),
-          }) as unknown as InstanceType<typeof Client>,
-      );
+      vi.mocked(Client).mockImplementation(function () {
+        return {
+          connect: vi
+            .fn()
+            .mockRejectedValue(new Error('Some unexpected error')),
+          close: vi.fn().mockResolvedValue(undefined),
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+        } as unknown as InstanceType<typeof Client>;
+      });
 
       const manager = new BrowserManager(mockConfig);
 
@@ -694,17 +692,16 @@ describe('BrowserManager', () => {
     });
 
     it('should classify non-connection-refused errors in existing mode as unknown', async () => {
-      vi.mocked(Client).mockImplementation(
-        () =>
-          ({
-            connect: vi
-              .fn()
-              .mockRejectedValue(new Error('Some unexpected error')),
-            close: vi.fn().mockResolvedValue(undefined),
-            listTools: vi.fn(),
-            callTool: vi.fn(),
-          }) as unknown as InstanceType<typeof Client>,
-      );
+      vi.mocked(Client).mockImplementation(function () {
+        return {
+          connect: vi
+            .fn()
+            .mockRejectedValue(new Error('Some unexpected error')),
+          close: vi.fn().mockResolvedValue(undefined),
+          listTools: vi.fn(),
+          callTool: vi.fn(),
+        } as unknown as InstanceType<typeof Client>;
+      });
 
       const existingConfig = makeFakeConfig({
         agents: {
@@ -1209,18 +1206,17 @@ describe('BrowserManager', () => {
     });
 
     it('should NOT re-inject overlay when tool returns an error result', async () => {
-      vi.mocked(Client).mockImplementation(
-        () =>
-          ({
-            connect: vi.fn().mockResolvedValue(undefined),
-            close: vi.fn().mockResolvedValue(undefined),
-            listTools: vi.fn().mockResolvedValue({ tools: [] }),
-            callTool: vi.fn().mockResolvedValue({
-              content: [{ type: 'text', text: 'Element not found' }],
-              isError: true,
-            }),
-          }) as unknown as InstanceType<typeof Client>,
-      );
+      vi.mocked(Client).mockImplementation(function () {
+        return {
+          connect: vi.fn().mockResolvedValue(undefined),
+          close: vi.fn().mockResolvedValue(undefined),
+          listTools: vi.fn().mockResolvedValue({ tools: [] }),
+          callTool: vi.fn().mockResolvedValue({
+            content: [{ type: 'text', text: 'Element not found' }],
+            isError: true,
+          }),
+        } as unknown as InstanceType<typeof Client>;
+      });
 
       const manager = new BrowserManager(mockConfig);
       await manager.callTool('click', { uid: 'bad' });

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,16 +11,12 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { ExtensionManager } from './extension-manager.js';
 import { createTestMergedSettings } from './settings.js';
-import {
-  loadAgentsFromDirectory,
-  loadSkillsFromDir,
-} from '@bare-ai/core';
+import { loadAgentsFromDirectory, loadSkillsFromDir } from '@bare-ai/core';
 
 let currentTempHome = '';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: () => currentTempHome,
@@ -28,10 +25,12 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
       error: vi.fn(),
       warn: vi.fn(),
     },
-    loadAgentsFromDirectory: vi.fn().mockImplementation(async () => ({
-      agents: [],
-      errors: [],
-    })),
+    loadAgentsFromDirectory: vi.fn().mockImplementation(async function () {
+      return {
+        agents: [],
+        errors: [],
+      };
+    }),
     loadSkillsFromDir: vi.fn().mockImplementation(async () => []),
   };
 });

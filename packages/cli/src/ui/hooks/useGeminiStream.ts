@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -89,7 +90,9 @@ import path from 'node:path';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import { useKeypress } from './useKeypress.js';
 import type { LoadedSettings } from '../../config/settings.js';
-function isTopicTool(toolName: string): boolean { return toolName === "topic"; }
+function isTopicTool(toolName: string): boolean {
+  return toolName === 'topic';
+}
 
 type ToolResponseWithParts = ToolCallResponseInfo & {
   llmContent?: PartListUnion;
@@ -232,7 +235,7 @@ export const useGeminiStream = (
     useStateAndRef<boolean>(true);
   const processedMemoryToolsRef = useRef<Set<string>>(new Set());
   const { startNewPrompt, getPromptCount } = useSessionStats();
-  const logger = useLogger(config as any);
+  const logger = useLogger(config.storage);
   const gitService = useMemo(() => {
     if (!config.getProjectRoot()) {
       return;
@@ -324,15 +327,13 @@ export const useGeminiStream = (
     return (executingShellTool as TrackedExecutingToolCall | undefined)?.pid;
   }, [toolCalls]);
 
-  const onExec = useCallback(
-    async (done: Promise<void>) => {
-      setIsResponding(true);
-      await done;
-      setIsResponding(false);
-    },
-    [setIsResponding],
-  );
-
+  // The shell surface is a typed placeholder that makes every member a safe
+  // no-op; see shellCommandProcessor.ts for why, and for what a real wiring
+  // still needs. This call site previously passed addItem, setPendingHistoryItem,
+  // an onExec wrapper around setIsResponding, onDebugMessage, config,
+  // geminiClient, setShellInputFocused, terminalWidth, terminalHeight and
+  // activeToolPtyId to a stub that ignored all ten. The onExec wrapper existed
+  // only for that call, so it is removed with the arguments.
   const {
     handleShellCommand,
     activeShellPtyId,
@@ -344,18 +345,7 @@ export const useGeminiStream = (
     registerBackgroundShell,
     dismissBackgroundShell,
     backgroundShells,
-  } = useShellCommandProcessor(
-    addItem,
-    setPendingHistoryItem,
-    onExec,
-    onDebugMessage,
-    config,
-    geminiClient,
-    setShellInputFocused,
-    terminalWidth,
-    terminalHeight,
-    activeToolPtyId,
-  );
+  } = useShellCommandProcessor();
 
   const streamingState = useMemo(
     () => calculateStreamingState(isResponding, toolCalls),
@@ -373,13 +363,29 @@ export const useGeminiStream = (
         setIsFirstToolInGroup(true);
       }
     } else if (streamingState === StreamingState.Idle) {
-      // Clear when idle to be ready for next turn
-      setPushedToolCallIds(new Set());
-      setIsFirstToolInGroup(true);
+      // Clear when idle to be ready for next turn.
+      //
+      // WHY the guards: these two setters used to run unconditionally on every
+      // pass, and setPushedToolCallIds always received a NEW Set (new identity).
+      // While the hook rests in Idle with no tool calls - the normal resting
+      // state - any change in this effect's dependency identities re-ran it,
+      // which wrote state again, which re-rendered, which re-armed it. That is
+      // an unbounded render loop; it is the heap-limit crash tracked in
+      // td-a0066a95cf8c, and it stayed hidden only because the tests mocked
+      // state in a way that no render could observe. Writing only when the ref
+      // says there is something to clear makes a settled hook perform no state
+      // write at all, so the loop cannot start.
+      if (pushedToolCallIdsRef.current.size > 0) {
+        setPushedToolCallIds(new Set());
+      }
+      if (!isFirstToolInGroupRef.current) {
+        setIsFirstToolInGroup(true);
+      }
     }
   }, [
     toolCalls,
     pushedToolCallIdsRef,
+    isFirstToolInGroupRef,
     setPushedToolCallIds,
     setIsFirstToolInGroup,
     streamingState,
@@ -1059,8 +1065,10 @@ export const useGeminiStream = (
           'Response stopped due to unexpected tool call.',
         [FinishReason.IMAGE_PROHIBITED_CONTENT]:
           'Response stopped due to prohibited image content.',
-        [FinishReason.IMAGE_RECITATION]: 'Response stopped due to image recitation.',
-        [FinishReason.IMAGE_OTHER]: 'Response stopped due to other image reasons.',
+        [FinishReason.IMAGE_RECITATION]:
+          'Response stopped due to image recitation.',
+        [FinishReason.IMAGE_OTHER]:
+          'Response stopped due to other image reasons.',
         [FinishReason.NO_IMAGE]:
           'Response stopped because no image was generated.',
       };
@@ -1112,13 +1120,23 @@ export const useGeminiStream = (
   );
 
   const handleMaxSessionTurnsEvent = useCallback(
-    () =>
-      addItem({
-        type: 'info',
-        text:
-          `The session has reached the maximum number of turns: ${config.getMaxSessionTurns()}. ` +
-          `Please update this limit in your setting.json file.`,
-      }),
+    (value?: { source: 'session_limit' | 'turn_cap'; limit: number }) => {
+      // Two independent circuit breakers report through this one event, and
+      // only one of them is user-configurable. Naming the wrong one sends the
+      // user to a setting that was never the cause, so the message is chosen
+      // from the payload rather than assumed.
+      const text =
+        value?.source === 'turn_cap'
+          ? `Agent loop stopped: the per-prompt tool-round limit of ` +
+            `${value.limit} was reached, so the agent will not continue on its ` +
+            `own. Raise model.maxToolIterations in settings (default 32, max ` +
+            `256) or send a message to resume.`
+          : `The session has reached the maximum number of turns: ` +
+            `${value?.limit ?? config.getMaxSessionTurns()}. ` +
+            `The agent loop has stopped — send a message to resume, or update ` +
+            `this limit in your settings.json file.`;
+      addItem({ type: 'info', text });
+    },
     [addItem, config],
   );
 
@@ -1249,6 +1267,10 @@ export const useGeminiStream = (
       signal: AbortSignal,
     ): Promise<StreamProcessingStatus> => {
       let geminiMessageBuffer = '';
+      // Tracks whether any event legitimately ended this turn. If the stream
+      // finishes with this still false, the API connection was cut mid-response
+      // and the loop would otherwise drop back to the prompt in silence.
+      let sawEndOfTurn = false;
       const toolCallRequests: ToolCallRequestInfo[] = [];
       for await (const event of stream) {
         if (
@@ -1304,15 +1326,18 @@ export const useGeminiStream = (
             // do nothing
             break;
           case ServerGeminiEventType.MaxSessionTurns:
-            handleMaxSessionTurnsEvent();
+            sawEndOfTurn = true;
+            handleMaxSessionTurnsEvent(event.value);
             break;
           case ServerGeminiEventType.ContextWindowWillOverflow:
+            sawEndOfTurn = true;
             handleContextWindowWillOverflowEvent(
               event.value.estimatedRequestTokenCount,
               event.value.remainingTokenCount,
             );
             break;
           case ServerGeminiEventType.Finished:
+            sawEndOfTurn = true;
             handleFinishedEvent(event, userMessageTimestamp);
             break;
           case ServerGeminiEventType.Citation:
@@ -1327,8 +1352,34 @@ export const useGeminiStream = (
             loopDetectedRef.current = true;
             break;
           case ServerGeminiEventType.Retry:
+            // The provider is retrying in-stream. Say so, so a long pause is
+            // not read as a hang; the loop continues on its own afterwards.
+            setLastGeminiActivityTime(Date.now());
+            addItem(
+              {
+                type: MessageType.WARNING,
+                text:
+                  'The model request was interrupted and is being retried. ' +
+                  'The loop continues automatically once the provider responds.',
+              },
+              userMessageTimestamp,
+            );
+            break;
           case ServerGeminiEventType.InvalidStream:
-            // Will add the missing logic later
+            // A stream this broken yields no usable turn and nothing downstream
+            // recovers from it, so mark the turn terminal and say why.
+            sawEndOfTurn = true;
+            addItem(
+              {
+                type: MessageType.WARNING,
+                text:
+                  'The model response stream ended unexpectedly (invalid stream ' +
+                  '/ connection terminated), so this turn was discarded. The ' +
+                  'agent loop has stopped and will not resume on its own; send a ' +
+                  'message to continue.',
+              },
+              userMessageTimestamp,
+            );
             break;
           default: {
             // enforces exhaustive switch-case
@@ -1343,6 +1394,21 @@ export const useGeminiStream = (
           setPendingHistoryItem(null);
         }
         await scheduleToolCalls(toolCallRequests, signal);
+      } else if (!sawEndOfTurn && !signal.aborted) {
+        // The generator ended without a terminal event and without a tool call
+        // to drive the next turn, i.e. the API connection was cut mid-response.
+        // Left silent, the loop simply returns to the prompt and the user has
+        // to guess that they must type something to resume.
+        addItem(
+          {
+            type: MessageType.WARNING,
+            text:
+              'The model response ended before it completed (the API stream was ' +
+              'closed early), so this turn is unfinished. The agent loop has ' +
+              'stopped; send a message to resume.',
+          },
+          userMessageTimestamp,
+        );
       }
       return StreamProcessingStatus.Completed;
     },
@@ -1720,6 +1786,55 @@ export const useGeminiStream = (
       }
 
       if (geminiTools.length === 0) {
+        // The filter above keeps only terminal calls that carry responseParts.
+        // A terminal call WITHOUT them used to end the loop here in silence,
+        // leaving the user at an idle prompt with no tool response and no
+        // explanation. Collect those calls and feed the failure back instead.
+        const droppedWithoutParts = completedToolCallsFromScheduler.filter(
+          (tc): tc is TrackedCompletedToolCall | TrackedCancelledToolCall => {
+            const isTerminal =
+              tc.status === 'success' ||
+              tc.status === 'error' ||
+              tc.status === 'cancelled';
+            if (!isTerminal || tc.request.isClientInitiated) {
+              return false;
+            }
+            return (
+              (tc as TrackedCompletedToolCall | TrackedCancelledToolCall)
+                .response?.responseParts === undefined
+            );
+          },
+        );
+
+        if (droppedWithoutParts.length === 0) {
+          return;
+        }
+
+        const syntheticResponses: Part[] = droppedWithoutParts.map((tc) => ({
+          functionResponse: {
+            id: tc.request.callId,
+            name: tc.request.originalRequestName ?? tc.request.name,
+            response: {
+              error:
+                `The ${tc.request.name} tool call ended in state ` +
+                `'${tc.status}' without returning a response payload. Treat the ` +
+                `call as failed and try a different approach.`,
+            },
+          },
+        }));
+
+        markToolsAsSubmitted(
+          droppedWithoutParts.map((tc) => tc.request.callId),
+        );
+
+        if (!modelSwitchedFromQuotaError) {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          submitQuery(
+            syntheticResponses,
+            { isContinuation: true },
+            droppedWithoutParts[0].request.prompt_id,
+          );
+        }
         return;
       }
 

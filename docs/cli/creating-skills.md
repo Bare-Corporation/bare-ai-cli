@@ -1,18 +1,18 @@
 # Creating Agent Skills
 
 This guide provides an overview of how to create your own Agent Skills to extend
-the capabilities of Gemini CLI.
+the capabilities of Bare AI CLI.
 
 ## Getting started: The `skill-creator` skill
 
 The recommended way to create a new skill is to use the built-in `skill-creator`
-skill. To use it, ask Gemini CLI to create a new skill for you.
+skill. To use it, ask Bare AI CLI to create a new skill for you.
 
 **Example prompt:**
 
 > "create a new skill called 'code-reviewer'"
 
-Gemini CLI will then use the `skill-creator` to generate the skill:
+Bare AI CLI will then use the `skill-creator` to generate the skill:
 
 1.  Generate a new directory for your skill (for example, `my-new-skill/`).
 2.  Create a `SKILL.md` file with the necessary YAML frontmatter (`name` and

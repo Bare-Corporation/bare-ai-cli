@@ -20,20 +20,26 @@ vi.mock('../confirmation-bus/message-bus.js', () => ({
   MessageBus: vi.fn(),
 }));
 vi.mock('../policy/policy-engine.js', () => ({
-  PolicyEngine: vi.fn().mockImplementation(() => ({
-    getExcludedTools: vi.fn().mockReturnValue(new Set()),
-    getApprovalMode: vi.fn().mockReturnValue('yolo'),
-  })),
+  PolicyEngine: vi.fn().mockImplementation(function () {
+    return {
+      getExcludedTools: vi.fn().mockReturnValue(new Set()),
+      getApprovalMode: vi.fn().mockReturnValue('yolo'),
+    };
+  }),
 }));
 vi.mock('../skills/skillManager.js', () => ({
-  SkillManager: vi.fn().mockImplementation(() => ({
-    setAdminSettings: vi.fn(),
-  })),
+  SkillManager: vi.fn().mockImplementation(function () {
+    return {
+      setAdminSettings: vi.fn(),
+    };
+  }),
 }));
 vi.mock('../agents/registry.js', () => ({
-  AgentRegistry: vi.fn().mockImplementation(() => ({
-    initialize: vi.fn(),
-  })),
+  AgentRegistry: vi.fn().mockImplementation(function () {
+    return {
+      initialize: vi.fn(),
+    };
+  }),
 }));
 vi.mock('../agents/acknowledgedAgents.js', () => ({
   AcknowledgedAgentsService: vi.fn(),

@@ -614,6 +614,15 @@
           "default": -1,
           "type": "number"
         },
+        "maxToolIterations": {
+          "title": "Max Tool Iterations",
+          "description": "Tool-call rounds allowed for one prompt on the fleet endpoint path, before the turn reports the cap. Out-of-range entries are rejected. Default 32.",
+          "markdownDescription": "Tool-call rounds allowed for one prompt on the fleet endpoint path, before the turn reports the cap. Out-of-range entries are rejected. Default 32.\n\n- Category: `Model`\n- Requires restart: `no`\n- Default: `32`",
+          "default": 32,
+          "minimum": 1,
+          "maximum": 256,
+          "type": "number"
+        },
         "summarizeToolOutput": {
           "title": "Summarize Tool Output",
           "description": "Enables or disables summarization of tool output. Configure per-tool token budgets (for example {\"run_shell_command\": {\"tokenBudget\": 2000}}). Currently only the run_shell_command tool supports summarization.",

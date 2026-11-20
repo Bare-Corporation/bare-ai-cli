@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,8 +36,12 @@ vi.mock('@bare-ai/core', async () => {
   const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
-    hasValidEditorCommand: vi.fn(() => true),
-    allowEditorTypeInSandbox: vi.fn(() => true),
+    hasValidEditorCommand: vi.fn(function () {
+      return true;
+    }),
+    allowEditorTypeInSandbox: vi.fn(function () {
+      return true;
+    }),
   };
 });
 
