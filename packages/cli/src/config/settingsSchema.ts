@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -121,6 +122,13 @@ export interface SettingDefinition {
    * Optional unit to display after the value (e.g. '%').
    */
   unit?: string;
+  /**
+   * Inclusive bounds for a numeric setting. The settings dialog REJECTS an
+   * out-of-range entry instead of storing it, so a bound here is enforced at
+   * the point of input rather than corrected later.
+   */
+  min?: number;
+  max?: number;
   /**
    * Optional reference identifier for generators that emit a `$ref`.
    */
@@ -962,6 +970,18 @@ const SETTINGS_SCHEMA = {
         description:
           'Maximum number of user/model/tool turns to keep in a session. -1 means unlimited.',
         showInDialog: true,
+      },
+      maxToolIterations: {
+        type: 'number',
+        label: 'Max Tool Iterations',
+        category: 'Model',
+        requiresRestart: false,
+        default: 32,
+        description:
+          'Tool-call rounds allowed for one prompt on the fleet endpoint path, before the turn reports the cap. Out-of-range entries are rejected. Default 32.',
+        showInDialog: true,
+        min: 1,
+        max: 256,
       },
       summarizeToolOutput: {
         type: 'object',

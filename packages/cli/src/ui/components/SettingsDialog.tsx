@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -320,7 +321,10 @@ export function SettingsDialog({
     (key: string, newValue: string, _item: SettingsDialogItem) => {
       const definition = getSettingDefinition(key);
       const type: SettingsType = definition?.type ?? 'string';
-      const parsed = parseEditedValue(type, newValue);
+      const parsed = parseEditedValue(type, newValue, {
+        min: definition?.min,
+        max: definition?.max,
+      });
 
       if (parsed === null) {
         return;

@@ -54,11 +54,11 @@ const nameSchema = z
 const mcpServerSchema = z.object({
   command: z.string().optional(),
   args: z.array(z.string()).optional(),
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
   cwd: z.string().optional(),
   url: z.string().optional(),
   http_url: z.string().optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
   tcp: z.string().optional(),
   type: z.enum(['sse', 'http']).optional(),
   timeout: z.number().optional(),
@@ -102,7 +102,7 @@ const localAgentSchema = z
           ),
       )
       .optional(),
-    mcp_servers: z.record(mcpServerSchema).optional(),
+    mcp_servers: z.record(z.string(), mcpServerSchema).optional(),
     model: z.string().optional(),
     temperature: z.number().optional(),
     max_turns: z.number().int().positive().optional(),
@@ -287,7 +287,7 @@ function formatZodError(
     issues.flatMap((i) => {
       // Handle union errors specifically to give better context
       if (i.code === z.ZodIssueCode.invalid_union) {
-        return i.unionErrors.flatMap((unionError, index) => {
+        return i.errors.flatMap((unionIssues, index) => {
           const label = unionPrefix
             ? unionPrefix
             : ((agentUnionOptions[index] as { label?: string })?.label ??
@@ -296,7 +296,7 @@ function formatZodError(
           if (intendedKind === 'local' && label === 'Remote Agent') return [];
           if (intendedKind === 'remote' && label === 'Local Agent') return [];
 
-          return formatIssues(unionError.issues, label);
+          return formatIssues(unionIssues, label);
         });
       }
       const prefix = unionPrefix ? `(${unionPrefix}) ` : '';

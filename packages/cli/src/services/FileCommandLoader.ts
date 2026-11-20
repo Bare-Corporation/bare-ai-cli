@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -48,8 +49,10 @@ interface CommandDirectory {
  */
 const TomlCommandDefSchema = z.object({
   prompt: z.string({
-    required_error: "The 'prompt' field is required.",
-    invalid_type_error: "The 'prompt' field must be a string.",
+    error: (issue) =>
+      issue.input === undefined
+        ? "The 'prompt' field is required."
+        : "The 'prompt' field must be a string.",
   }),
   description: z.string().optional(),
 });

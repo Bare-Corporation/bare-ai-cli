@@ -1,6 +1,6 @@
 # Auto Memory
 
-Auto Memory is an experimental feature that mines your past Gemini CLI sessions
+Auto Memory is an experimental feature that mines your past Bare AI CLI sessions
 in the background and turns recurring workflows into reusable
 [Agent Skills](./skills.md). You review, accept, or discard each extracted skill
 before it becomes available to future sessions.
@@ -11,7 +11,7 @@ before it becomes available to future sessions.
 
 ## Overview
 
-Every session you run with Gemini CLI is recorded locally as a transcript. Auto
+Every session you run with Bare AI CLI is recorded locally as a transcript. Auto
 Memory scans those transcripts for procedural patterns that recur across
 sessions, then drafts each pattern as a `SKILL.md` file in a project-local
 inbox. You inspect the draft, decide whether it captures real expertise, and
@@ -31,7 +31,7 @@ Auto Memory complements—but does not replace—the
 
 ## Prerequisites
 
-- Gemini CLI installed and authenticated.
+- Bare AI CLI installed and authenticated.
 - At least 10 user messages across recent, idle sessions in the project. Auto
   Memory ignores active or trivial sessions.
 
@@ -53,7 +53,7 @@ Auto Memory is off by default. Enable it in your settings file:
     }
     ```
 
-3.  Restart Gemini CLI. The flag requires a restart because the extraction
+3.  Restart Bare AI CLI. The flag requires a restart because the extraction
     service starts during session boot.
 
 ## How Auto Memory works
@@ -76,7 +76,7 @@ UI, consume your interactive turns, or surface tool prompts.
     inbox (for example, an existing global skill), it writes a unified diff
     `.patch` file. Auto Memory dry-runs each patch and discards any that do not
     apply cleanly.
-5.  **Notification.** When a run produces new skills or patches, Gemini CLI
+5.  **Notification.** When a run produces new skills or patches, Bare AI CLI
     surfaces an inline message telling you how many items are waiting.
 
 ## How to review extracted skills
@@ -100,7 +100,7 @@ Promoted skills become discoverable in the next session and follow the standard
 ## How to disable Auto Memory
 
 To turn off background extraction, set the flag back to `false` in your settings
-file and restart Gemini CLI:
+file and restart Bare AI CLI:
 
 ```json
 {

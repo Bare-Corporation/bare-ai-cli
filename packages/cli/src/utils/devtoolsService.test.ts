@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -70,9 +71,15 @@ vi.mock('./activityLogger.js', () => ({
   },
 }));
 
-const mockShouldLaunchBrowser = vi.hoisted(() => vi.fn(() => true));
+const mockShouldLaunchBrowser = vi.hoisted(() =>
+  vi.fn(function () {
+    return true;
+  }),
+);
 const mockOpenBrowserSecurely = vi.hoisted(() =>
-  vi.fn(() => Promise.resolve()),
+  vi.fn(function () {
+    return Promise.resolve();
+  }),
 );
 
 vi.mock('@bare-ai/core', () => ({

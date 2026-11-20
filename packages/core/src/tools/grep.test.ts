@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -25,17 +26,19 @@ vi.mock('../utils/shell-utils.js', () => ({
 
 // Mock the child_process module to control grep/git grep behavior
 vi.mock('child_process', () => ({
-  spawn: vi.fn(() => ({
-    on: (event: string, cb: (...args: unknown[]) => void) => {
-      if (event === 'error' || event === 'close') {
-        // Simulate command not found or error for git grep and system grep
-        // to force it to fall back to JS implementation.
-        setTimeout(() => cb(1), 0); // cb(1) for error/close
-      }
-    },
-    stdout: { on: vi.fn() },
-    stderr: { on: vi.fn() },
-  })),
+  spawn: vi.fn(function () {
+    return {
+      on: (event: string, cb: (...args: unknown[]) => void) => {
+        if (event === 'error' || event === 'close') {
+          // Simulate command not found or error for git grep and system grep
+          // to force it to fall back to JS implementation.
+          setTimeout(() => cb(1), 0); // cb(1) for error/close
+        }
+      },
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+    };
+  }),
 }));
 
 describe('GrepTool', () => {
@@ -202,9 +205,9 @@ describe('GrepTool', () => {
     });
 
     it('should ignore system grep output that escapes base path', async () => {
-      vi.mocked(execStreaming).mockImplementationOnce(() =>
-        createLineGenerator(['..env:1:hello', '../secret.txt:2:leak']),
-      );
+      vi.mocked(execStreaming).mockImplementationOnce(function () {
+        return createLineGenerator(['..env:1:hello', '../secret.txt:2:leak']);
+      });
 
       const params: GrepToolParams = { pattern: 'hello' };
       const invocation = grepTool.build(params) as unknown as {

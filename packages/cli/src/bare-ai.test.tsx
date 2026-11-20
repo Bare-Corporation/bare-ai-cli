@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -64,11 +65,13 @@ vi.mock('./nonInteractiveCli.js', () => ({
 
 const terminalNotificationMocks = vi.hoisted(() => ({
   notifyViaTerminal: vi.fn().mockResolvedValue(true),
-  buildRunEventNotificationContent: vi.fn(() => ({
-    title: 'Session complete',
-    body: 'done',
-    subtitle: 'Run finished',
-  })),
+  buildRunEventNotificationContent: vi.fn(function () {
+    return {
+      title: 'Session complete',
+      body: 'done',
+      subtitle: 'Run finished',
+    };
+  }),
 }));
 vi.mock('./utils/terminalNotifications.js', () => ({
   notifyViaTerminal: terminalNotificationMocks.notifyViaTerminal,
@@ -77,8 +80,7 @@ vi.mock('./utils/terminalNotifications.js', () => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     recordSlowRender: vi.fn(),
@@ -88,41 +90,51 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
         ...(args as Parameters<typeof process.stdout.write>),
       ),
     ),
-    patchStdio: vi.fn(() => () => {}),
-    createWorkingStdio: vi.fn(() => ({
-      stdout: {
-        write: vi.fn((...args) =>
-          process.stdout.write(
-            ...(args as Parameters<typeof process.stdout.write>),
+    patchStdio: vi.fn(function () {
+      return () => {};
+    }),
+    createWorkingStdio: vi.fn(function () {
+      return {
+        stdout: {
+          write: vi.fn((...args) =>
+            process.stdout.write(
+              ...(args as Parameters<typeof process.stdout.write>),
+            ),
           ),
-        ),
-        columns: 80,
-        rows: 24,
-        on: vi.fn(),
-        removeListener: vi.fn(),
-      },
-      stderr: {
-        write: vi.fn(),
-      },
-    })),
+          columns: 80,
+          rows: 24,
+          on: vi.fn(),
+          removeListener: vi.fn(),
+        },
+        stderr: {
+          write: vi.fn(),
+        },
+      };
+    }),
     enableMouseEvents: vi.fn(),
     disableMouseEvents: vi.fn(),
     enterAlternateScreen: vi.fn(),
     disableLineWrapping: vi.fn(),
-    getVersion: vi.fn(() => Promise.resolve('1.0.0')),
+    getVersion: vi.fn(function () {
+      return Promise.resolve('1.0.0');
+    }),
     startupProfiler: {
-      start: vi.fn(() => ({
-        end: vi.fn(),
-      })),
+      start: vi.fn(function () {
+        return {
+          end: vi.fn(),
+        };
+      }),
       flush: vi.fn(),
     },
     ClearcutLogger: {
-      getInstance: vi.fn(() => ({
-        logStartSessionEvent: vi.fn().mockResolvedValue(undefined),
-        logEndSessionEvent: vi.fn().mockResolvedValue(undefined),
-        logUserPrompt: vi.fn(),
-        addDefaultFields: vi.fn((data) => data),
-      })),
+      getInstance: vi.fn(function () {
+        return {
+          logStartSessionEvent: vi.fn().mockResolvedValue(undefined),
+          logEndSessionEvent: vi.fn().mockResolvedValue(undefined),
+          logUserPrompt: vi.fn(),
+          addDefaultFields: vi.fn((data) => data),
+        };
+      }),
       clearInstance: vi.fn(),
     },
     coreEvents: {
@@ -175,11 +187,13 @@ vi.mock('./config/settings.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./config/settings.js')>();
   return {
     ...actual,
-    loadSettings: vi.fn().mockImplementation(() => ({
-      merged: actual.getDefaultsFromSchema(),
-      workspace: { settings: {} },
-      errors: [],
-    })),
+    loadSettings: vi.fn().mockImplementation(function () {
+      return {
+        merged: actual.getDefaultsFromSchema(),
+        workspace: { settings: {} },
+        errors: [],
+      };
+    }),
     saveModelChange: vi.fn(),
     getDefaultsFromSchema: actual.getDefaultsFromSchema,
   };
@@ -199,9 +213,15 @@ vi.mock('./config/config.js', () => ({
     allowedPaths: [],
     networkAccess: false,
   }),
-  isDebugMode: vi.fn(() => false),
-  getRequestedWorktreeName: vi.fn(() => undefined),
-  getWorktreeArg: vi.fn(() => undefined),
+  isDebugMode: vi.fn(function () {
+    return false;
+  }),
+  getRequestedWorktreeName: vi.fn(function () {
+    return undefined;
+  }),
+  getWorktreeArg: vi.fn(function () {
+    return undefined;
+  }),
 }));
 
 vi.mock('read-package-up', () => ({
@@ -215,9 +235,11 @@ vi.mock('read-package-up', () => ({
 }));
 
 vi.mock('update-notifier', () => ({
-  default: vi.fn(() => ({
-    notify: vi.fn(),
-  })),
+  default: vi.fn(function () {
+    return {
+      notify: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('./utils/events.js', async (importOriginal) => {
@@ -233,8 +255,12 @@ vi.mock('./utils/events.js', async (importOriginal) => {
 import * as readStdinModule from './utils/readStdin.js';
 
 vi.mock('./utils/sandbox.js', () => ({
-  sandbox_command: vi.fn(() => ''), // Default to no sandbox command
-  start_sandbox: vi.fn(() => Promise.resolve()), // Mock as an async function that resolves
+  sandbox_command: vi.fn(function () {
+    return '';
+  }), // Default to no sandbox command
+  start_sandbox: vi.fn(function () {
+    return Promise.resolve();
+  }), // Mock as an async function that resolves
 }));
 
 vi.mock('./utils/relaunch.js', () => ({
@@ -824,12 +850,13 @@ describe('gemini.tsx main function kitty protocol', () => {
   it('should handle session selector error', async () => {
     const { SessionSelector } = await import('./utils/sessionUtils.js');
     vi.mocked(SessionSelector).mockImplementation(
-      () =>
-        ({
+      function () {
+        return {
           resolveSession: vi
             .fn()
             .mockRejectedValue(new Error('Session not found')),
-        }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        } as any;
+      }, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
 
     const processExitSpy = vi
@@ -879,17 +906,15 @@ describe('gemini.tsx main function kitty protocol', () => {
   });
 
   it('should start normally with a warning when no sessions found for resume', async () => {
-    const { SessionSelector, SessionError } = await import(
-      './utils/sessionUtils.js'
-    );
-    vi.mocked(SessionSelector).mockImplementation(
-      () =>
-        ({
-          resolveSession: vi
-            .fn()
-            .mockRejectedValue(SessionError.noSessionsFound()),
-        }) as unknown as InstanceType<typeof SessionSelector>,
-    );
+    const { SessionSelector, SessionError } =
+      await import('./utils/sessionUtils.js');
+    vi.mocked(SessionSelector).mockImplementation(function () {
+      return {
+        resolveSession: vi
+          .fn()
+          .mockRejectedValue(SessionError.noSessionsFound()),
+      } as unknown as InstanceType<typeof SessionSelector>;
+    });
 
     const processExitSpy = vi
       .spyOn(process, 'exit')
@@ -936,9 +961,8 @@ describe('gemini.tsx main function kitty protocol', () => {
   });
 
   it.skip('should log error when cleanupExpiredSessions fails', async () => {
-    const { cleanupExpiredSessions } = await import(
-      './utils/sessionCleanup.js'
-    );
+    const { cleanupExpiredSessions } =
+      await import('./utils/sessionCleanup.js');
     vi.mocked(cleanupExpiredSessions).mockRejectedValue(
       new Error('Cleanup failed'),
     );
@@ -1067,7 +1091,9 @@ describe('gemini.tsx main function exit codes', () => {
       throw new MockProcessExitError(code);
     });
     // Mock stderr to avoid cluttering output
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    vi.spyOn(process.stderr, 'write').mockImplementation(function () {
+      return true;
+    });
 
     originalIsTTY = process.stdin.isTTY;
   });
@@ -1166,11 +1192,13 @@ describe('gemini.tsx main function exit codes', () => {
         await importOriginal<typeof import('./utils/sessionUtils.js')>();
       return {
         ...original,
-        SessionSelector: vi.fn().mockImplementation(() => ({
-          resolveSession: vi
-            .fn()
-            .mockRejectedValue(new Error('Session not found')),
-        })),
+        SessionSelector: vi.fn().mockImplementation(function () {
+          return {
+            resolveSession: vi
+              .fn()
+              .mockRejectedValue(new Error('Session not found')),
+          };
+        }),
       };
     });
 
@@ -1244,7 +1272,9 @@ describe('gemini.tsx main function exit codes', () => {
       networkAccess: false,
     } as unknown as CliArgs);
 
-    runNonInteractiveSpy.mockImplementation(() => Promise.resolve());
+    runNonInteractiveSpy.mockImplementation(function () {
+      return Promise.resolve();
+    });
 
     const processExitSpy = vi
       .spyOn(process, 'exit')
@@ -1429,10 +1459,14 @@ describe('startInteractiveUI', () => {
   };
 
   vi.mock('./ui/utils/updateCheck.js', () => ({
-    checkForUpdates: vi.fn(() => Promise.resolve(null)),
+    checkForUpdates: vi.fn(function () {
+      return Promise.resolve(null);
+    }),
   }));
   vi.mock('./utils/cleanup.js', () => ({
-    cleanupCheckpoints: vi.fn(() => Promise.resolve()),
+    cleanupCheckpoints: vi.fn(function () {
+      return Promise.resolve();
+    }),
     registerCleanup: vi.fn(),
     removeCleanup: vi.fn(),
     runExitCleanup: vi.fn(),
@@ -1440,7 +1474,9 @@ describe('startInteractiveUI', () => {
     removeSyncCleanup: vi.fn(),
     registerTelemetryConfig: vi.fn(),
     setupSignalHandlers: vi.fn(),
-    setupTtyCheck: vi.fn(() => vi.fn()),
+    setupTtyCheck: vi.fn(function () {
+      return vi.fn();
+    }),
   }));
 
   beforeEach(() => {
@@ -1606,7 +1642,9 @@ describe('startInteractiveUI', () => {
   ])('$name', async ({ screenReader, expectedCalls }) => {
     const writeSpy = vi
       .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
+      .mockImplementation(function () {
+        return true;
+      });
     const mockConfigWithScreenReader = {
       // eslint-disable-next-line @typescript-eslint/no-misused-spread
       ...mockConfig,

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,7 +36,7 @@ describe('docsCommand', () => {
       throw new Error('docsCommand must have an action.');
     }
 
-    const docsUrl = 'https://docs.bare-erp.com';
+    const docsUrl = 'https://github.com/Bare-Corporation/bare-ai-cli';
 
     await docsCommand.action(mockContext, '');
 
@@ -57,7 +58,7 @@ describe('docsCommand', () => {
 
     // Simulate a sandbox environment
     vi.stubEnv('SANDBOX', 'gemini-sandbox');
-    const docsUrl = 'https://docs.bare-erp.com';
+    const docsUrl = 'https://github.com/Bare-Corporation/bare-ai-cli';
 
     await docsCommand.action(mockContext, '');
 
@@ -80,7 +81,7 @@ describe('docsCommand', () => {
 
     // Simulate the specific 'sandbox-exec' environment
     vi.stubEnv('SANDBOX', 'sandbox-exec');
-    const docsUrl = 'https://docs.bare-erp.com';
+    const docsUrl = 'https://github.com/Bare-Corporation/bare-ai-cli';
 
     await docsCommand.action(mockContext, '');
 

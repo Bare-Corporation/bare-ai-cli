@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,8 +15,7 @@ import { waitFor } from '../../test-utils/async.js';
 
 // Mock the dependencies
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     getCodeAssistServer: vi.fn(),
@@ -95,12 +95,11 @@ describe('usePrivacySettings', () => {
     let deferredGet: { resolve: (val: unknown) => void };
     const mockCodeAssistServer = {
       projectId: 'test-project-id',
-      getCodeAssistGlobalUserSetting: vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            deferredGet = { resolve };
-          }),
-      ),
+      getCodeAssistGlobalUserSetting: vi.fn().mockImplementation(function () {
+        return new Promise((resolve) => {
+          deferredGet = { resolve };
+        });
+      }),
       setCodeAssistGlobalUserSetting: vi.fn().mockResolvedValue({
         freeTierDataCollectionOptin: false,
       }),

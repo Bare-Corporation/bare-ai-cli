@@ -1,8 +1,8 @@
 # Get started with Agent Skills
 
-Agent Skills extend Gemini CLI with specialized expertise. In this guide, you'll
-learn how to create your first skill, bundle custom scripts, and activate them
-during a session.
+Agent Skills extend Bare AI CLI with specialized expertise. In this guide,
+you'll learn how to create your first skill, bundle custom scripts, and activate
+them during a session.
 
 ## How to create a skill
 
@@ -76,9 +76,9 @@ Skills can bundle resources like scripts.
 
 ## How to verify discovery
 
-Gemini CLI automatically discovers skills in the `.gemini/skills` directory. You
-can also use `.agents/skills` as a more generic alternative. Check that it found
-your new skill.
+Bare AI CLI automatically discovers skills in the `.gemini/skills` directory.
+You can also use `.agents/skills` as a more generic alternative. Check that it
+found your new skill.
 
 **Command:** `/skills list`
 

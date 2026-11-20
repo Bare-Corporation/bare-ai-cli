@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,10 +17,12 @@ vi.mock('../contexts/MouseContext.js', async (importOriginal) => {
   const unsubscribe = vi.fn();
   return {
     ...actual,
-    useMouseContext: vi.fn(() => ({
-      subscribe,
-      unsubscribe,
-    })),
+    useMouseContext: vi.fn(function () {
+      return {
+        subscribe,
+        unsubscribe,
+      };
+    }),
   };
 });
 

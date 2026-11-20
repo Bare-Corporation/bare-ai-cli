@@ -13,13 +13,14 @@ import { formatDuration } from '../utils/formatters.js';
 import type { Config } from '@bare-ai/core';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
-    UserAccountManager: vi.fn().mockImplementation(() => ({
-      getCachedGoogleAccount: vi.fn().mockReturnValue('mock@example.com'),
-    })),
+    UserAccountManager: vi.fn().mockImplementation(function () {
+      return {
+        getCachedGoogleAccount: vi.fn().mockReturnValue('mock@example.com'),
+      };
+    }),
     getG1CreditBalance: vi.fn().mockReturnValue(undefined),
   };
 });

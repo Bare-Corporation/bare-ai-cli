@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -54,7 +55,9 @@ describe('migrate command', () => {
 
     // Mock process.cwd()
     originalCwd = process.cwd;
-    process.cwd = vi.fn(() => '/test/project');
+    process.cwd = vi.fn(function () {
+      return '/test/project';
+    });
 
     mockedLoadSettings.mockReturnValue({
       merged: {

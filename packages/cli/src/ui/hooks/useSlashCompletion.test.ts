@@ -1068,15 +1068,14 @@ describe('useSlashCompletion', () => {
 
     it('should call command.completion with an empty string when args start with a space', async () => {
       let deferredCompletion: { resolve: (v: string[]) => void } | null = null;
-      const mockCompletionFn = vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            deferredCompletion = {
-              resolve: () =>
-                resolve(['my-chat-tag-1', 'my-chat-tag-2', 'my-channel']),
-            };
-          }),
-      );
+      const mockCompletionFn = vi.fn().mockImplementation(function () {
+        return new Promise((resolve) => {
+          deferredCompletion = {
+            resolve: () =>
+              resolve(['my-chat-tag-1', 'my-chat-tag-2', 'my-channel']),
+          };
+        });
+      });
 
       const slashCommands = [
         createTestCommand({
@@ -1127,12 +1126,11 @@ describe('useSlashCompletion', () => {
 
     it('should handle completion function that returns null', async () => {
       let deferredCompletion: { resolve: (v: null) => void } | null = null;
-      const mockCompletionFn = vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            deferredCompletion = { resolve: () => resolve(null) };
-          }),
-      );
+      const mockCompletionFn = vi.fn().mockImplementation(function () {
+        return new Promise((resolve) => {
+          deferredCompletion = { resolve: () => resolve(null) };
+        });
+      });
 
       const slashCommands = [
         createTestCommand({

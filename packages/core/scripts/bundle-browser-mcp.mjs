@@ -18,6 +18,18 @@ const excludedToolsFiles = (manifest.exclude || []).map((t) => t.name);
 const emptyModulePlugin = {
   name: 'empty-modules',
   setup(build) {
+    // chrome-devtools-mcp's prebuilt third_party bundle imports two packages that
+    // are neither published to npm nor declared in its package.json, so esbuild
+    // cannot resolve them and the whole build step fails. Measured: 1.9.0, 1.10.0
+    // and 1.10.1 all carry the imports, so no 1.x pin avoids it; only the 0.x line
+    // does. They are reached only from code paths this bundle never takes, so they
+    // resolve to an empty module - the same treatment the excluded tools get below.
+    const phantomOptionalDeps = /^(@toon-format\/toon|@blackwell-systems\/gcf)(\/|$)/;
+    build.onResolve({ filter: phantomOptionalDeps }, (args) => ({
+      path: args.path,
+      namespace: 'empty',
+    }));
+
     if (excludedToolsFiles.length === 0) return;
 
     // Create a filter that matches any of the excluded tools

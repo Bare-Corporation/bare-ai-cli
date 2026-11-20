@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,9 +18,11 @@ import * as os from 'node:os';
 
 // Mock the SessionSummaryService module
 vi.mock('./sessionSummaryService.js', () => ({
-  SessionSummaryService: vi.fn().mockImplementation(() => ({
-    generateSummary: vi.fn(),
-  })),
+  SessionSummaryService: vi.fn().mockImplementation(function () {
+    return {
+      generateSummary: vi.fn(),
+    };
+  }),
 }));
 
 // Mock the BaseLlmClient module
@@ -143,14 +146,15 @@ describe('sessionSummaryUtils', () => {
 
     mockGenerateSummary = vi.fn().mockResolvedValue('Add dark mode to the app');
 
-    const { SessionSummaryService } = await import(
-      './sessionSummaryService.js'
-    );
+    const { SessionSummaryService } =
+      await import('./sessionSummaryService.js');
     (
       SessionSummaryService as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation(() => ({
-      generateSummary: mockGenerateSummary,
-    }));
+    ).mockImplementation(function () {
+      return {
+        generateSummary: mockGenerateSummary,
+      };
+    });
   });
 
   afterEach(async () => {

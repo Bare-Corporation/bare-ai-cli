@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -67,8 +68,12 @@ vi.mock('./text-buffer.js', async (importOriginal) => {
 
   return {
     ...actual,
-    useTextBuffer: vi.fn(() => mockTextBuffer as unknown as TextBuffer),
-    TextBuffer: vi.fn(() => mockTextBuffer as unknown as TextBuffer),
+    useTextBuffer: vi.fn(function () {
+      return mockTextBuffer as unknown as TextBuffer;
+    }),
+    TextBuffer: vi.fn(function () {
+      return mockTextBuffer as unknown as TextBuffer;
+    }),
   };
 });
 

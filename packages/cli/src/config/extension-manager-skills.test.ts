@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,7 +15,11 @@ import { createTestMergedSettings } from './settings.js';
 import { createExtension } from '../test-utils/createExtension.js';
 import { EXTENSIONS_DIRECTORY_NAME } from './extensions/variables.js';
 
-const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/mock-home'));
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/tmp/mock-home';
+  }),
+);
 const mockIntegrityManager = vi.hoisted(() => ({
   verify: vi.fn().mockResolvedValue('verified'),
   store: vi.fn().mockResolvedValue(undefined),
@@ -30,20 +35,18 @@ vi.mock('node:os', async (importOriginal) => {
 
 // Mock @bare-ai/core
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: mockHomedir,
-    ExtensionIntegrityManager: vi
-      .fn()
-      .mockImplementation(() => mockIntegrityManager),
-    loadAgentsFromDirectory: vi
-      .fn()
-      .mockImplementation(async () => ({ agents: [], errors: [] })),
-    loadSkillsFromDir: (
-      await importOriginal<typeof import('@bare-ai/core')>()
-    ).loadSkillsFromDir,
+    ExtensionIntegrityManager: vi.fn().mockImplementation(function () {
+      return mockIntegrityManager;
+    }),
+    loadAgentsFromDirectory: vi.fn().mockImplementation(async function () {
+      return { agents: [], errors: [] };
+    }),
+    loadSkillsFromDir: (await importOriginal<typeof import('@bare-ai/core')>())
+      .loadSkillsFromDir,
   };
 });
 

@@ -15,7 +15,7 @@ Learn more about [session management](./session-management.md).
 > suggestions, or encounter issues:
 >
 > - [Open an issue](https://github.com/google-gemini/gemini-cli/issues/new?template=bug_report.yml) on GitHub.
-> - Use the **/bug** command within Gemini CLI to file an issue.
+> - Use the **/bug** command within Bare AI CLI to file an issue.
 
 Learn more in the official Git worktree
 [documentation](https://git-scm.com/docs/git-worktree).
@@ -47,14 +47,14 @@ CLI in it.
   name (within `.gemini/worktrees/`) and the branch name.
 
   ```bash
-  gemini --worktree feature-search
+  bare --worktree feature-search
   ```
 
 - **Start with a random name:** If you omit the name, Gemini generates a random
   one automatically (for example, `worktree-a1b2c3d4`).
 
   ```bash
-  gemini --worktree
+  bare --worktree
   ```
 
 <!-- prettier-ignore -->
@@ -81,11 +81,11 @@ manually remove the worktree if you no longer need it.
 ## Resuming work in a Git worktree
 
 To resume a session in a worktree, navigate to the worktree directory and start
-Gemini CLI with the `--resume` flag and the session ID:
+Bare AI CLI with the `--resume` flag and the session ID:
 
 ```bash
 cd .gemini/worktrees/feature-search
-gemini --resume <session_id>
+bare --resume <session_id>
 ```
 
 ## Managing Git worktrees manually

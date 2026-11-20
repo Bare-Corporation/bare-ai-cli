@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -49,14 +50,18 @@ vi.mock('../hooks/useFlickerDetector.js', () => ({
 }));
 
 vi.mock('../hooks/useAlternateBuffer.js', () => ({
-  useAlternateBuffer: vi.fn(() => false),
+  useAlternateBuffer: vi.fn(function () {
+    return false;
+  }),
 }));
 
 vi.mock('../contexts/ConfigContext.js', () => ({
   useConfig: () => ({
-    getAccessibility: vi.fn(() => ({
-      enableLoadingPhrases: true,
-    })),
+    getAccessibility: vi.fn(function () {
+      return {
+        enableLoadingPhrases: true,
+      };
+    }),
   }),
 }));
 
