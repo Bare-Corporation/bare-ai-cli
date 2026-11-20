@@ -155,3 +155,7 @@ node sovereign.js -p "Check disk space and CPU temperatures, then write a summar
 
 Apache-2.0. This project is a derivative work of the Google Gemini CLI, modified
 for local, sovereign operation.
+
+Copyright 2025-2026 Bare-AI, a trading name of Consulting Hailing Services LTD.
+The upstream Gemini CLI copyright (2025 Google LLC) is retained under the terms of
+the Apache-2.0 licence. See [NOTICE](./NOTICE) for the full attribution.
