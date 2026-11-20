@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -27,8 +28,7 @@ vi.mock('../utils/historyExportUtils.js', async (importOriginal) => {
 import { exportHistoryToFile } from '../utils/historyExportUtils.js';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     IdeClient: {
@@ -86,6 +86,7 @@ describe('bugCommand', () => {
         agentContext: {
           config: {
             getModel: () => 'gemini-pro',
+            getSessionId: () => 'test-session-id',
             getBugCommand: () => undefined,
             getIdeMode: () => true,
             getContentGeneratorConfig: () => ({ authType: 'oauth-personal' }),
@@ -116,9 +117,38 @@ describe('bugCommand', () => {
 * **Kitty Keyboard Protocol:** Supported
 * **IDE Client:** VSCode
 `;
-    const expectedUrl = `https://github.com/google-gemini/bare-ai-cli/issues/new?template=bug_report.yml&title=A%20test%20bug&info=${encodeURIComponent(expectedInfo)}&problem=A%20test%20bug`;
+    const expectedUrl = `https://github.com/Bare-Corporation/bare-ai-cli/issues/new?template=bug_report.yml&title=A%20test%20bug&info=${encodeURIComponent(expectedInfo)}&problem=A%20test%20bug`;
 
     expect(open).toHaveBeenCalledWith(expectedUrl);
+  });
+
+  it('should read agentContext from services when top-level agentContext is undefined', async () => {
+    const mockContext = createMockCommandContext({
+      agentContext: undefined,
+      services: {
+        agentContext: {
+          config: {
+            getModel: () => 'services-agent-model',
+            getSessionId: () => 'test-session-id',
+            getBugCommand: () => undefined,
+            getIdeMode: () => true,
+            getContentGeneratorConfig: () => ({ authType: 'oauth-personal' }),
+          },
+          geminiClient: {
+            getChat: () => ({
+              getHistory: () => [],
+            }),
+          },
+        },
+      },
+    });
+
+    if (!bugCommand.action) throw new Error('Action is not defined');
+    await bugCommand.action(mockContext, 'A test bug');
+
+    const addItemCall = vi.mocked(mockContext.ui.addItem).mock.calls[0];
+    const messageText = addItemCall[0].text;
+    expect(messageText).toContain('services-agent-model');
   });
 
   it('should export chat history if available', async () => {
@@ -131,6 +161,7 @@ describe('bugCommand', () => {
         agentContext: {
           config: {
             getModel: () => 'gemini-pro',
+            getSessionId: () => 'test-session-id',
             getBugCommand: () => undefined,
             getIdeMode: () => true,
             getContentGeneratorConfig: () => ({ authType: 'vertex-ai' }),
@@ -179,6 +210,7 @@ describe('bugCommand', () => {
         agentContext: {
           config: {
             getModel: () => 'gemini-pro',
+            getSessionId: () => 'test-session-id',
             getBugCommand: () => ({ urlTemplate: customTemplate }),
             getIdeMode: () => true,
             getContentGeneratorConfig: () => ({ authType: 'vertex-ai' }),

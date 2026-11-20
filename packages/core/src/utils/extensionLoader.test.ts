@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -102,10 +103,12 @@ describe('SimpleExtensionLoader', () => {
         isInitialized: () => true,
         setTools: mockGeminiClientSetTools,
       },
-      getGeminiClient: vi.fn(() => ({
-        isInitialized: () => true,
-        setTools: mockGeminiClientSetTools,
-      })),
+      getGeminiClient: vi.fn(function () {
+        return {
+          isInitialized: () => true,
+          setTools: mockGeminiClientSetTools,
+        };
+      }),
       getHookSystem: () => ({
         initialize: mockHookSystemInit,
       }),

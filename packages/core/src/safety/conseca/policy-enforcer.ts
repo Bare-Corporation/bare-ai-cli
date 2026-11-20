@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -40,7 +41,7 @@ Output strictly JSON.
 `;
 
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { zodSchemaToJsonSchema } from '../../utils/zodJsonSchema.js';
 
 const EnforcementResultSchema = z.object({
   decision: z.enum(['allow', 'deny', 'ask_user']),
@@ -91,7 +92,7 @@ export async function enforcePolicy(
         model,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: zodToJsonSchema(EnforcementResultSchema, {
+          responseSchema: zodSchemaToJsonSchema(EnforcementResultSchema, {
             target: 'openApi3',
           }),
         },

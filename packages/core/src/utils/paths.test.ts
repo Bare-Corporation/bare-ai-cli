@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -589,13 +590,13 @@ describe('resolveToRealPath', () => {
       throw err;
     });
 
-    vi.spyOn(fs, 'lstatSync').mockImplementation(
-      () => ({ isSymbolicLink: () => true }) as fs.Stats,
-    );
+    vi.spyOn(fs, 'lstatSync').mockImplementation(function () {
+      return { isSymbolicLink: () => true } as fs.Stats;
+    });
 
-    vi.spyOn(fs, 'readlinkSync').mockImplementation(() =>
-      ['..', 'malicious', 'symlink'].join(path.sep),
-    );
+    vi.spyOn(fs, 'readlinkSync').mockImplementation(function () {
+      return ['..', 'malicious', 'symlink'].join(path.sep);
+    });
 
     expect(() => resolveToRealPath(maliciousPath)).toThrow(
       /Infinite recursion detected/,

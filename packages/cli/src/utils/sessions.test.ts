@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -18,7 +19,9 @@ const mocks = vi.hoisted(() => ({
 // Mock the SessionSelector and ChatRecordingService
 vi.mock('./sessionUtils.js', () => ({
   SessionSelector: vi.fn(),
-  formatRelativeTime: vi.fn(() => 'some time ago'),
+  formatRelativeTime: vi.fn(function () {
+    return 'some time ago';
+  }),
 }));
 
 vi.mock('@bare-ai/core', async () => {
@@ -49,12 +52,11 @@ describe('listSessions', () => {
     mockListSessions = vi.fn();
 
     // Mock SessionSelector constructor to return object with listSessions method
-    vi.mocked(SessionSelector).mockImplementation(
-      () =>
-        ({
-          listSessions: mockListSessions,
-        }) as unknown as InstanceType<typeof SessionSelector>,
-    );
+    vi.mocked(SessionSelector).mockImplementation(function () {
+      return {
+        listSessions: mockListSessions,
+      } as unknown as InstanceType<typeof SessionSelector>;
+    });
   });
 
   afterEach(() => {
@@ -351,20 +353,18 @@ describe('deleteSession', () => {
     mockDeleteSession = vi.fn();
 
     // Mock SessionSelector constructor
-    vi.mocked(SessionSelector).mockImplementation(
-      () =>
-        ({
-          listSessions: mockListSessions,
-        }) as unknown as InstanceType<typeof SessionSelector>,
-    );
+    vi.mocked(SessionSelector).mockImplementation(function () {
+      return {
+        listSessions: mockListSessions,
+      } as unknown as InstanceType<typeof SessionSelector>;
+    });
 
     // Mock ChatRecordingService
-    vi.mocked(ChatRecordingService).mockImplementation(
-      () =>
-        ({
-          deleteSession: mockDeleteSession,
-        }) as unknown as InstanceType<typeof ChatRecordingService>,
-    );
+    vi.mocked(ChatRecordingService).mockImplementation(function () {
+      return {
+        deleteSession: mockDeleteSession,
+      } as unknown as InstanceType<typeof ChatRecordingService>;
+    });
   });
 
   afterEach(() => {

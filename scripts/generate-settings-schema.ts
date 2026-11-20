@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -152,6 +153,12 @@ function buildSettingSchema(
 
   if (definition.default !== undefined) {
     base.default = definition.default as JsonValue;
+  }
+  if (definition.min !== undefined) {
+    base.minimum = definition.min;
+  }
+  if (definition.max !== undefined) {
+    base.maximum = definition.max;
   }
 
   const schemaShape = definition.ref

@@ -14,7 +14,9 @@ import * as os from 'node:os';
 vi.mock('node:crypto', () => {
   let count = 0;
   return {
-    randomUUID: vi.fn(() => `mock-uuid-${++count}`),
+    randomUUID: vi.fn(function () {
+      return `mock-uuid-${++count}`;
+    }),
   };
 });
 

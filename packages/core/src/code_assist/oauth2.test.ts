@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -78,10 +79,12 @@ vi.mock('../utils/browser.js', () => ({
 vi.mock('../utils/stdio.js', () => ({
   writeToStdout: vi.fn(),
   writeToStderr: vi.fn(),
-  createWorkingStdio: vi.fn(() => ({
-    stdout: process.stdout,
-    stderr: process.stderr,
-  })),
+  createWorkingStdio: vi.fn(function () {
+    return {
+      stdout: process.stdout,
+      stderr: process.stderr,
+    };
+  }),
   enterAlternateScreen: vi.fn(),
   exitAlternateScreen: vi.fn(),
   enableLineWrapping: vi.fn(),
@@ -98,11 +101,13 @@ vi.mock('./oauth-credential-storage.js', () => ({
 }));
 
 vi.mock('../mcp/token-storage/hybrid-token-storage.js', () => ({
-  HybridTokenStorage: vi.fn(() => ({
-    getCredentials: vi.fn(),
-    setCredentials: vi.fn(),
-    deleteCredentials: vi.fn(),
-  })),
+  HybridTokenStorage: vi.fn(function () {
+    return {
+      getCredentials: vi.fn(),
+      setCredentials: vi.fn(),
+      deleteCredentials: vi.fn(),
+    };
+  }),
 }));
 
 const mockConfig = {
@@ -176,7 +181,9 @@ describe('oauth2', () => {
           }
         }),
       } as unknown as OAuth2Client;
-      vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+      vi.mocked(OAuth2Client).mockImplementation(function () {
+        return mockOAuth2Client;
+      });
 
       vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
       vi.mocked(open).mockImplementation(
@@ -305,9 +312,9 @@ describe('oauth2', () => {
         getTokenInfo: vi.fn().mockResolvedValue({}),
         on: vi.fn(),
       };
-      vi.mocked(OAuth2Client).mockImplementation(
-        () => mockClient as unknown as OAuth2Client,
-      );
+      vi.mocked(OAuth2Client).mockImplementation(function () {
+        return mockClient as unknown as OAuth2Client;
+      });
 
       const eventPromise = new Promise<void>((resolve) => {
         authEvents.once('post_auth', (creds) => {
@@ -376,7 +383,9 @@ describe('oauth2', () => {
       mockOAuth2Client.setCredentials = vi.fn().mockImplementation((creds) => {
         mockOAuth2Client.credentials = creds;
       });
-      vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+      vi.mocked(OAuth2Client).mockImplementation(function () {
+        return mockOAuth2Client;
+      });
 
       const mockReadline = {
         question: vi.fn((_query, callback) => callback(mockCode)),
@@ -449,7 +458,9 @@ describe('oauth2', () => {
       mockOAuth2Client.setCredentials = vi.fn().mockImplementation((creds) => {
         mockOAuth2Client.credentials = creds;
       });
-      vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+      vi.mocked(OAuth2Client).mockImplementation(function () {
+        return mockOAuth2Client;
+      });
 
       vi.spyOn(crypto, 'randomBytes').mockReturnValue('test-state' as never);
 
@@ -499,9 +510,9 @@ describe('oauth2', () => {
           getAccessToken: mockGetAccessToken,
         } as unknown as Compute;
 
-        (Compute as unknown as Mock).mockImplementation(
-          () => mockComputeClient,
-        );
+        (Compute as unknown as Mock).mockImplementation(function () {
+          return mockComputeClient;
+        });
       });
 
       it('should attempt to load cached credentials first', async () => {
@@ -522,9 +533,9 @@ describe('oauth2', () => {
         };
 
         // To mock the new OAuth2Client() inside the function
-        vi.mocked(OAuth2Client).mockImplementation(
-          () => mockClient as unknown as OAuth2Client,
-        );
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockClient as unknown as OAuth2Client;
+        });
 
         await getOauthClient(AuthType.LOGIN_WITH_GOOGLE, mockConfig);
 
@@ -602,9 +613,9 @@ describe('oauth2', () => {
           getTokenInfo: vi.fn().mockResolvedValue({}),
           on: vi.fn(),
         };
-        vi.mocked(OAuth2Client).mockImplementation(
-          () => mockClient as unknown as OAuth2Client,
-        );
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockClient as unknown as OAuth2Client;
+        });
 
         await getOauthClient(AuthType.LOGIN_WITH_GOOGLE, mockConfig);
 
@@ -626,9 +637,9 @@ describe('oauth2', () => {
           getTokenInfo: vi.fn().mockResolvedValue({}),
           on: vi.fn(),
         };
-        vi.mocked(OAuth2Client).mockImplementation(
-          () => mockClient as unknown as OAuth2Client,
-        );
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockClient as unknown as OAuth2Client;
+        });
 
         await getOauthClient(AuthType.LOGIN_WITH_GOOGLE, mockConfig);
 
@@ -657,16 +668,16 @@ describe('oauth2', () => {
         const mockGoogleAuthInstance = {
           fromJSON: mockFromJSON,
         };
-        (GoogleAuth as unknown as Mock).mockImplementation(
-          () => mockGoogleAuthInstance,
-        );
+        (GoogleAuth as unknown as Mock).mockImplementation(function () {
+          return mockGoogleAuthInstance;
+        });
 
         const mockOAuth2Client = {
           on: vi.fn(),
         };
-        (OAuth2Client as unknown as Mock).mockImplementation(
-          () => mockOAuth2Client,
-        );
+        (OAuth2Client as unknown as Mock).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         const client = await getOauthClient(
           AuthType.LOGIN_WITH_GOOGLE,
@@ -696,7 +707,9 @@ describe('oauth2', () => {
           getAccessToken: mockGetAccessToken,
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         // Mock the UserInfo API response for fetchAndCacheUserInfo
         (global.fetch as Mock).mockResolvedValue({
@@ -754,7 +767,9 @@ describe('oauth2', () => {
           getTokenInfo: mockGetTokenInfo,
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         // Make it fall through to cached credentials path
         const cachedCreds = { refresh_token: 'cached-token' };
@@ -787,7 +802,9 @@ describe('oauth2', () => {
           getTokenInfo: mockGetTokenInfo,
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         // Make it fall through to cached credentials path
         const cachedCreds = { refresh_token: 'cached-token' };
@@ -816,7 +833,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue('https://example.com/auth'),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         await expect(
           getOauthClient(AuthType.LOGIN_WITH_GOOGLE, mockConfig),
@@ -829,7 +848,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue(mockAuthUrl),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.mocked(open).mockImplementation(
           async () => ({ on: vi.fn() }) as never,
@@ -841,9 +862,9 @@ describe('oauth2', () => {
           on: vi.fn(),
           address: () => ({ port: 3000 }),
         };
-        (http.createServer as Mock).mockImplementation(
-          () => mockHttpServer as unknown as http.Server,
-        );
+        (http.createServer as Mock).mockImplementation(function () {
+          return mockHttpServer as unknown as http.Server;
+        });
 
         // Mock setTimeout to trigger timeout immediately
         const originalSetTimeout = global.setTimeout;
@@ -883,7 +904,9 @@ describe('oauth2', () => {
           on: vi.fn(),
           credentials: {},
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
         vi.mocked(open).mockImplementation(
@@ -945,7 +968,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue(mockAuthUrl),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.mocked(open).mockImplementation(
           async () => ({ on: vi.fn() }) as never,
@@ -1002,7 +1027,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue(mockAuthUrl),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.mocked(open).mockImplementation(
           async () => ({ on: vi.fn() }) as never,
@@ -1059,7 +1086,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue(mockAuthUrl),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.mocked(open).mockImplementation(
           async () => ({ on: vi.fn() }) as never,
@@ -1129,7 +1158,9 @@ describe('oauth2', () => {
             .mockRejectedValue(new Error('Token exchange failed')),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
         vi.mocked(open).mockImplementation(
@@ -1203,7 +1234,9 @@ describe('oauth2', () => {
           .mockImplementation((creds) => {
             mockOAuth2Client.credentials = creds;
           });
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
         vi.mocked(open).mockImplementation(
@@ -1290,7 +1323,9 @@ describe('oauth2', () => {
             .mockRejectedValue(new Error('Invalid authorization code')),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         const mockReadline = {
           question: vi.fn((_query, callback) => callback('invalid-code')),
@@ -1328,7 +1363,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue(mockAuthUrl),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
         vi.mocked(open).mockImplementation(
@@ -1342,14 +1379,16 @@ describe('oauth2', () => {
           on: vi.fn(),
           address: () => ({ port: 3000 }),
         };
-        (http.createServer as Mock).mockImplementation(
-          () => mockHttpServer as unknown as http.Server,
-        );
+        (http.createServer as Mock).mockImplementation(function () {
+          return mockHttpServer as unknown as http.Server;
+        });
 
         // Mock process.on to capture SIGINT handler
         const processOnSpy = vi
           .spyOn(process, 'on')
-          .mockImplementation(() => process);
+          .mockImplementation(function () {
+            return process;
+          });
 
         const processRemoveListenerSpy = vi.spyOn(process, 'removeListener');
 
@@ -1393,7 +1432,9 @@ describe('oauth2', () => {
           generateAuthUrl: vi.fn().mockReturnValue(mockAuthUrl),
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
         vi.mocked(open).mockImplementation(
@@ -1406,14 +1447,16 @@ describe('oauth2', () => {
           on: vi.fn(),
           address: () => ({ port: 3000 }),
         };
-        (http.createServer as Mock).mockImplementation(
-          () => mockHttpServer as unknown as http.Server,
-        );
+        (http.createServer as Mock).mockImplementation(function () {
+          return mockHttpServer as unknown as http.Server;
+        });
 
         // Spy on process.stdin.on to capture data handler
         const stdinOnSpy = vi
           .spyOn(process.stdin, 'on')
-          .mockImplementation(() => process.stdin);
+          .mockImplementation(function () {
+            return process.stdin;
+          });
 
         const stdinRemoveListenerSpy = vi.spyOn(
           process.stdin,
@@ -1516,7 +1559,9 @@ describe('oauth2', () => {
           getTokenInfo: mockGetTokenInfo,
           on: vi.fn(),
         } as unknown as OAuth2Client;
-        vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+        vi.mocked(OAuth2Client).mockImplementation(function () {
+          return mockOAuth2Client;
+        });
 
         // Pre-populate credentials to make getOauthClient resolve quickly
         const credsPath = path.join(
@@ -1566,9 +1611,8 @@ describe('oauth2', () => {
     });
 
     it('should save credentials using OAuthCredentialStorage during web login', async () => {
-      const { OAuthCredentialStorage } = await import(
-        './oauth-credential-storage.js'
-      );
+      const { OAuthCredentialStorage } =
+        await import('./oauth-credential-storage.js');
       const mockAuthUrl = 'https://example.com/auth';
       const mockCode = 'test-code';
       const mockState = 'test-state';
@@ -1599,7 +1643,9 @@ describe('oauth2', () => {
         on: mockOn,
         credentials: mockTokens,
       } as unknown as OAuth2Client;
-      vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
+      vi.mocked(OAuth2Client).mockImplementation(function () {
+        return mockOAuth2Client;
+      });
 
       vi.spyOn(crypto, 'randomBytes').mockReturnValue(mockState as never);
       vi.mocked(open).mockImplementation(
@@ -1668,9 +1714,8 @@ describe('oauth2', () => {
     });
 
     it('should load credentials using OAuthCredentialStorage and not from file', async () => {
-      const { OAuthCredentialStorage } = await import(
-        './oauth-credential-storage.js'
-      );
+      const { OAuthCredentialStorage } =
+        await import('./oauth-credential-storage.js');
       const cachedCreds = { refresh_token: 'cached-encrypted-token' };
       vi.mocked(OAuthCredentialStorage.loadCredentials).mockResolvedValue(
         cachedCreds,
@@ -1690,9 +1735,9 @@ describe('oauth2', () => {
         on: vi.fn(),
       };
 
-      vi.mocked(OAuth2Client).mockImplementation(
-        () => mockClient as unknown as OAuth2Client,
-      );
+      vi.mocked(OAuth2Client).mockImplementation(function () {
+        return mockClient as unknown as OAuth2Client;
+      });
 
       await getOauthClient(AuthType.LOGIN_WITH_GOOGLE, mockConfig);
 
@@ -1706,9 +1751,8 @@ describe('oauth2', () => {
     });
 
     it('should clear credentials using OAuthCredentialStorage', async () => {
-      const { OAuthCredentialStorage } = await import(
-        './oauth-credential-storage.js'
-      );
+      const { OAuthCredentialStorage } =
+        await import('./oauth-credential-storage.js');
 
       // Create a dummy unencrypted credential file. It should not be deleted.
       const credsPath = path.join(tempHomeDir, BARE_AI_DIR, 'oauth_creds.json');

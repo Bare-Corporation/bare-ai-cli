@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -28,7 +29,9 @@ vi.mock('fs/promises', () => ({
 }));
 
 vi.mock('os', () => {
-  const homedir = vi.fn(() => '/home/user');
+  const homedir = vi.fn(function () {
+    return '/home/user';
+  });
   return {
     default: {
       homedir,

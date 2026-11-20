@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,16 +11,18 @@ import { KeychainTokenStorage } from './keychain-token-storage.js';
 import { type OAuthCredentials, TokenStorageType } from './types.js';
 
 vi.mock('./keychain-token-storage.js', () => ({
-  KeychainTokenStorage: vi.fn().mockImplementation(() => ({
-    isAvailable: vi.fn(),
-    isUsingFileFallback: vi.fn(),
-    getCredentials: vi.fn(),
-    setCredentials: vi.fn(),
-    deleteCredentials: vi.fn(),
-    listServers: vi.fn(),
-    getAllCredentials: vi.fn(),
-    clearAll: vi.fn(),
-  })),
+  KeychainTokenStorage: vi.fn().mockImplementation(function () {
+    return {
+      isAvailable: vi.fn(),
+      isUsingFileFallback: vi.fn(),
+      getCredentials: vi.fn(),
+      setCredentials: vi.fn(),
+      deleteCredentials: vi.fn(),
+      listServers: vi.fn(),
+      getAllCredentials: vi.fn(),
+      clearAll: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('../../code_assist/oauth-credential-storage.js', () => ({
@@ -70,7 +73,9 @@ describe('HybridTokenStorage', () => {
 
     (
       KeychainTokenStorage as unknown as ReturnType<typeof vi.fn>
-    ).mockImplementation(() => mockKeychainStorage);
+    ).mockImplementation(function () {
+      return mockKeychainStorage;
+    });
 
     storage = new HybridTokenStorage('test-service');
   });

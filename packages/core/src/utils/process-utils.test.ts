@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -28,7 +29,9 @@ describe('process-utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true);
+    mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(function () {
+      return true;
+    });
     mockSpawnAsync = vi.mocked(spawnAsync);
   });
 
@@ -106,7 +109,9 @@ describe('process-utils', () => {
     it('should skip SIGKILL if isExited returns true after SIGTERM', async () => {
       vi.mocked(os.platform).mockReturnValue('linux');
       let exited = false;
-      const isExited = vi.fn().mockImplementation(() => exited);
+      const isExited = vi.fn().mockImplementation(function () {
+        return exited;
+      });
 
       const killPromise = killProcessGroup({
         pid: 1234,
@@ -164,7 +169,9 @@ describe('process-utils', () => {
         throw new Error('ESRCH');
       });
       // Second call (group kill retry after pty.kill) should succeed
-      mockProcessKill.mockImplementationOnce(() => true);
+      mockProcessKill.mockImplementationOnce(function () {
+        return true;
+      });
       const mockPty = { kill: vi.fn() };
 
       await killProcessGroup({ pid: 1234, pty: mockPty });

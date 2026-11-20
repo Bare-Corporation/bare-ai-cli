@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -44,8 +45,7 @@ vi.mock('../utils/sessionUtils.js', async (importOriginal) => {
 });
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     CoreToolCallStatus: {
@@ -175,12 +175,14 @@ describe('GeminiAgent Session Resume', () => {
       getTool: vi.fn().mockReturnValue({ kind: 'read' }),
     };
 
-    (SessionSelector as unknown as Mock).mockImplementation(() => ({
-      resolveSession: vi.fn().mockResolvedValue({
-        sessionData,
-        sessionPath: '/path/to/session.json',
-      }),
-    }));
+    (SessionSelector as unknown as Mock).mockImplementation(function () {
+      return {
+        resolveSession: vi.fn().mockResolvedValue({
+          sessionData,
+          sessionPath: '/path/to/session.json',
+        }),
+      };
+    });
 
     const mockClientHistory = [
       { role: 'user', parts: [{ text: 'Hello' }] },

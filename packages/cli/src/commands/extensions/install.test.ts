@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -68,8 +69,7 @@ vi.mock('../../config/trustedFolders.js', () => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     FolderTrustDiscoveryService: {
@@ -117,9 +117,9 @@ describe('handleInstall', () => {
   beforeEach(() => {
     debugLogSpy = vi.spyOn(core.debugLogger, 'log');
     debugErrorSpy = vi.spyOn(core.debugLogger, 'error');
-    processSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation(() => undefined as never);
+    processSpy = vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
 
     vi.spyOn(ExtensionManager.prototype, 'loadExtensions').mockResolvedValue(
       [],

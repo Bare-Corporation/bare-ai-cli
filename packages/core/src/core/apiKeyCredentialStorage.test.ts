@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,11 +18,13 @@ const setCredentialsMock = vi.hoisted(() => vi.fn());
 const deleteCredentialsMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../mcp/token-storage/hybrid-token-storage.js', () => ({
-  HybridTokenStorage: vi.fn().mockImplementation(() => ({
-    getCredentials: getCredentialsMock,
-    setCredentials: setCredentialsMock,
-    deleteCredentials: deleteCredentialsMock,
-  })),
+  HybridTokenStorage: vi.fn().mockImplementation(function () {
+    return {
+      getCredentials: getCredentialsMock,
+      setCredentials: setCredentialsMock,
+      deleteCredentials: deleteCredentialsMock,
+    };
+  }),
 }));
 
 describe('ApiKeyCredentialStorage', () => {

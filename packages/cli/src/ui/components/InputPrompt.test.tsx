@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -61,7 +62,9 @@ vi.mock('clipboardy');
 vi.mock('../utils/clipboardUtils.js');
 vi.mock('../hooks/useKittyKeyboardProtocol.js');
 vi.mock('../utils/terminalUtils.js', () => ({
-  isLowColorDepth: vi.fn(() => false),
+  isLowColorDepth: vi.fn(function () {
+    return false;
+  }),
 }));
 
 // Mock ink BEFORE importing components that use it to intercept terminalCursorPosition

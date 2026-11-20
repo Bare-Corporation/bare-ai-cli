@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,7 +18,9 @@ vi.mock('../themes/theme-manager.js', () => ({
   themeManager: {
     getActiveTheme: vi.fn(),
     setTerminalBackground: vi.fn(),
-    getAllThemes: vi.fn(() => []),
+    getAllThemes: vi.fn(function () {
+      return [];
+    }),
     setActiveTheme: vi.fn(),
   },
   DEFAULT_THEME: { name: 'Default' },
@@ -28,7 +31,9 @@ vi.mock('../themes/builtin/dark/holiday-dark.js', () => ({
 }));
 
 vi.mock('./useTerminalSize.js', () => ({
-  useTerminalSize: vi.fn(() => ({ columns: 120, rows: 20 })),
+  useTerminalSize: vi.fn(function () {
+    return { columns: 120, rows: 20 };
+  }),
 }));
 
 describe('useSnowfall', () => {
