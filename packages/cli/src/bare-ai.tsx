@@ -94,7 +94,10 @@ import { SettingsContext } from './ui/contexts/SettingsContext.js';
 import { MouseProvider } from './ui/contexts/MouseContext.js';
 import { StreamingState } from './ui/types.js';
 import { computeTerminalTitle } from './utils/windowTitle.js';
-import { isWindowTitleSupported } from './utils/terminalStatus.js';
+import {
+  isWindowTitleSupported,
+  writeTerminalTitle,
+} from './utils/terminalStatus.js';
 
 import { SessionStatsProvider } from './ui/contexts/SessionContext.js';
 import { VimModeProvider } from './ui/contexts/VimModeContext.js';
@@ -893,10 +896,17 @@ function setWindowTitle(title: string, settings: LoadedSettings) {
       // Before the React loop starts there is nothing running: 🟢.
       status: 'idle',
     });
-    writeToStdout(`\x1b]0;${windowTitle}\x07`);
+    // process.stdout is untouched at this point (ink has not been created yet),
+    // and writeToStdout keeps the write monkey-patch-proof, so wrap it in the
+    // shape writeTerminalTitle expects.
+    const titleStream = {
+      isTTY: process.stdout.isTTY,
+      write: (chunk: string) => writeToStdout(chunk),
+    };
+    writeTerminalTitle(titleStream, windowTitle);
 
     process.on('exit', () => {
-      writeToStdout(`\x1b]0;\x07`);
+      writeTerminalTitle(titleStream, '');
     });
   }
 }

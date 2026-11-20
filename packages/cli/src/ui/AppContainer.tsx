@@ -110,6 +110,7 @@ import { computeTerminalTitle } from '../utils/windowTitle.js';
 import {
   isWindowTitleSupported,
   reduceAgentStatus,
+  writeTerminalTitle,
   type AgentStatus,
 } from '../utils/terminalStatus.js';
 import { useTextBuffer } from './components/shared/text-buffer.js';
@@ -1960,12 +1961,14 @@ Logging in with Google... Restarting Bare AI CLI to continue.
 
     // A piped or captured stdout must never receive OSC bytes: skip the write
     // rather than inject escape sequences into a log or a --prompt capture.
+    // writeTerminalTitle applies the same guard; the early return also keeps
+    // the dedupe ref from recording a title that was never emitted.
     if (!isWindowTitleSupported(stdout)) return;
 
     // Only update the title if it's different from the last value we set
     if (lastTitleRef.current !== paddedTitle) {
       lastTitleRef.current = paddedTitle;
-      stdout.write(`\x1b]0;${paddedTitle}\x07`);
+      writeTerminalTitle(stdout, paddedTitle);
     }
     // Note: We don't need to reset the window title on exit because Bare AI CLI is already doing that elsewhere
   }, [

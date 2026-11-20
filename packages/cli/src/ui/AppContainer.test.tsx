@@ -367,6 +367,10 @@ describe('AppContainer State Management', () => {
 
     mockIdeClient.getInstance.mockReturnValue(new Promise(() => {}));
 
+    // The writer takes a different branch inside tmux. These tests assert the
+    // exact write, so pin TMUX off rather than inherit it from the shell.
+    delete process.env['TMUX'];
+
     // Initialize mock stdout for terminal title tests
 
     mocks.mockStdout.write.mockClear();
