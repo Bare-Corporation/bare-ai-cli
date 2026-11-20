@@ -33,7 +33,7 @@ export const bugCommand: SlashCommand = {
   autoExecute: false,
   action: async (context: CommandContext, args?: string): Promise<void> => {
     const bugDescription = (args || '').trim();
-    const agentContext: AgentLoopContext | undefined =
+    const agentContext: AgentLoopContext | null | undefined =
       context.services.agentContext;
     const config = agentContext?.config;
     const osVersion = `${process.platform} ${process.version}`;

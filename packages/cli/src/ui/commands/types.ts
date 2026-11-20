@@ -41,7 +41,9 @@ export interface CommandContext {
   };
   // Core services and configuration
   services: {
-    agentContext?: AgentLoopContext;
+    // Accepts either an AgentLoopContext or a Config (Config satisfies the
+    // interface structurally) and may be null before the config is ready.
+    agentContext?: AgentLoopContext | null;
     // TODO(abhipatel12): Ensure that config is never null.
     config?: Config | null;
     settings: LoadedSettings;
