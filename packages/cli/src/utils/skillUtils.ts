@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2026 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,7 +13,7 @@ import {
   type SkillDefinition,
 } from '@bare-ai/core';
 import { cloneFromGit } from '../config/extensions/github.js';
-import extract from 'extract-zip';
+import { safeExtractZip } from './safeExtractZip.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -121,7 +122,7 @@ export async function installSkill(
       sourcePath = tempDirToClean;
 
       onLog(`Extracting skill from ${source}...`);
-      await extract(path.resolve(source), { dir: tempDirToClean });
+      await safeExtractZip(path.resolve(source), tempDirToClean);
     }
 
     // If a subpath is provided, resolve it against the cloned/local root.

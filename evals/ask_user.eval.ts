@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2026 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -99,13 +100,8 @@ describe('ask_user', () => {
   // Regression test for issue #20177: Ensure the agent does not use \`ask_user\` to
   // confirm shell commands. Fixed via prompt refinements and tool definition
   // updates to clarify that shell command confirmation is handled by the UI.
-<<<<<<< HEAD
-  // See fix: https://github.com/google-gemini/bare-ai-cli/pull/20504
-  evalTest('USUALLY_PASSES', {
-=======
   // See fix: https://github.com/google-gemini/gemini-cli/pull/20504
   askUserEvalTest('USUALLY_PASSES', {
->>>>>>> e3df87cf1
     name: 'Agent does NOT use AskUser to confirm shell commands',
     files: {
       'package.json': JSON.stringify({

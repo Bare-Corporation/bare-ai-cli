@@ -5,7 +5,6 @@
  */
 
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
@@ -14,6 +13,7 @@ import {
   type ExecuteOptions,
   Kind,
   type MessageBus,
+  zodSchemaToJsonSchema,
 } from '@bare-ai/core';
 import type { SessionContext } from './types.js';
 
@@ -26,18 +26,18 @@ export class ModelVisibleError extends Error {
   }
 }
 
-export interface ToolDefinition<T extends z.ZodTypeAny> {
+export interface ToolDefinition<T extends z.ZodType<object>> {
   name: string;
   description: string;
   inputSchema: T;
   sendErrorsToModel?: boolean;
 }
 
-export interface Tool<T extends z.ZodTypeAny> extends ToolDefinition<T> {
+export interface Tool<T extends z.ZodType<object>> extends ToolDefinition<T> {
   action: (params: z.infer<T>, context?: SessionContext) => Promise<unknown>;
 }
 
-class SdkToolInvocation<T extends z.ZodTypeAny> extends BaseToolInvocation<
+class SdkToolInvocation<T extends z.ZodType<object>> extends BaseToolInvocation<
   z.infer<T>,
   ToolResult
 > {
@@ -88,7 +88,7 @@ class SdkToolInvocation<T extends z.ZodTypeAny> extends BaseToolInvocation<
   }
 }
 
-export class SdkTool<T extends z.ZodTypeAny> extends BaseDeclarativeTool<
+export class SdkTool<T extends z.ZodType<object>> extends BaseDeclarativeTool<
   z.infer<T>,
   ToolResult
 > {
@@ -103,7 +103,7 @@ export class SdkTool<T extends z.ZodTypeAny> extends BaseDeclarativeTool<
       definition.name,
       definition.description,
       Kind.Other,
-      zodToJsonSchema(definition.inputSchema),
+      zodSchemaToJsonSchema(definition.inputSchema),
       messageBus,
     );
   }
@@ -144,7 +144,7 @@ export class SdkTool<T extends z.ZodTypeAny> extends BaseDeclarativeTool<
   }
 }
 
-export function tool<T extends z.ZodTypeAny>(
+export function tool<T extends z.ZodType<object>>(
   definition: ToolDefinition<T>,
   action: (params: z.infer<T>, context?: SessionContext) => Promise<unknown>,
 ): Tool<T> {

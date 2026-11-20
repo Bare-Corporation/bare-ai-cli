@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -22,7 +23,9 @@ describe('ContextBuilder', () => {
     mockHistory = [];
 
     const mockGeminiClient = {
-      getHistory: vi.fn().mockImplementation(() => mockHistory),
+      getHistory: vi.fn().mockImplementation(function () {
+        return mockHistory;
+      }),
     };
     mockConfig = {
       get config() {

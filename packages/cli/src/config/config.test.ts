@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,7 +36,9 @@ import { ExtensionManager } from './extension-manager.js';
 import { RESUME_LATEST } from '../utils/sessionUtils.js';
 
 vi.mock('./trustedFolders.js', () => ({
-  isWorkspaceTrusted: vi.fn(() => ({ isTrusted: true, source: 'file' })), // Default to trusted
+  isWorkspaceTrusted: vi.fn(function () {
+    return { isTrusted: true, source: 'file' };
+  }), // Default to trusted
 }));
 
 vi.mock('./sandboxConfig.js', () => ({
@@ -84,7 +87,9 @@ vi.mock('os', async (importOriginal) => {
   const actualOs = await importOriginal<typeof os>();
   return {
     ...actualOs,
-    homedir: vi.fn(() => path.resolve(path.sep, 'mock', 'home', 'user')),
+    homedir: vi.fn(function () {
+      return path.resolve(path.sep, 'mock', 'home', 'user');
+    }),
   };
 });
 
@@ -93,9 +98,9 @@ vi.mock('open', () => ({
 }));
 
 vi.mock('read-package-up', () => ({
-  readPackageUp: vi.fn(() =>
-    Promise.resolve({ packageJson: { version: 'test-version' } }),
-  ),
+  readPackageUp: vi.fn(function () {
+    return Promise.resolve({ packageJson: { version: 'test-version' } });
+  }),
 }));
 
 vi.mock('@bare-ai/core', async () => {

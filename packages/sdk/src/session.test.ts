@@ -41,11 +41,12 @@ const mockScheduleAgentTools = vi.fn().mockResolvedValue([]);
 
 // Mock @bare-ai/core to avoid heavy filesystem/auth/telemetry setup
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
-    Config: vi.fn().mockImplementation(() => mockConfig),
+    Config: vi.fn().mockImplementation(function () {
+      return mockConfig;
+    }),
     getAuthTypeFromEnv: vi.fn().mockReturnValue(null),
     scheduleAgentTools: (...args: unknown[]) => mockScheduleAgentTools(...args),
     loadSkillsFromDir: vi.fn().mockResolvedValue([]),

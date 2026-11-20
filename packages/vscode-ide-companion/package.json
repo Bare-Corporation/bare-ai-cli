@@ -2,7 +2,7 @@
   "name": "bare-ai-cli-vscode-ide-companion",
   "displayName": "Bare AI CLI Companion",
   "description": "Enable Bare AI CLI with direct access to your IDE workspace.",
-  "version": "0.1.0-bare-ai",
+  "version": "0.1.1-bare-ai",
   "publisher": "google",
   "icon": "assets/icon.png",
   "repository": {
@@ -129,17 +129,17 @@
     "@types/vscode": "^1.99.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
-    "@vscode/vsce": "^3.6.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.25.3",
     "eslint": "^9.25.1",
     "npm-run-all2": "^8.0.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.12"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   }
 }

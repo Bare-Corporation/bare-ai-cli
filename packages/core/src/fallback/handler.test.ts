@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -67,16 +68,24 @@ const createMockConfig = (overrides: Partial<Config> = {}): Config =>
     setActiveModel: vi.fn(),
     setModel: vi.fn(),
     activateFallbackMode: vi.fn(),
-    getModelAvailabilityService: vi.fn(() =>
-      createAvailabilityServiceMock({
+    getModelAvailabilityService: vi.fn(function () {
+      return createAvailabilityServiceMock({
         selectedModel: FALLBACK_MODEL,
         skipped: [],
-      }),
-    ),
-    getActiveModel: vi.fn(() => MOCK_PRO_MODEL),
-    getModel: vi.fn(() => MOCK_PRO_MODEL),
-    getUserTier: vi.fn(() => undefined),
-    isInteractive: vi.fn(() => false),
+      });
+    }),
+    getActiveModel: vi.fn(function () {
+      return MOCK_PRO_MODEL;
+    }),
+    getModel: vi.fn(function () {
+      return MOCK_PRO_MODEL;
+    }),
+    getUserTier: vi.fn(function () {
+      return undefined;
+    }),
+    isInteractive: vi.fn(function () {
+      return false;
+    }),
     ...overrides,
   }) as unknown as Config;
 

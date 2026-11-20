@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -200,7 +201,7 @@ export class GeminiAgent {
       // Extract gateway details if present
       const gatewaySchema = z.object({
         baseUrl: z.string().optional(),
-        headers: z.record(z.string()).optional(),
+        headers: z.record(z.string(), z.string()).optional(),
       });
 
       let baseUrl: string | undefined;

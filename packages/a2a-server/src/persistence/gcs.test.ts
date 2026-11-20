@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -194,7 +195,9 @@ describe('GCSTaskStore', () => {
       getBuckets: vi.fn().mockResolvedValue([[{ name: bucketName }]]),
       createBucket: vi.fn().mockResolvedValue([mockBucket]),
     };
-    mockStorage.mockReturnValue(mockStorageInstance as unknown as Storage);
+    mockStorage.mockImplementation(function () {
+      return mockStorageInstance as unknown as Storage;
+    });
 
     mockUuidv4.mockReturnValue('test-uuid');
     mockSetTargetDir.mockReturnValue('/tmp/workdir');

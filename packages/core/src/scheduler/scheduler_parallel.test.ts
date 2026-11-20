@@ -250,7 +250,9 @@ describe('Scheduler Parallel Execution', () => {
         if (next) mockActiveCallsMap.set(next.request.callId, next);
         return next;
       }),
-      peekQueue: vi.fn(() => mockQueue[0]),
+      peekQueue: vi.fn(function () {
+        return mockQueue[0];
+      }),
       getToolCall: vi.fn((id: string) => mockActiveCallsMap.get(id)),
       updateStatus: vi.fn((id: string, status: Status) => {
         const call = mockActiveCallsMap.get(id);
@@ -272,19 +274,27 @@ describe('Scheduler Parallel Execution', () => {
     } as unknown as Mocked<SchedulerStateManager>;
 
     Object.defineProperty(mockStateManager, 'isActive', {
-      get: vi.fn(() => mockActiveCallsMap.size > 0),
+      get: vi.fn(function () {
+        return mockActiveCallsMap.size > 0;
+      }),
       configurable: true,
     });
     Object.defineProperty(mockStateManager, 'allActiveCalls', {
-      get: vi.fn(() => Array.from(mockActiveCallsMap.values())),
+      get: vi.fn(function () {
+        return Array.from(mockActiveCallsMap.values());
+      }),
       configurable: true,
     });
     Object.defineProperty(mockStateManager, 'queueLength', {
-      get: vi.fn(() => mockQueue.length),
+      get: vi.fn(function () {
+        return mockQueue.length;
+      }),
       configurable: true,
     });
     Object.defineProperty(mockStateManager, 'firstActiveCall', {
-      get: vi.fn(() => mockActiveCallsMap.values().next().value),
+      get: vi.fn(function () {
+        return mockActiveCallsMap.values().next().value;
+      }),
       configurable: true,
     });
     Object.defineProperty(mockStateManager, 'completedBatch', {

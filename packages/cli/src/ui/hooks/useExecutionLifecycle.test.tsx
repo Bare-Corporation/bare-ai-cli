@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -54,8 +55,7 @@ const mockLifecycleOnBackground = vi.hoisted(() => vi.fn());
 const mockLifecycleOffBackground = vi.hoisted(() => vi.fn());
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     ShellExecutionService: {
@@ -95,9 +95,15 @@ vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();
   const mocked = {
     ...actual,
-    homedir: vi.fn(() => '/home/user'),
-    platform: vi.fn(() => 'linux'),
-    tmpdir: vi.fn(() => '/tmp'),
+    homedir: vi.fn(function () {
+      return '/home/user';
+    }),
+    platform: vi.fn(function () {
+      return 'linux';
+    }),
+    tmpdir: vi.fn(function () {
+      return '/tmp';
+    }),
   };
   return {
     ...mocked,
@@ -608,10 +614,12 @@ describe('useExecutionLifecycle', () => {
   it('should handle promise rejection and show an error', async () => {
     const { result } = await renderProcessorHook();
     const testError = new Error('Unexpected failure');
-    mockShellExecutionService.mockImplementation(() => ({
-      pid: 12345,
-      result: Promise.reject(testError),
-    }));
+    mockShellExecutionService.mockImplementation(function () {
+      return {
+        pid: 12345,
+        result: Promise.reject(testError),
+      };
+    });
 
     act(() => {
       result.current.handleShellCommand(
@@ -804,14 +812,14 @@ describe('useExecutionLifecycle', () => {
 
     it('should reset activeShellPtyId to null if execution promise rejects', async () => {
       let rejectResultPromise: (reason?: unknown) => void;
-      mockShellExecutionService.mockImplementation(() =>
-        Promise.resolve({
+      mockShellExecutionService.mockImplementation(function () {
+        return Promise.resolve({
           pid: 12345,
           result: new Promise((_, reject) => {
             rejectResultPromise = reject;
           }),
-        }),
-      );
+        });
+      });
       const { result } = await renderProcessorHook();
 
       await act(async () => {

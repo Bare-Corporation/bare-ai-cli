@@ -1,15 +1,13 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { type ReactElement } from 'react';
 
-import type {
-  ExtensionLoader,
-  GeminiCLIExtension,
-} from '@bare-ai/core';
+import type { ExtensionLoader, GeminiCLIExtension } from '@bare-ai/core';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
 import { MessageType } from '../types.js';
 import {
@@ -929,20 +927,24 @@ describe('extensionsCommand', () => {
       mockRestartExtension = vi.fn();
       mockContext.services.agentContext!.config.getExtensionLoader = vi
         .fn()
-        .mockImplementation(() => ({
-          getExtensions: mockGetExtensions,
-          restartExtension: mockRestartExtension,
-        }));
+        .mockImplementation(function () {
+          return {
+            getExtensions: mockGetExtensions,
+            restartExtension: mockRestartExtension,
+          };
+        });
       mockContext.invocation!.name = 'reload';
     });
 
     it('should show a message if no extensions are installed', async () => {
       mockContext.services.agentContext!.config.getExtensionLoader = vi
         .fn()
-        .mockImplementation(() => ({
-          getExtensions: () => [],
-          restartExtension: mockRestartExtension,
-        }));
+        .mockImplementation(function () {
+          return {
+            getExtensions: () => [],
+            restartExtension: mockRestartExtension,
+          };
+        });
 
       await restartAction!(mockContext, '--all');
 
@@ -1132,9 +1134,8 @@ describe('extensionsCommand', () => {
       const prompts = (await import('prompts')).default;
       vi.mocked(prompts).mockResolvedValue({ overwrite: true });
 
-      const { getScopedEnvContents } = await import(
-        '../../config/extensions/extensionSettings.js'
-      );
+      const { getScopedEnvContents } =
+        await import('../../config/extensions/extensionSettings.js');
       vi.mocked(getScopedEnvContents).mockResolvedValue({});
     });
 

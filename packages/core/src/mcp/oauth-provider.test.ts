@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,12 +20,14 @@ vi.mock('./oauth-token-storage.js', () => {
   const mockdeleteCredentials = vi.fn();
 
   return {
-    MCPOAuthTokenStorage: vi.fn(() => ({
-      saveToken: mockSaveToken,
-      getCredentials: mockGetCredentials,
-      isTokenExpired: mockIsTokenExpired,
-      deleteCredentials: mockdeleteCredentials,
-    })),
+    MCPOAuthTokenStorage: vi.fn(function () {
+      return {
+        saveToken: mockSaveToken,
+        getCredentials: mockGetCredentials,
+        isTokenExpired: mockIsTokenExpired,
+        deleteCredentials: mockdeleteCredentials,
+      };
+    }),
   };
 });
 vi.mock('../utils/events.js', () => ({
@@ -34,24 +37,32 @@ vi.mock('../utils/events.js', () => ({
   },
 }));
 vi.mock('../utils/authConsent.js', () => ({
-  getConsentForOauth: vi.fn(() => Promise.resolve(true)),
+  getConsentForOauth: vi.fn(function () {
+    return Promise.resolve(true);
+  }),
 }));
 vi.mock('../utils/headless.js', () => ({
-  isHeadlessMode: vi.fn(() => false),
+  isHeadlessMode: vi.fn(function () {
+    return false;
+  }),
 }));
 vi.mock('node:readline', () => ({
   default: {
-    createInterface: vi.fn(() => ({
+    createInterface: vi.fn(function () {
+      return {
+        question: vi.fn((_query, callback) => callback('')),
+        close: vi.fn(),
+        on: vi.fn(),
+      };
+    }),
+  },
+  createInterface: vi.fn(function () {
+    return {
       question: vi.fn((_query, callback) => callback('')),
       close: vi.fn(),
       on: vi.fn(),
-    })),
-  },
-  createInterface: vi.fn(() => ({
-    question: vi.fn((_query, callback) => callback('')),
-    close: vi.fn(),
-    on: vi.fn(),
-  })),
+    };
+  }),
 }));
 
 import * as http from 'node:http';
@@ -131,10 +142,14 @@ const mockHttpServer = {
   listen: vi.fn(),
   close: vi.fn(),
   on: vi.fn(),
-  address: vi.fn(() => ({ address: 'localhost', family: 'IPv4', port: 7777 })),
+  address: vi.fn(function () {
+    return { address: 'localhost', family: 'IPv4', port: 7777 };
+  }),
 };
 vi.mock('node:http', () => ({
-  createServer: vi.fn(() => mockHttpServer),
+  createServer: vi.fn(function () {
+    return mockHttpServer;
+  }),
 }));
 
 describe('MCPOAuthProvider', () => {
@@ -1025,9 +1040,9 @@ describe('MCPOAuthProvider', () => {
     it('should handle callback timeout', async () => {
       vi.useFakeTimers();
       try {
-        vi.mocked(http.createServer).mockImplementation(
-          () => mockHttpServer as unknown as http.Server,
-        );
+        vi.mocked(http.createServer).mockImplementation(function () {
+          return mockHttpServer as unknown as http.Server;
+        });
 
         mockHttpServer.listen.mockImplementation((port, callback) => {
           callback?.();

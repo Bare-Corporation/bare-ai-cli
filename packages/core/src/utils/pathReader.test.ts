@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -298,7 +299,9 @@ describe('readPathFromWorkspace', () => {
         },
       });
       const mockFileService = {
-        filterFiles: vi.fn(() => []), // Simulate the file being filtered out
+        filterFiles: vi.fn(function () {
+          return [];
+        }), // Simulate the file being filtered out
       } as unknown as FileDiscoveryService;
       const config = createMockConfig(CWD, [], mockFileService);
       const result = await readPathFromWorkspace('ignored.txt', config);
@@ -348,7 +351,9 @@ describe('readPathFromWorkspace', () => {
         },
       });
       const mockFileService = {
-        filterFiles: vi.fn(() => []),
+        filterFiles: vi.fn(function () {
+          return [];
+        }),
       } as unknown as FileDiscoveryService;
       const config = createMockConfig(CWD, [], mockFileService, {
         respectGitIgnore: false,

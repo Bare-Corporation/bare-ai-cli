@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -295,6 +296,21 @@ export default tseslint.config(
     },
   },
   {
+    // vitest 4 refuses to construct an arrow-function mock: a class stand-in
+    // must be a function expression or a class. prefer-arrow-callback is an
+    // error repo-wide and the pre-commit hook runs eslint --fix, which would
+    // rewrite those function expressions back into arrows and re-break every
+    // constructor mock. Keep the rule for production code, disable it here.
+    files: [
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/test-utils/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'prefer-arrow-callback': 'off',
+    },
+  },
+  {
     files: ['./**/*.{tsx,ts,js,cjs}'],
     plugins: {
       headers,
@@ -308,6 +324,7 @@ export default tseslint.config(
           content: [
             '@license',
             'Copyright (year) Google LLC',
+            'Copyright (year) Bare-AI, a trading name of Consulting Hailing Services LTD',
             'SPDX-License-Identifier: Apache-2.0',
           ].join('\n'),
           patterns: {

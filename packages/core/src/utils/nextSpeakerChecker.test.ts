@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -41,10 +42,12 @@ vi.mock('node:fs', () => {
       });
     }),
     existsSync: vi.fn((path: string) => mockFileSystem.has(path)),
-    createWriteStream: vi.fn(() => ({
-      write: vi.fn(),
-      on: vi.fn(),
-    })),
+    createWriteStream: vi.fn(function () {
+      return {
+        write: vi.fn(),
+        on: vi.fn(),
+      };
+    }),
   };
 
   return {
