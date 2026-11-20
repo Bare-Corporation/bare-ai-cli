@@ -14,6 +14,13 @@ import {
   reduceAgentStatus,
   statusGlyph,
   writeTerminalTitle,
+  DEFAULT_STATUS_AUDIO_PING,
+  STATUS_AUDIO_PING_VALUES,
+  buildStatusAudioCue,
+  isStatusAudioEnabled,
+  parseStatusAudioPing,
+  playStatusAudioPing,
+  resolveTerminalStream,
   type AgentStatus,
 } from './terminalStatus.js';
 
@@ -130,7 +137,6 @@ describe('isWindowTitleSupported', () => {
   });
 });
 
-
 describe('buildTitleSequences', () => {
   it('emits plain OSC 0 outside tmux', () => {
     expect(buildTitleSequences('🟢  Ready (proj)', false)).toBe(
@@ -171,7 +177,8 @@ describe('buildTitleSequences', () => {
   });
 
   it('strips control characters so a title cannot break out of the sequence', () => {
-    const hostile = 'a' + BEL + 'b' + ESC + 'c' + String.fromCharCode(127) + 'd';
+    const hostile =
+      'a' + BEL + 'b' + ESC + 'c' + String.fromCharCode(127) + 'd';
     expect(buildTitleSequences(hostile, false)).toBe(plainTitle('abcd'));
   });
 
@@ -243,5 +250,444 @@ describe('writeTerminalTitle', () => {
     const stream = fakeStream(true);
     writeTerminalTitle(stream, '');
     expect(stream.writes).toEqual([plainTitle('')]);
+  });
+});
+
+describe('parseStatusAudioPing', () => {
+  it('accepts every documented value', () => {
+    expect(parseStatusAudioPing('all')).toBe('all');
+    expect(parseStatusAudioPing('completion')).toBe('completion');
+    expect(parseStatusAudioPing('off')).toBe('off');
+  });
+
+  it('falls back to the default for anything else', () => {
+    // A settings file is hand-edited, so a typo has to degrade rather than
+    // throw or silence the cue entirely.
+    expect(parseStatusAudioPing('Completion')).toBe(DEFAULT_STATUS_AUDIO_PING);
+    expect(parseStatusAudioPing('')).toBe(DEFAULT_STATUS_AUDIO_PING);
+    expect(parseStatusAudioPing(undefined)).toBe(DEFAULT_STATUS_AUDIO_PING);
+    expect(parseStatusAudioPing(null)).toBe(DEFAULT_STATUS_AUDIO_PING);
+    expect(parseStatusAudioPing(1)).toBe(DEFAULT_STATUS_AUDIO_PING);
+    expect(parseStatusAudioPing({ mode: 'all' })).toBe(
+      DEFAULT_STATUS_AUDIO_PING,
+    );
+  });
+
+  it('defaults to completion, not all', () => {
+    // Starting a turn must be opt-in: it is the cue operators mute first.
+    expect(DEFAULT_STATUS_AUDIO_PING).toBe('completion');
+  });
+
+  it('lists the modes in menu order', () => {
+    expect(STATUS_AUDIO_PING_VALUES).toEqual(['all', 'completion', 'off']);
+  });
+});
+
+describe('buildStatusAudioCue', () => {
+  it('distinguishes the three statuses by BEAT COUNT', () => {
+    // A terminal has one audio primitive, so count is the only channel left.
+    // If these three ever collapse to the same length the cues become useless.
+    expect(buildStatusAudioCue('working')).toHaveLength(1);
+    expect(buildStatusAudioCue('idle')).toHaveLength(2);
+    expect(buildStatusAudioCue('error')).toHaveLength(3);
+  });
+
+  it('emits only BEL bytes, never an escape sequence', () => {
+    for (const status of ['idle', 'working', 'error'] as AgentStatus[]) {
+      for (const step of buildStatusAudioCue(status)) {
+        expect(step.bytes).toBe(BEL);
+        expect(step.bytes).not.toContain(ESC);
+      }
+    }
+  });
+
+  it('leaves a zero gap on the final beat', () => {
+    // A trailing gap would schedule a beat that does not exist, and a caller
+    // that ignores gapMs would still emit the whole cue.
+    for (const status of ['idle', 'working', 'error'] as AgentStatus[]) {
+      const steps = buildStatusAudioCue(status);
+      expect(steps[steps.length - 1].gapMs).toBe(0);
+    }
+  });
+
+  it('separates beats by 120 ms and no more', () => {
+    for (const status of ['idle', 'working', 'error'] as AgentStatus[]) {
+      for (const step of buildStatusAudioCue(status)) {
+        expect([0, 120]).toContain(step.gapMs);
+      }
+    }
+  });
+
+  it('returns nothing for an unknown status', () => {
+    expect(buildStatusAudioCue('nonsense' as AgentStatus)).toEqual([]);
+  });
+});
+
+describe('isStatusAudioEnabled', () => {
+  it('silences everything when the mode is off', () => {
+    expect(isStatusAudioEnabled('off', 'idle')).toBe(false);
+    expect(isStatusAudioEnabled('off', 'working')).toBe(false);
+    expect(isStatusAudioEnabled('off', 'error')).toBe(false);
+  });
+
+  it('rings only at the end of a turn in completion mode', () => {
+    expect(isStatusAudioEnabled('completion', 'working')).toBe(false);
+    expect(isStatusAudioEnabled('completion', 'idle')).toBe(true);
+    // The failure is the ending that matters most - it must not be the one the
+    // default mode mutes.
+    expect(isStatusAudioEnabled('completion', 'error')).toBe(true);
+  });
+
+  it('rings for every status in all mode', () => {
+    expect(isStatusAudioEnabled('all', 'working')).toBe(true);
+    expect(isStatusAudioEnabled('all', 'idle')).toBe(true);
+    expect(isStatusAudioEnabled('all', 'error')).toBe(true);
+  });
+});
+
+describe('playStatusAudioPing', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  /** Records the beats in the order they are actually written. */
+  function recordingStream(isTTY: boolean) {
+    const writes: string[] = [];
+    return {
+      isTTY,
+      writes,
+      write(chunk: string) {
+        writes.push(chunk);
+        return true;
+      },
+    };
+  }
+
+  /** Runs every scheduled callback immediately, recording the requested delays. */
+  function immediateScheduler() {
+    const delays: number[] = [];
+    return {
+      delays,
+      schedule(fn: () => void, ms: number) {
+        delays.push(ms);
+        fn();
+      },
+    };
+  }
+
+  it('rings twice for a completed turn (green)', () => {
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    playStatusAudioPing(stream, 'idle', {
+      mode: 'all',
+      schedule: scheduler.schedule,
+    });
+    expect(stream.writes).toEqual([BEL, BEL]);
+    expect(scheduler.delays).toEqual([120]);
+  });
+
+  it('rings once when a turn starts (orange)', () => {
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    playStatusAudioPing(stream, 'working', {
+      mode: 'all',
+      schedule: scheduler.schedule,
+    });
+    expect(stream.writes).toEqual([BEL]);
+    expect(scheduler.delays).toEqual([]);
+  });
+
+  it('rings three times for a failed turn (red)', () => {
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    playStatusAudioPing(stream, 'error', {
+      mode: 'all',
+      schedule: scheduler.schedule,
+    });
+    expect(stream.writes).toEqual([BEL, BEL, BEL]);
+    expect(scheduler.delays).toEqual([120, 120]);
+  });
+
+  it('gives a failure a different cadence from a completion', () => {
+    // The whole point of the feature: distinguishable by ear without looking.
+    // The scheduler is injected because the real one is a timer: without it the
+    // second and third beats have not been written when the assertion runs, and
+    // the comparison would be measuring this test's own timing.
+    const completion = recordingStream(true);
+    const failure = recordingStream(true);
+    playStatusAudioPing(completion, 'idle', {
+      mode: 'all',
+      schedule: immediateScheduler().schedule,
+    });
+    playStatusAudioPing(failure, 'error', {
+      mode: 'all',
+      schedule: immediateScheduler().schedule,
+    });
+    expect(failure.writes.length).toBeGreaterThan(completion.writes.length);
+  });
+
+  it('stays silent for the working status under the default mode', () => {
+    const stream = recordingStream(true);
+    playStatusAudioPing(stream, 'working');
+    expect(stream.writes).toEqual([]);
+  });
+
+  it('rings for an error under the default mode', () => {
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    playStatusAudioPing(stream, 'error', { schedule: scheduler.schedule });
+    expect(stream.writes).toEqual([BEL, BEL, BEL]);
+  });
+
+  it('writes NOTHING to a non-TTY stream', () => {
+    // A headless --prompt run, a tee, or a CI log must never receive BEL.
+    const stream = recordingStream(false);
+    const scheduler = immediateScheduler();
+    for (const status of ['idle', 'working', 'error'] as AgentStatus[]) {
+      playStatusAudioPing(stream, status, {
+        mode: 'all',
+        schedule: scheduler.schedule,
+      });
+    }
+    expect(stream.writes).toEqual([]);
+    expect(scheduler.delays).toEqual([]);
+  });
+
+  it('writes nothing when the mode is off', () => {
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    playStatusAudioPing(stream, 'error', {
+      mode: 'off',
+      schedule: scheduler.schedule,
+    });
+    expect(stream.writes).toEqual([]);
+    expect(scheduler.delays).toEqual([]);
+  });
+
+  it('writes nothing for a missing stream and does not throw', () => {
+    expect(() => playStatusAudioPing(undefined, 'error')).not.toThrow();
+    expect(() => playStatusAudioPing(null, 'error')).not.toThrow();
+  });
+
+  it('is byte-identical inside and outside tmux', () => {
+    // BEL is a single byte tmux acts on itself (bell-action), not an escape
+    // sequence carrying a payload. Wrapping it in a DCS passthrough would ring
+    // the outer terminal AND let tmux ring, defeating the user's bell settings.
+    const outside = recordingStream(true);
+    vi.stubEnv('TMUX', '');
+    playStatusAudioPing(outside, 'error', { mode: 'all' });
+
+    const inside = recordingStream(true);
+    vi.stubEnv('TMUX', '/tmp/tmux-1000/default,4242,0');
+    playStatusAudioPing(inside, 'error', { mode: 'all' });
+
+    expect(inside.writes).toEqual(outside.writes);
+    for (const chunk of inside.writes) {
+      expect(chunk).toBe(BEL);
+      expect(chunk).not.toContain('Ptmux;');
+      expect(chunk).not.toContain(ESC);
+    }
+  });
+
+  it('does not write a title sequence when ringing', () => {
+    // Audio and title are separate writers: a ping must never smuggle OSC bytes
+    // into the stream, or a pipe that missed the TTY guard would be corrupted.
+    const stream = recordingStream(true);
+    playStatusAudioPing(stream, 'idle', { mode: 'all' });
+    for (const chunk of stream.writes) {
+      expect(chunk).not.toContain(']0;');
+    }
+  });
+});
+
+describe('audio cues follow the status reducer', () => {
+  // Local copies: the helpers in the player block are scoped to that block,
+  // and a test that leans on them would be reading another describe's state.
+  function recordingStream(isTTY: boolean) {
+    const writes: string[] = [];
+    return {
+      isTTY,
+      writes,
+      write(chunk: string) {
+        writes.push(chunk);
+        return true;
+      },
+    };
+  }
+
+  function immediateScheduler() {
+    const delays: number[] = [];
+    return {
+      delays,
+      schedule(fn: () => void, ms: number) {
+        delays.push(ms);
+        fn();
+      },
+    };
+  }
+  it('rings once per real transition, not once per event', () => {
+    // Walking the same state machine the title uses: a settled reducer emits no
+    // further beats, which is what stops a render loop from ringing repeatedly.
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    let status: AgentStatus = 'idle';
+    let previous = status;
+
+    const drive = (event: Parameters<typeof reduceAgentStatus>[1]) => {
+      status = reduceAgentStatus(status, event);
+      if (status !== previous) {
+        previous = status;
+        playStatusAudioPing(stream, status, {
+          mode: 'all',
+          schedule: scheduler.schedule,
+        });
+      }
+    };
+
+    drive('prompt-submitted');
+    drive('turn-completed');
+    drive('turn-completed');
+    drive('turn-completed');
+
+    // one beat for working, two for the completion - and nothing after.
+    expect(stream.writes).toEqual([BEL, BEL, BEL]);
+  });
+
+  it('keeps the failure cue and never adds a completion cue after it', () => {
+    // reduceAgentStatus latches error across turn-completed, so the transition
+    // into error happens exactly once and the green chime never fires after it.
+    const stream = recordingStream(true);
+    const scheduler = immediateScheduler();
+    let status: AgentStatus = 'idle';
+    let previous = status;
+
+    const drive = (event: Parameters<typeof reduceAgentStatus>[1]) => {
+      status = reduceAgentStatus(status, event);
+      if (status !== previous) {
+        previous = status;
+        playStatusAudioPing(stream, status, {
+          mode: 'all',
+          schedule: scheduler.schedule,
+        });
+      }
+    };
+
+    drive('prompt-submitted');
+    drive('turn-failed');
+    drive('turn-completed');
+
+    expect(stream.writes).toEqual([BEL, BEL, BEL, BEL]);
+    expect(scheduler.delays).toEqual([120, 120]);
+  });
+});
+
+describe('resolveTerminalStream', () => {
+  it('prefers the caller stream when it is a TTY', () => {
+    const primary = { isTTY: true, write: vi.fn() };
+    const secondary = { isTTY: true, write: vi.fn() };
+    expect(resolveTerminalStream(primary, secondary)).toBe(primary);
+  });
+
+  it('falls back to a TTY stderr when the caller stream is piped', () => {
+    const primary = { isTTY: false, write: vi.fn() };
+    const secondary = { isTTY: true, write: vi.fn() };
+    expect(resolveTerminalStream(primary, secondary)).toBe(secondary);
+  });
+
+  it('returns nothing when NEITHER stream is a TTY', () => {
+    // The guarantee the guard exists for: a captured --prompt run must receive
+    // zero control bytes, so an unusable primary must not become a licence to
+    // write somewhere else that is also a pipe.
+    expect(
+      resolveTerminalStream({ isTTY: false }, { isTTY: false }),
+    ).toBeUndefined();
+    expect(resolveTerminalStream(undefined, undefined)).toBeUndefined();
+    expect(resolveTerminalStream(null, {})).toBeUndefined();
+  });
+
+  it('falls back to the process stderr when no fallback is supplied', () => {
+    // Not asserted for identity: this only has to prove the default is consulted
+    // rather than the answer being a hard-coded undefined.
+    const primary = { isTTY: false, write: vi.fn() };
+    const resolved = resolveTerminalStream(primary);
+    expect(resolved === undefined).toBe(process.stderr.isTTY !== true);
+  });
+});
+
+describe('stderr TTY fallback (launcher pipes stdout, terminal is still there)', () => {
+  function fakeStream(isTTY: boolean) {
+    const writes: string[] = [];
+    return {
+      isTTY,
+      writes,
+      write(chunk: string) {
+        writes.push(chunk);
+        return true;
+      },
+    };
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('writes the title to stderr when stdout is a pipe', () => {
+    vi.stubEnv('TMUX', '');
+    const stdout = fakeStream(false);
+    const stderr = fakeStream(true);
+    writeTerminalTitle(stdout, '🟢  Ready', stderr);
+    expect(stdout.writes).toEqual([]);
+    expect(stderr.writes).toEqual([plainTitle('🟢  Ready')]);
+  });
+
+  it('keeps writing to stdout when stdout is the TTY', () => {
+    vi.stubEnv('TMUX', '');
+    const stdout = fakeStream(true);
+    const stderr = fakeStream(true);
+    writeTerminalTitle(stdout, '🟠  Working', stderr);
+    expect(stderr.writes).toEqual([]);
+    expect(stdout.writes).toEqual([plainTitle('🟠  Working')]);
+  });
+
+  it('writes NOTHING when both streams are pipes', () => {
+    const stdout = fakeStream(false);
+    const stderr = fakeStream(false);
+    writeTerminalTitle(stdout, '🟢  Ready', stderr);
+    expect([...stdout.writes, ...stderr.writes]).toEqual([]);
+  });
+
+  it('rings on stderr when stdout is a pipe', () => {
+    const stdout = fakeStream(false);
+    const stderr = fakeStream(true);
+    const delays: number[] = [];
+    playStatusAudioPing(stdout, 'error', {
+      mode: 'all',
+      fallback: stderr,
+      schedule(fn: () => void, ms: number) {
+        delays.push(ms);
+        fn();
+      },
+    });
+    expect(stdout.writes).toEqual([]);
+    expect(stderr.writes).toEqual([BEL, BEL, BEL]);
+    expect(delays).toEqual([120, 120]);
+  });
+
+  it('stays silent when both streams are pipes, even with audio enabled', () => {
+    const stdout = fakeStream(false);
+    const stderr = fakeStream(false);
+    playStatusAudioPing(stdout, 'idle', { mode: 'all', fallback: stderr });
+    expect([...stdout.writes, ...stderr.writes]).toEqual([]);
+  });
+
+  it('honours the tmux passthrough on the stderr write too', () => {
+    // The fallback must not bypass the wrapper: a title written to fd 2 inside
+    // tmux needs exactly the same DCS treatment as one written to fd 1.
+    vi.stubEnv('TMUX', '/tmp/tmux-1000/default,4242,0');
+    const stdout = fakeStream(false);
+    const stderr = fakeStream(true);
+    writeTerminalTitle(stdout, 'x', stderr);
+    expect(stderr.writes).toHaveLength(1);
+    expect(stderr.writes[0]).toContain(ESC + 'Ptmux;');
   });
 });

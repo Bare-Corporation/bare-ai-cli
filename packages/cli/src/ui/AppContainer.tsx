@@ -109,6 +109,8 @@ import { basename } from 'node:path';
 import { computeTerminalTitle } from '../utils/windowTitle.js';
 import {
   isWindowTitleSupported,
+  parseStatusAudioPing,
+  playStatusAudioPing,
   reduceAgentStatus,
   writeTerminalTitle,
   type AgentStatus,
@@ -906,8 +908,12 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       toggleDebugProfiler,
       dispatchExtensionStateUpdate,
       addConfirmUpdateExtensionRequest,
-      toggleBackgroundTasks: () => { setDebugMessage("The /tasks feature is not available in bare-ai-cli."); },
-      toggleBackgroundShell: () => { if (toggleBackgroundShellRef.current) toggleBackgroundShellRef.current();
+      toggleBackgroundTasks: () => {
+        setDebugMessage('The /tasks feature is not available in bare-ai-cli.');
+      },
+      toggleBackgroundShell: () => {
+        if (toggleBackgroundShellRef.current)
+          toggleBackgroundShellRef.current();
         if (!isBackgroundShellVisibleRef.current) {
           setEmbeddedShellFocused(true);
           if (backgroundShellsRef.current.size > 1) {
@@ -1509,9 +1515,9 @@ Logging in with Google... Restarting Bare AI CLI to continue.
   }, []);
   const shouldShowIdePrompt = Boolean(
     currentIDE &&
-      !config.getIdeMode() &&
-      !settings.merged.ide.hasSeenNudge &&
-      !idePromptAnswered,
+    !config.getIdeMode() &&
+    !settings.merged.ide.hasSeenNudge &&
+    !idePromptAnswered,
   );
 
   const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
@@ -1746,9 +1752,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       if (keyMatchers[Command.SHOW_ERROR_DETAILS](key)) {
         if (settings.merged.general.devtools) {
           void (async () => {
-            const { toggleDevToolsPanel } = await import(
-              '../utils/devtoolsService.js'
-            );
+            const { toggleDevToolsPanel } =
+              await import('../utils/devtoolsService.js');
             await toggleDevToolsPanel(
               config,
               showErrorDetails,
@@ -1985,6 +1990,33 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     stdout,
   ]);
 
+  // Audible status cues, on the same transitions the circle follows.
+  //
+  // Deliberately a SEPARATE effect from the title: audio is not owned by
+  // hideWindowTitle, so an operator who mutes the title bar must still hear a
+  // failed turn. Coupling them would also mean the cue silently disappears for
+  // anyone running with a title-less terminal.
+  //
+  // The ref is the baseline, not the latch. The status latch itself lives in
+  // agentStatusRef above; this only answers "did the circle just change?",
+  // because ringing on the first render would train the operator to ignore the
+  // cue before anything has happened.
+  const statusAudioMode = parseStatusAudioPing(
+    settings.merged.ui.statusAudioPing,
+  );
+  const previousAudioStatusRef = useRef<AgentStatus>(agentStatus);
+  useEffect(() => {
+    const previous = previousAudioStatusRef.current;
+    previousAudioStatusRef.current = agentStatus;
+    if (previous === agentStatus) {
+      return;
+    }
+    // Non-TTY streams are refused inside playStatusAudioPing, on the same
+    // reasoning as the title: BEL is a control byte and must not land in a
+    // --prompt capture or a CI log.
+    playStatusAudioPing(stdout, agentStatus, { mode: statusAudioMode });
+  }, [agentStatus, statusAudioMode, stdout]);
+
   useEffect(() => {
     const handleUserFeedback = (payload: UserFeedbackPayload) => {
       let type: MessageType;
@@ -2009,7 +2041,10 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       // error feedback, and the user needs to see that the run failed even
       // though the prompt is idle again.
       if (payload.severity === 'error') {
-        const latched = reduceAgentStatus(agentStatusRef.current, 'turn-failed');
+        const latched = reduceAgentStatus(
+          agentStatusRef.current,
+          'turn-failed',
+        );
         if (latched !== agentStatusRef.current) {
           agentStatusRef.current = latched;
           forceStatusRender();
@@ -2096,22 +2131,23 @@ Logging in with Google... Restarting Bare AI CLI to continue.
   const loadingPhrases = settings.merged.ui.loadingPhrases;
   const showStatusTips = loadingPhrases === 'tips' || loadingPhrases === 'all';
 
+  const { elapsedTime, currentLoadingPhrase } = useLoadingIndicator({
+    streamingState,
+    shouldShowFocusHint,
+    retryStatus,
+    loadingPhrasesMode: showStatusTips ? 'all' : 'off',
+    customWittyPhrases: settings.merged.ui.customWittyPhrases,
+    errorVerbosity: settings.merged.ui.errorVerbosity,
+  });
 
-
-
-
-  const { elapsedTime, currentLoadingPhrase } =
-    useLoadingIndicator({
-      streamingState,
-      shouldShowFocusHint,
-      retryStatus,
-      loadingPhrasesMode: showStatusTips ? 'all' : 'off',
-      customWittyPhrases: settings.merged.ui.customWittyPhrases,
-      errorVerbosity: settings.merged.ui.errorVerbosity,
-    });
-
-  const currentTip = typeof currentLoadingPhrase === 'object' ? currentLoadingPhrase?.currentTip : undefined;
-  const currentWittyPhrase = typeof currentLoadingPhrase === 'object' ? currentLoadingPhrase?.currentWittyPhrase : undefined;
+  const currentTip =
+    typeof currentLoadingPhrase === 'object'
+      ? currentLoadingPhrase?.currentTip
+      : undefined;
+  const currentWittyPhrase =
+    typeof currentLoadingPhrase === 'object'
+      ? currentLoadingPhrase?.currentWittyPhrase
+      : undefined;
   const allowPlanMode =
     config.isPlanEnabled() &&
     streamingState === StreamingState.Idle &&
@@ -2137,7 +2173,8 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     permissionConfirmationRequest,
     hasConfirmUpdateExtensionRequests,
     hasLoopDetectionConfirmationRequest,
-    notificationMethod: (settings?.merged?.general as any)?.notificationMethod ?? "terminal",
+    notificationMethod:
+      (settings?.merged?.general as any)?.notificationMethod ?? 'terminal',
   });
 
   const isPassiveShortcutsHelpState =
@@ -2667,7 +2704,13 @@ Logging in with Google... Restarting Bare AI CLI to continue.
               startupWarnings: props.startupWarnings || [],
             }}
           >
-            <ToolActionsProvider config={config} toolCalls={allToolCalls} isExpanded={() => false} toggleExpansion={() => {}} toggleAllExpansion={() => {}}>
+            <ToolActionsProvider
+              config={config}
+              toolCalls={allToolCalls}
+              isExpanded={() => false}
+              toggleExpansion={() => {}}
+              toggleAllExpansion={() => {}}
+            >
               <ShellFocusContext.Provider value={isFocused}>
                 <App key={`app-${forceRerenderKey}`} />
               </ShellFocusContext.Provider>

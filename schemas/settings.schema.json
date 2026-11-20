@@ -310,6 +310,14 @@
           "default": true,
           "type": "boolean"
         },
+        "statusAudioPing": {
+          "title": "Status Audio Ping",
+          "description": "Audible cue on agent status changes: all rings when a turn starts too, completion rings only when a turn ends (finished or failed), off is silent.",
+          "markdownDescription": "Audible cue on agent status changes: all rings when a turn starts too, completion rings only when a turn ends (finished or failed), off is silent.\n\n- Category: `UI`\n- Requires restart: `no`\n- Default: `completion`",
+          "default": "completion",
+          "type": "string",
+          "enum": ["all", "completion", "off"]
+        },
         "showHomeDirectoryWarning": {
           "title": "Show Home Directory Warning",
           "description": "Show a warning when running Bare AI CLI in the home directory.",

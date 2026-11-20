@@ -23,21 +23,24 @@ import {
 import type { SessionRetentionSettings } from './settings.js';
 import { DEFAULT_MIN_RETENTION } from '../utils/sessionCleanup.js';
 
+/**
+ * An empty map for a schema default whose ELEMENT type must survive inference.
+ *
+ * Written as a call rather than a cast because lint's
+ * no-unnecessary-type-assertion rule judges an assertion against its
+ * immediate receiver and strips it, which silently erases the element type
+ * and breaks the code that reads the default back out of the schema. A
+ * generic call states the same type with no assertion for the rule to remove.
+ */
+function emptyRecord<T>(): Record<string, T> {
+  return {};
+}
+
 export type SettingsType =
-  | 'boolean'
-  | 'string'
-  | 'number'
-  | 'array'
-  | 'object'
-  | 'enum';
+  'boolean' | 'string' | 'number' | 'array' | 'object' | 'enum';
 
 export type SettingsValue =
-  | boolean
-  | string
-  | number
-  | string[]
-  | object
-  | undefined;
+  boolean | string | number | string[] | object | undefined;
 
 /**
  * Setting datatypes that "toggle" through a fixed list of options
@@ -166,7 +169,7 @@ const SETTINGS_SCHEMA = {
     label: 'MCP Servers',
     category: 'Advanced',
     requiresRestart: true,
-    default: {} as Record<string, MCPServerConfig>,
+    default: emptyRecord<MCPServerConfig>(),
     description: 'Configuration for MCP servers.',
     showInDialog: false,
     mergeStrategy: MergeStrategy.SHALLOW_MERGE,
@@ -371,7 +374,7 @@ const SETTINGS_SCHEMA = {
             label: 'Enable Session Cleanup',
             category: 'General',
             requiresRestart: false,
-            default: true as boolean,
+            default: true,
             description: 'Enable automatic session cleanup',
             showInDialog: true,
           },
@@ -380,7 +383,7 @@ const SETTINGS_SCHEMA = {
             label: 'Keep chat history',
             category: 'General',
             requiresRestart: false,
-            default: '30d' as string,
+            default: '30d',
             description:
               'Automatically delete chats older than this time period (e.g., "30d", "7d", "24h", "1w")',
             showInDialog: true,
@@ -507,7 +510,7 @@ const SETTINGS_SCHEMA = {
         label: 'Custom Themes',
         category: 'UI',
         requiresRestart: false,
-        default: {} as Record<string, CustomTheme>,
+        default: emptyRecord<CustomTheme>(),
         description: 'Custom theme definitions.',
         showInDialog: false,
         additionalProperties: {
@@ -556,6 +559,21 @@ const SETTINGS_SCHEMA = {
         description:
           'Update the terminal window title with current status icons (Ready: ◇, Action Required: ✋, Working: ✦)',
         showInDialog: true,
+      },
+      statusAudioPing: {
+        type: 'enum',
+        label: 'Status Audio Ping',
+        category: 'UI',
+        requiresRestart: false,
+        default: 'completion',
+        description:
+          'Audible cue on agent status changes: all rings when a turn starts too, completion rings only when a turn ends (finished or failed), off is silent.',
+        showInDialog: true,
+        options: [
+          { value: 'all', label: 'All' },
+          { value: 'completion', label: 'Completion only' },
+          { value: 'off', label: 'Off' },
+        ],
       },
       showHomeDirectoryWarning: {
         type: 'boolean',
@@ -989,8 +1007,7 @@ const SETTINGS_SCHEMA = {
         category: 'Model',
         requiresRestart: false,
         default: undefined as
-          | Record<string, { tokenBudget?: number }>
-          | undefined,
+          Record<string, { tokenBudget?: number }> | undefined,
         description: oneLine`
           Enables or disables summarization of tool output.
           Configure per-tool token budgets (for example {"run_shell_command": {"tokenBudget": 2000}}).
@@ -1009,7 +1026,7 @@ const SETTINGS_SCHEMA = {
         label: 'Context Compression Threshold',
         category: 'Model',
         requiresRestart: true,
-        default: 0.5 as number,
+        default: 0.5,
         description:
           'The fraction of context usage at which to trigger context compression (e.g. 0.2, 0.3).',
         showInDialog: true,
@@ -1103,7 +1120,7 @@ const SETTINGS_SCHEMA = {
         label: 'Agent Overrides',
         category: 'Advanced',
         requiresRestart: true,
-        default: {} as Record<string, AgentOverride>,
+        default: emptyRecord<AgentOverride>(),
         description:
           'Override settings for specific agents, e.g. to disable the agent, set a custom model config, or run config.',
         showInDialog: false,
@@ -1356,7 +1373,7 @@ const SETTINGS_SCHEMA = {
             label: 'Pager',
             category: 'Tools',
             requiresRestart: false,
-            default: 'cat' as string | undefined,
+            default: 'cat',
             description:
               'The pager command to use for shell output. Defaults to `cat`.',
             showInDialog: false,
@@ -2437,7 +2454,7 @@ const SETTINGS_SCHEMA = {
             label: 'MCP Config',
             category: 'Admin',
             requiresRestart: false,
-            default: {} as Record<string, MCPServerConfig>,
+            default: emptyRecord<MCPServerConfig>(),
             description: 'Admin-configured MCP servers.',
             showInDialog: false,
             mergeStrategy: MergeStrategy.REPLACE,
