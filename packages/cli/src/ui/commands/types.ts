@@ -5,20 +5,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AgentLoopContext } from '@bare-ai/core';
-import type { ReactNode } from 'react';
 import type {
-  HistoryItemWithoutId,
-  HistoryItem,
-  ConfirmationRequest,
-} from '../types.js';
-import type {
+  AgentLoopContext,
   Config,
   GitService,
   Logger,
   CommandActionReturn,
   AgentDefinition,
 } from '@bare-ai/core';
+import type { ReactNode } from 'react';
+import type {
+  HistoryItemWithoutId,
+  HistoryItem,
+  ConfirmationRequest,
+} from '../types.js';
 import type { LoadedSettings } from '../../config/settings.js';
 import type { UseHistoryManagerReturn } from '../hooks/useHistoryManager.js';
 import type { SessionStatsState } from '../contexts/SessionContext.js';
@@ -41,8 +41,7 @@ export interface CommandContext {
   };
   // Core services and configuration
   services: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    agentContext?: any;
+    agentContext?: AgentLoopContext;
     // TODO(abhipatel12): Ensure that config is never null.
     config?: Config | null;
     settings: LoadedSettings;

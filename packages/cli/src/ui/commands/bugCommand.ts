@@ -16,6 +16,7 @@ import { MessageType } from '../types.js';
 import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
 import { formatBytes } from '../utils/formatters.js';
 import {
+  type AgentLoopContext,
   IdeClient,
   getVersion,
   INITIAL_HISTORY_LENGTH,
@@ -32,7 +33,8 @@ export const bugCommand: SlashCommand = {
   autoExecute: false,
   action: async (context: CommandContext, args?: string): Promise<void> => {
     const bugDescription = (args || '').trim();
-    const agentContext = context.services.agentContext;
+    const agentContext: AgentLoopContext | undefined =
+      context.services.agentContext;
     const config = agentContext?.config;
     const osVersion = `${process.platform} ${process.version}`;
     let sandboxEnv = 'no sandbox';
