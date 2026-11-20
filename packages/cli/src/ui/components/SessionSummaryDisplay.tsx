@@ -1,10 +1,12 @@
 /**
  * @license
- * Copyright 2026 Cloud Integration Corporation
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Portions Copyright 2026 Cloud Integration Corporation
  */
- /**
+/**
 ############################################################
 #    ____ _                 _ _       _        ____        #
 #   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
