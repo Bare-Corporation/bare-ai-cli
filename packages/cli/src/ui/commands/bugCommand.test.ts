@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -86,6 +87,7 @@ describe('bugCommand', () => {
         agentContext: {
           config: {
             getModel: () => 'gemini-pro',
+            getSessionId: () => 'test-session-id',
             getBugCommand: () => undefined,
             getIdeMode: () => true,
             getContentGeneratorConfig: () => ({ authType: 'oauth-personal' }),
@@ -116,7 +118,7 @@ describe('bugCommand', () => {
 * **Kitty Keyboard Protocol:** Supported
 * **IDE Client:** VSCode
 `;
-    const expectedUrl = `https://github.com/google-gemini/bare-ai-cli/issues/new?template=bug_report.yml&title=A%20test%20bug&info=${encodeURIComponent(expectedInfo)}&problem=A%20test%20bug`;
+    const expectedUrl = `https://github.com/Bare-Corporation/bare-ai-cli/issues/new?template=bug_report.yml&title=A%20test%20bug&info=${encodeURIComponent(expectedInfo)}&problem=A%20test%20bug`;
 
     expect(open).toHaveBeenCalledWith(expectedUrl);
   });
@@ -131,6 +133,7 @@ describe('bugCommand', () => {
         agentContext: {
           config: {
             getModel: () => 'gemini-pro',
+            getSessionId: () => 'test-session-id',
             getBugCommand: () => undefined,
             getIdeMode: () => true,
             getContentGeneratorConfig: () => ({ authType: 'vertex-ai' }),
@@ -179,6 +182,7 @@ describe('bugCommand', () => {
         agentContext: {
           config: {
             getModel: () => 'gemini-pro',
+            getSessionId: () => 'test-session-id',
             getBugCommand: () => ({ urlTemplate: customTemplate }),
             getIdeMode: () => true,
             getContentGeneratorConfig: () => ({ authType: 'vertex-ai' }),
