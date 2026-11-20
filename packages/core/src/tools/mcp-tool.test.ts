@@ -730,23 +730,22 @@ describe('DiscoveredMCPTool', () => {
         const controller = new AbortController();
 
         // Mock a delayed response to simulate long-running tool
-        mockCallTool.mockImplementation(
-          () =>
-            new Promise((resolve) => {
-              setTimeout(() => {
-                resolve([
-                  {
-                    functionResponse: {
-                      name: serverToolName,
-                      response: {
-                        content: [{ type: 'text', text: 'Success' }],
-                      },
+        mockCallTool.mockImplementation(function () {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve([
+                {
+                  functionResponse: {
+                    name: serverToolName,
+                    response: {
+                      content: [{ type: 'text', text: 'Success' }],
                     },
                   },
-                ]);
-              }, MOCK_TOOL_DELAY);
-            }),
-        );
+                },
+              ]);
+            }, MOCK_TOOL_DELAY);
+          });
+        });
 
         const invocation = tool.build(params);
         const promise = invocation.execute({ abortSignal: controller.signal });

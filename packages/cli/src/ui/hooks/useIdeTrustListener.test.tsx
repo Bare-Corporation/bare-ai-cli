@@ -21,16 +21,17 @@ import type { LoadedSettings } from '../../config/settings.js';
 
 // Mock dependencies
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
   const ideClientInstance = {
     addTrustChangeListener: vi.fn(),
     removeTrustChangeListener: vi.fn(),
     addStatusChangeListener: vi.fn(),
     removeStatusChangeListener: vi.fn(),
-    getConnectionStatus: vi.fn(() => ({
-      status: IDEConnectionStatus.Disconnected,
-    })),
+    getConnectionStatus: vi.fn(function () {
+      return {
+        status: IDEConnectionStatus.Disconnected,
+      };
+    }),
   };
   return {
     ...original,
@@ -58,21 +59,22 @@ describe('useIdeTrustListener', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    vi.mocked(IdeClient.getInstance).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          deferredIdeClient = { resolve };
-        }),
-    );
+    vi.mocked(IdeClient.getInstance).mockImplementation(function () {
+      return new Promise((resolve) => {
+        deferredIdeClient = { resolve };
+      });
+    });
 
     mockIdeClient = {
       addTrustChangeListener: vi.fn(),
       removeTrustChangeListener: vi.fn(),
       addStatusChangeListener: vi.fn(),
       removeStatusChangeListener: vi.fn(),
-      getConnectionStatus: vi.fn(() => ({
-        status: IDEConnectionStatus.Disconnected,
-      })),
+      getConnectionStatus: vi.fn(function () {
+        return {
+          status: IDEConnectionStatus.Disconnected,
+        };
+      }),
     } as unknown as IdeClient;
 
     mockSettings = {

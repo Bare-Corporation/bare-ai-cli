@@ -79,9 +79,7 @@ describe('authCommand', () => {
       const logoutCommand = authCommand.subCommands?.[1];
       expect(logoutCommand?.name).toBe('signout');
 
-      const { clearCachedCredentialFile } = await import(
-        '@bare-ai/core'
-      );
+      const { clearCachedCredentialFile } = await import('@bare-ai/core');
 
       await logoutCommand!.action!(mockContext, '');
 
@@ -108,7 +106,9 @@ describe('authCommand', () => {
       } as unknown as GeminiClient;
       if (mockContext.services.agentContext?.config) {
         mockContext.services.agentContext.config.getGeminiClient = vi.fn(
-          () => mockClient,
+          function () {
+            return mockClient;
+          },
         );
       }
 

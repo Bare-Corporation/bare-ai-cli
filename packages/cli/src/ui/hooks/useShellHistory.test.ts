@@ -20,7 +20,11 @@ vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn(),
   mkdir: vi.fn(),
 }));
-const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/mock-home'));
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/tmp/mock-home';
+  }),
+);
 vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();
   return {
@@ -37,8 +41,7 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   const path = await import('node:path');
   class Storage {
     static getGlobalSettingsPath(): string {

@@ -487,10 +487,10 @@ describe('commandUtils', () => {
       const testText = 'timeout-fallback';
       process.env['SSH_CONNECTION'] = '1';
 
-      mockFs.createWriteStream.mockImplementation(() =>
-        // Stream that never emits open or error
-        makeWritable({ isTTY: true }),
-      );
+      mockFs.createWriteStream.mockImplementation(function () {
+        return; // Stream that never emits open or error
+        makeWritable({ isTTY: true });
+      });
 
       mockClipboardyWrite.mockResolvedValue(undefined);
 

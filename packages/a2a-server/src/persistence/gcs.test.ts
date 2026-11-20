@@ -195,7 +195,9 @@ describe('GCSTaskStore', () => {
       getBuckets: vi.fn().mockResolvedValue([[{ name: bucketName }]]),
       createBucket: vi.fn().mockResolvedValue([mockBucket]),
     };
-    mockStorage.mockReturnValue(mockStorageInstance as unknown as Storage);
+    mockStorage.mockImplementation(function () {
+      return mockStorageInstance as unknown as Storage;
+    });
 
     mockUuidv4.mockReturnValue('test-uuid');
     mockSetTargetDir.mockReturnValue('/tmp/workdir');

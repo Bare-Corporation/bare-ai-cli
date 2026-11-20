@@ -81,7 +81,9 @@ describe('useAnimatedScrollbar', () => {
     });
     const dateSpy = vi.spyOn(Date, 'now');
     let currentTime = 1000;
-    dateSpy.mockImplementation(() => currentTime);
+    dateSpy.mockImplementation(function () {
+      return currentTime;
+    });
 
     const { rerender } = await render(<TestComponent isFocused={false} />);
 

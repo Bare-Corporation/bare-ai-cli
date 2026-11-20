@@ -59,12 +59,11 @@ describe('Telemetry SDK', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(GoogleAuth).mockImplementation(
-      () =>
-        ({
-          getApplicationDefault: mockGetApplicationDefault,
-        }) as unknown as GoogleAuth,
-    );
+    vi.mocked(GoogleAuth).mockImplementation(function () {
+      return {
+        getApplicationDefault: mockGetApplicationDefault,
+      } as unknown as GoogleAuth;
+    });
     mockConfig = {
       getTelemetryEnabled: () => true,
       getTelemetryOtlpEndpoint: () => 'http://localhost:4317',

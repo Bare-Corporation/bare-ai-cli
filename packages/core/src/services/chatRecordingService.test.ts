@@ -58,12 +58,18 @@ vi.mock('node:crypto', async (importOriginal) => {
   let count = 0;
   return {
     ...actual,
-    randomUUID: vi.fn(() => `test-uuid-${count++}`),
-    createHash: vi.fn(() => ({
-      update: vi.fn(() => ({
-        digest: vi.fn(() => 'mocked-hash'),
-      })),
-    })),
+    randomUUID: vi.fn(function () {
+      return `test-uuid-${count++}`;
+    }),
+    createHash: vi.fn(function () {
+      return {
+        update: vi.fn(function () {
+          return {
+            digest: vi.fn(() => 'mocked-hash'),
+          };
+        }),
+      };
+    }),
   };
 });
 

@@ -37,15 +37,17 @@ const hoistedMockAdd = vi.hoisted(() => vi.fn());
 const hoistedMockCommit = vi.hoisted(() => vi.fn());
 const hoistedMockStatus = vi.hoisted(() => vi.fn());
 vi.mock('simple-git', () => ({
-  simpleGit: hoistedMockSimpleGit.mockImplementation(() => ({
-    checkIsRepo: hoistedMockCheckIsRepo,
-    init: hoistedMockInit,
-    raw: hoistedMockRaw,
-    add: hoistedMockAdd,
-    commit: hoistedMockCommit,
-    status: hoistedMockStatus,
-    env: hoistedMockEnv,
-  })),
+  simpleGit: hoistedMockSimpleGit.mockImplementation(function () {
+    return {
+      checkIsRepo: hoistedMockCheckIsRepo,
+      init: hoistedMockInit,
+      raw: hoistedMockRaw,
+      add: hoistedMockAdd,
+      commit: hoistedMockCommit,
+      status: hoistedMockStatus,
+      env: hoistedMockEnv,
+    };
+  }),
   CheckRepoActions: { IS_REPO_ROOT: 'is-repo-root' },
 }));
 
@@ -103,23 +105,27 @@ describe('GitService', () => {
     hoistedMockHomedir.mockReturnValue(homedir);
     (pathsHomedir as Mock).mockReturnValue(homedir);
 
-    hoistedMockEnv.mockImplementation(() => ({
-      checkIsRepo: hoistedMockCheckIsRepo,
-      init: hoistedMockInit,
-      raw: hoistedMockRaw,
-      add: hoistedMockAdd,
-      commit: hoistedMockCommit,
-      status: hoistedMockStatus,
-    }));
-    hoistedMockSimpleGit.mockImplementation(() => ({
-      checkIsRepo: hoistedMockCheckIsRepo,
-      init: hoistedMockInit,
-      raw: hoistedMockRaw,
-      add: hoistedMockAdd,
-      commit: hoistedMockCommit,
-      status: hoistedMockStatus,
-      env: hoistedMockEnv,
-    }));
+    hoistedMockEnv.mockImplementation(function () {
+      return {
+        checkIsRepo: hoistedMockCheckIsRepo,
+        init: hoistedMockInit,
+        raw: hoistedMockRaw,
+        add: hoistedMockAdd,
+        commit: hoistedMockCommit,
+        status: hoistedMockStatus,
+      };
+    });
+    hoistedMockSimpleGit.mockImplementation(function () {
+      return {
+        checkIsRepo: hoistedMockCheckIsRepo,
+        init: hoistedMockInit,
+        raw: hoistedMockRaw,
+        add: hoistedMockAdd,
+        commit: hoistedMockCommit,
+        status: hoistedMockStatus,
+        env: hoistedMockEnv,
+      };
+    });
     hoistedMockCheckIsRepo.mockResolvedValue(false);
     hoistedMockInit.mockResolvedValue(undefined);
     hoistedMockRaw.mockResolvedValue('');

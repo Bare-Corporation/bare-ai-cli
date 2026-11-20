@@ -58,7 +58,9 @@ describe('usePhraseCycler', () => {
   });
 
   it('should initialize with an empty string when not active and not waiting', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    }); // Always witty
     const { lastFrame, unmount, waitUntilReady } = await render(
       <TestComponent isActive={false} isWaiting={false} />,
     );
@@ -141,7 +143,9 @@ describe('usePhraseCycler', () => {
   });
 
   it('should show both a tip and a witty phrase when both are enabled', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5);
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    });
     const { lastFrame, waitUntilReady, unmount } = await render(
       <TestComponent
         isActive={true}
@@ -162,7 +166,9 @@ describe('usePhraseCycler', () => {
   });
 
   it('should cycle through phrases when isActive is true and not waiting', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5);
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    });
     const { lastFrame, waitUntilReady, unmount } = await render(
       <TestComponent
         isActive={true}
@@ -319,7 +325,9 @@ describe('usePhraseCycler', () => {
   });
 
   it('should fall back to witty phrases if custom phrases are an empty array', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5);
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    });
     const { lastFrame, waitUntilReady, unmount } = await render(
       <TestComponent
         isActive={true}

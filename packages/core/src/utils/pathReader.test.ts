@@ -299,7 +299,9 @@ describe('readPathFromWorkspace', () => {
         },
       });
       const mockFileService = {
-        filterFiles: vi.fn(() => []), // Simulate the file being filtered out
+        filterFiles: vi.fn(function () {
+          return [];
+        }), // Simulate the file being filtered out
       } as unknown as FileDiscoveryService;
       const config = createMockConfig(CWD, [], mockFileService);
       const result = await readPathFromWorkspace('ignored.txt', config);
@@ -349,7 +351,9 @@ describe('readPathFromWorkspace', () => {
         },
       });
       const mockFileService = {
-        filterFiles: vi.fn(() => []),
+        filterFiles: vi.fn(function () {
+          return [];
+        }),
       } as unknown as FileDiscoveryService;
       const config = createMockConfig(CWD, [], mockFileService, {
         respectGitIgnore: false,

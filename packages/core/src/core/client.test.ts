@@ -77,10 +77,12 @@ vi.mock('node:fs', () => {
       });
     }),
     existsSync: vi.fn((path: string) => mockFileSystem.has(path)),
-    createWriteStream: vi.fn(() => ({
-      write: vi.fn(),
-      on: vi.fn(),
-    })),
+    createWriteStream: vi.fn(function () {
+      return {
+        write: vi.fn(),
+        on: vi.fn(),
+      };
+    }),
   };
 
   return {
@@ -2211,11 +2213,11 @@ ${JSON.stringify(
         reason: 'test',
       });
       // Always return a new invalid stream
-      mockTurnRunFn.mockImplementation(() =>
-        (async function* () {
+      mockTurnRunFn.mockImplementation(function () {
+        return (async function* () {
           yield { type: GeminiEventType.InvalidStream };
-        })(),
-      );
+        })();
+      });
 
       const mockChat: Partial<GeminiChat> = {
         addHistory: vi.fn(),
@@ -3102,12 +3104,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'First event' };
             yield { type: GeminiEventType.Content, value: 'Second event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3152,12 +3154,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
             yield { type: GeminiEventType.Content, value: 'Event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3188,11 +3190,11 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3229,12 +3231,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
             yield { type: GeminiEventType.Content, value: 'Event 2' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3278,12 +3280,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
             yield { type: GeminiEventType.Content, value: 'Event 2' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3310,11 +3312,11 @@ ${JSON.stringify(
         vi.spyOn(client['loopDetector'], 'addAndCheck').mockReturnValue({
           count: 0,
         });
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(

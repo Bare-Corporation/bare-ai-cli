@@ -68,16 +68,24 @@ const createMockConfig = (overrides: Partial<Config> = {}): Config =>
     setActiveModel: vi.fn(),
     setModel: vi.fn(),
     activateFallbackMode: vi.fn(),
-    getModelAvailabilityService: vi.fn(() =>
-      createAvailabilityServiceMock({
+    getModelAvailabilityService: vi.fn(function () {
+      return createAvailabilityServiceMock({
         selectedModel: FALLBACK_MODEL,
         skipped: [],
-      }),
-    ),
-    getActiveModel: vi.fn(() => MOCK_PRO_MODEL),
-    getModel: vi.fn(() => MOCK_PRO_MODEL),
-    getUserTier: vi.fn(() => undefined),
-    isInteractive: vi.fn(() => false),
+      });
+    }),
+    getActiveModel: vi.fn(function () {
+      return MOCK_PRO_MODEL;
+    }),
+    getModel: vi.fn(function () {
+      return MOCK_PRO_MODEL;
+    }),
+    getUserTier: vi.fn(function () {
+      return undefined;
+    }),
+    isInteractive: vi.fn(function () {
+      return false;
+    }),
     ...overrides,
   }) as unknown as Config;
 

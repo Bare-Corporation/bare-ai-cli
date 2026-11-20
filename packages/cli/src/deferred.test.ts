@@ -47,9 +47,9 @@ let mockExit: MockInstance;
 describe('deferred', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockExit = vi
-      .spyOn(process, 'exit')
-      .mockImplementation(() => undefined as never);
+    mockExit = vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
     setDeferredCommand(undefined as unknown as DeferredCommand); // Reset deferred command
   });
 

@@ -103,10 +103,12 @@ describe('SimpleExtensionLoader', () => {
         isInitialized: () => true,
         setTools: mockGeminiClientSetTools,
       },
-      getGeminiClient: vi.fn(() => ({
-        isInitialized: () => true,
-        setTools: mockGeminiClientSetTools,
-      })),
+      getGeminiClient: vi.fn(function () {
+        return {
+          isInitialized: () => true,
+          setTools: mockGeminiClientSetTools,
+        };
+      }),
       getHookSystem: () => ({
         initialize: mockHookSystemInit,
       }),

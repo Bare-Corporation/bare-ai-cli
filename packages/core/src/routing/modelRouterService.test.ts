@@ -82,9 +82,9 @@ describe('ModelRouterService', () => {
       ],
       'agent-router',
     );
-    vi.mocked(CompositeStrategy).mockImplementation(
-      () => mockCompositeStrategy,
-    );
+    vi.mocked(CompositeStrategy).mockImplementation(function () {
+      return mockCompositeStrategy;
+    });
 
     service = new ModelRouterService(mockConfig);
 

@@ -47,12 +47,6 @@ export default defineConfig({
         ['json-summary', { outputFile: 'coverage-summary.json' }],
       ],
     },
-    poolOptions: {
-      threads: {
-        minThreads: 1,
-        maxThreads: 4,
-      },
-    },
     server: {
       deps: {
         inline: [/@google\/bare-ai-cli-core/],

@@ -22,8 +22,7 @@ import type { CommandContext } from './types.js';
 import { logger } from '../utils/logger.js';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     performInit: vi.fn(),
@@ -40,9 +39,11 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 vi.mock('../agent/executor.js', () => ({
-  CoderAgentExecutor: vi.fn().mockImplementation(() => ({
-    execute: vi.fn(),
-  })),
+  CoderAgentExecutor: vi.fn().mockImplementation(function () {
+    return {
+      execute: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('../utils/logger.js', () => ({

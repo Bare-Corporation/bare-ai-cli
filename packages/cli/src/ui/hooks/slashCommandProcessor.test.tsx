@@ -49,8 +49,7 @@ vi.mock('./useAlternateBuffer.js', () => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
 
   return {
     ...original,
@@ -80,25 +79,33 @@ vi.mock('node:process', () => {
 });
 
 vi.mock('../../services/BuiltinCommandLoader.js', () => ({
-  BuiltinCommandLoader: vi.fn(() => ({
-    loadCommands: mockBuiltinLoadCommands,
-  })),
+  BuiltinCommandLoader: vi.fn(function () {
+    return {
+      loadCommands: mockBuiltinLoadCommands,
+    };
+  }),
 }));
 
 vi.mock('../../services/FileCommandLoader.js', () => ({
-  FileCommandLoader: vi.fn(() => ({
-    loadCommands: mockFileLoadCommands,
-  })),
+  FileCommandLoader: vi.fn(function () {
+    return {
+      loadCommands: mockFileLoadCommands,
+    };
+  }),
 }));
 
 vi.mock('../../services/McpPromptLoader.js', () => ({
-  McpPromptLoader: vi.fn(() => ({
-    loadCommands: mockMcpLoadCommands,
-  })),
+  McpPromptLoader: vi.fn(function () {
+    return {
+      loadCommands: mockMcpLoadCommands,
+    };
+  }),
 }));
 
 vi.mock('../contexts/SessionContext.js', () => ({
-  useSessionStats: vi.fn(() => ({ stats: {} })),
+  useSessionStats: vi.fn(function () {
+    return { stats: {} };
+  }),
 }));
 
 const { mockRunExitCleanup } = vi.hoisted(() => ({
@@ -872,12 +879,11 @@ describe('useSlashCommandProcessor', () => {
       const addStatusChangeListener = vi.fn();
       const removeStatusChangeListener = vi.fn();
 
-      mockIdeClientGetInstance.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            resolveIdeClient = resolve;
-          }),
-      );
+      mockIdeClientGetInstance.mockImplementation(function () {
+        return new Promise((resolve) => {
+          resolveIdeClient = resolve;
+        });
+      });
 
       const result = await setupProcessorHook();
 
@@ -908,12 +914,11 @@ describe('useSlashCommandProcessor', () => {
       const addStatusChangeListener = vi.fn();
       const removeStatusChangeListener = vi.fn();
 
-      mockIdeClientGetInstance.mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            resolveIdeClient = resolve;
-          }),
-      );
+      mockIdeClientGetInstance.mockImplementation(function () {
+        return new Promise((resolve) => {
+          resolveIdeClient = resolve;
+        });
+      });
 
       const result = await setupProcessorHook();
 

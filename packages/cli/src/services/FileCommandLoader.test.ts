@@ -29,14 +29,18 @@ import { AtFileProcessor } from './prompt-processors/atFileProcessor.js';
 const mockShellProcess = vi.hoisted(() => vi.fn());
 const mockAtFileProcess = vi.hoisted(() => vi.fn());
 vi.mock('./prompt-processors/atFileProcessor.js', () => ({
-  AtFileProcessor: vi.fn().mockImplementation(() => ({
-    process: mockAtFileProcess,
-  })),
+  AtFileProcessor: vi.fn().mockImplementation(function () {
+    return {
+      process: mockAtFileProcess,
+    };
+  }),
 }));
 vi.mock('./prompt-processors/shellProcessor.js', () => ({
-  ShellProcessor: vi.fn().mockImplementation(() => ({
-    process: mockShellProcess,
-  })),
+  ShellProcessor: vi.fn().mockImplementation(function () {
+    return {
+      process: mockShellProcess,
+    };
+  }),
   ConfirmationRequiredError: class extends Error {
     constructor(
       message: string,
@@ -54,14 +58,13 @@ vi.mock('./prompt-processors/argumentProcessor.js', async (importOriginal) => {
       typeof import('./prompt-processors/argumentProcessor.js')
     >();
   return {
-    DefaultArgumentProcessor: vi
-      .fn()
-      .mockImplementation(() => new original.DefaultArgumentProcessor()),
+    DefaultArgumentProcessor: vi.fn().mockImplementation(function () {
+      return new original.DefaultArgumentProcessor();
+    }),
   };
 });
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
     Storage: original.Storage,
@@ -231,10 +234,18 @@ describe('FileCommandLoader', () => {
       },
     });
     const mockConfig = {
-      getProjectRoot: vi.fn(() => '/path/to/project'),
-      getExtensions: vi.fn(() => []),
-      getFolderTrust: vi.fn(() => false),
-      isTrustedFolder: vi.fn(() => false),
+      getProjectRoot: vi.fn(function () {
+        return '/path/to/project';
+      }),
+      getExtensions: vi.fn(function () {
+        return [];
+      }),
+      getFolderTrust: vi.fn(function () {
+        return false;
+      }),
+      isTrustedFolder: vi.fn(function () {
+        return false;
+      }),
     } as unknown as Config;
     const loader = new FileCommandLoader(mockConfig);
     const commands = await loader.loadCommands(signal);
@@ -276,10 +287,18 @@ describe('FileCommandLoader', () => {
     });
 
     const mockConfig = {
-      getProjectRoot: vi.fn(() => process.cwd()),
-      getExtensions: vi.fn(() => []),
-      getFolderTrust: vi.fn(() => false),
-      isTrustedFolder: vi.fn(() => false),
+      getProjectRoot: vi.fn(function () {
+        return process.cwd();
+      }),
+      getExtensions: vi.fn(function () {
+        return [];
+      }),
+      getFolderTrust: vi.fn(function () {
+        return false;
+      }),
+      isTrustedFolder: vi.fn(function () {
+        return false;
+      }),
     } as unknown as Config;
     const loader = new FileCommandLoader(mockConfig);
     const commands = await loader.loadCommands(signal);
@@ -562,17 +581,25 @@ describe('FileCommandLoader', () => {
       });
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => process.cwd()),
-        getExtensions: vi.fn(() => [
-          {
-            name: 'test-ext',
-            version: '1.0.0',
-            isActive: true,
-            path: extensionDir,
-          },
-        ]),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return process.cwd();
+        }),
+        getExtensions: vi.fn(function () {
+          return [
+            {
+              name: 'test-ext',
+              version: '1.0.0',
+              isActive: true,
+              path: extensionDir,
+            },
+          ];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const loader = new FileCommandLoader(mockConfig);
       const commands = await loader.loadCommands(signal);
@@ -617,17 +644,25 @@ describe('FileCommandLoader', () => {
       });
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => process.cwd()),
-        getExtensions: vi.fn(() => [
-          {
-            name: 'test-ext',
-            version: '1.0.0',
-            isActive: true,
-            path: extensionDir,
-          },
-        ]),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return process.cwd();
+        }),
+        getExtensions: vi.fn(function () {
+          return [
+            {
+              name: 'test-ext',
+              version: '1.0.0',
+              isActive: true,
+              path: extensionDir,
+            },
+          ];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const loader = new FileCommandLoader(mockConfig);
       const commands = await loader.loadCommands(signal);
@@ -724,23 +759,31 @@ describe('FileCommandLoader', () => {
       });
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => process.cwd()),
-        getExtensions: vi.fn(() => [
-          {
-            name: 'active-ext',
-            version: '1.0.0',
-            isActive: true,
-            path: extensionDir1,
-          },
-          {
-            name: 'inactive-ext',
-            version: '1.0.0',
-            isActive: false,
-            path: extensionDir2,
-          },
-        ]),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return process.cwd();
+        }),
+        getExtensions: vi.fn(function () {
+          return [
+            {
+              name: 'active-ext',
+              version: '1.0.0',
+              isActive: true,
+              path: extensionDir1,
+            },
+            {
+              name: 'inactive-ext',
+              version: '1.0.0',
+              isActive: false,
+              path: extensionDir2,
+            },
+          ];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const loader = new FileCommandLoader(mockConfig);
       const commands = await loader.loadCommands(signal);
@@ -770,17 +813,25 @@ describe('FileCommandLoader', () => {
       });
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => process.cwd()),
-        getExtensions: vi.fn(() => [
-          {
-            name: 'no-commands',
-            version: '1.0.0',
-            isActive: true,
-            path: extensionDir,
-          },
-        ]),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return process.cwd();
+        }),
+        getExtensions: vi.fn(function () {
+          return [
+            {
+              name: 'no-commands',
+              version: '1.0.0',
+              isActive: true,
+              path: extensionDir,
+            },
+          ];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const loader = new FileCommandLoader(mockConfig);
       const commands = await loader.loadCommands(signal);
@@ -814,12 +865,20 @@ describe('FileCommandLoader', () => {
       });
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => process.cwd()),
-        getExtensions: vi.fn(() => [
-          { name: 'a', version: '1.0.0', isActive: true, path: extensionDir },
-        ]),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return process.cwd();
+        }),
+        getExtensions: vi.fn(function () {
+          return [
+            { name: 'a', version: '1.0.0', isActive: true, path: extensionDir },
+          ];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const loader = new FileCommandLoader(mockConfig);
       const commands = await loader.loadCommands(signal);
@@ -875,18 +934,26 @@ describe('FileCommandLoader', () => {
       });
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => process.cwd()),
-        getExtensions: vi.fn(() => [
-          {
-            name: 'my-test-ext',
-            id: extensionId,
-            version: '1.0.0',
-            isActive: true,
-            path: extensionDir,
-          },
-        ]),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return process.cwd();
+        }),
+        getExtensions: vi.fn(function () {
+          return [
+            {
+              name: 'my-test-ext',
+              id: extensionId,
+              version: '1.0.0',
+              isActive: true,
+              path: extensionDir,
+            },
+          ];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const loader = new FileCommandLoader(mockConfig);
       const commands = await loader.loadCommands(signal);
@@ -1127,12 +1194,11 @@ describe('FileCommandLoader', () => {
         ]),
       );
 
-      vi.mocked(DefaultArgumentProcessor).mockImplementation(
-        () =>
-          ({
-            process: defaultProcessMock,
-          }) as unknown as DefaultArgumentProcessor,
-      );
+      vi.mocked(DefaultArgumentProcessor).mockImplementation(function () {
+        return {
+          process: defaultProcessMock,
+        } as unknown as DefaultArgumentProcessor;
+      });
 
       const loader = new FileCommandLoader(null as unknown as Config);
       const commands = await loader.loadCommands(signal);
@@ -1223,12 +1289,11 @@ describe('FileCommandLoader', () => {
       );
 
       // Prevent default processor from interfering
-      vi.mocked(DefaultArgumentProcessor).mockImplementation(
-        () =>
-          ({
-            process: (p: PromptPipelineContent) => Promise.resolve(p),
-          }) as unknown as DefaultArgumentProcessor,
-      );
+      vi.mocked(DefaultArgumentProcessor).mockImplementation(function () {
+        return {
+          process: (p: PromptPipelineContent) => Promise.resolve(p),
+        } as unknown as DefaultArgumentProcessor;
+      });
 
       const loader = new FileCommandLoader(null as unknown as Config);
       const commands = await loader.loadCommands(signal);
@@ -1257,10 +1322,18 @@ describe('FileCommandLoader', () => {
   describe('with folder trust enabled', () => {
     it('loads multiple commands', async () => {
       const mockConfig = {
-        getProjectRoot: vi.fn(() => '/path/to/project'),
-        getExtensions: vi.fn(() => []),
-        getFolderTrust: vi.fn(() => true),
-        isTrustedFolder: vi.fn(() => true),
+        getProjectRoot: vi.fn(function () {
+          return '/path/to/project';
+        }),
+        getExtensions: vi.fn(function () {
+          return [];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return true;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return true;
+        }),
       } as unknown as Config;
       const userCommandsDir = Storage.getUserCommandsDir();
       mock({
@@ -1278,10 +1351,18 @@ describe('FileCommandLoader', () => {
 
     it('does not load when folder is not trusted', async () => {
       const mockConfig = {
-        getProjectRoot: vi.fn(() => '/path/to/project'),
-        getExtensions: vi.fn(() => []),
-        getFolderTrust: vi.fn(() => true),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return '/path/to/project';
+        }),
+        getExtensions: vi.fn(function () {
+          return [];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return true;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
       const userCommandsDir = Storage.getUserCommandsDir();
       mock({
@@ -1308,10 +1389,18 @@ describe('FileCommandLoader', () => {
         .mockImplementation(() => {});
 
       const mockConfig = {
-        getProjectRoot: vi.fn(() => '/path/to/project'),
-        getExtensions: vi.fn(() => []),
-        getFolderTrust: vi.fn(() => false),
-        isTrustedFolder: vi.fn(() => false),
+        getProjectRoot: vi.fn(function () {
+          return '/path/to/project';
+        }),
+        getExtensions: vi.fn(function () {
+          return [];
+        }),
+        getFolderTrust: vi.fn(function () {
+          return false;
+        }),
+        isTrustedFolder: vi.fn(function () {
+          return false;
+        }),
       } as unknown as Config;
 
       // Set up mock-fs so that the loader attempts to read a directory.

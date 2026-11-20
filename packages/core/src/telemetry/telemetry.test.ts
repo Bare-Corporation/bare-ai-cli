@@ -26,12 +26,11 @@ describe('telemetry', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(GoogleAuth).mockImplementation(
-      () =>
-        ({
-          getApplicationDefault: mockGetApplicationDefault,
-        }) as unknown as GoogleAuth,
-    );
+    vi.mocked(GoogleAuth).mockImplementation(function () {
+      return {
+        getApplicationDefault: mockGetApplicationDefault,
+      } as unknown as GoogleAuth;
+    });
     mockGetApplicationDefault.mockResolvedValue(undefined); // Simulate ADC available
 
     mockConfig = new Config({
@@ -50,7 +49,9 @@ describe('telemetry', () => {
       start: vi.fn(),
       shutdown: vi.fn().mockResolvedValue(undefined),
     } as unknown as NodeSDK;
-    vi.mocked(NodeSDK).mockImplementation(() => mockNodeSdk);
+    vi.mocked(NodeSDK).mockImplementation(function () {
+      return mockNodeSdk;
+    });
   });
 
   afterEach(async () => {

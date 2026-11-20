@@ -14,8 +14,12 @@ vi.mock('os', async (importOriginal) => {
   const actualOs = await importOriginal<typeof osActual>();
   return {
     ...actualOs,
-    homedir: vi.fn(() => '/mock/home/user'),
-    platform: vi.fn(() => 'linux'),
+    homedir: vi.fn(function () {
+      return '/mock/home/user';
+    }),
+    platform: vi.fn(function () {
+      return 'linux';
+    }),
   };
 });
 
@@ -73,8 +77,7 @@ const mockCoreEvents = vi.hoisted(() => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     coreEvents: mockCoreEvents,
@@ -107,7 +110,9 @@ describe('Settings Repro', () => {
     );
     (mockFsExistsSync as Mock).mockReturnValue(false);
     (fs.readFileSync as Mock).mockReturnValue('{}');
-    (mockFsMkdirSync as Mock).mockImplementation(() => undefined);
+    (mockFsMkdirSync as Mock).mockImplementation(function () {
+      return undefined;
+    });
     vi.mocked(isWorkspaceTrusted).mockReturnValue({
       isTrusted: true,
       source: 'file',

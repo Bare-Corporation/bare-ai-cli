@@ -20,7 +20,11 @@ const mockPlatform = vi.hoisted(() => vi.fn());
 // Default return value matters: bareAiClient.ts computes
 // path.join(os.homedir(), ...) at module-load time, so an undefined homedir
 // throws during collection and prevents this entire suite from loading.
-const mockHomedir = vi.hoisted(() => vi.fn(() => '/home/user'));
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/home/user';
+  }),
+);
 
 const mockShellExecutionService = vi.hoisted(() => vi.fn());
 const mockShellBackground = vi.hoisted(() => vi.fn());

@@ -94,23 +94,23 @@ vi.mock('../ui/commands/initCommand.js', () => ({
 }));
 vi.mock(
   '@bare-ai/core',
-  async (
-    importOriginal: () => Promise<typeof import('@bare-ai/core')>,
-  ) => {
+  async (importOriginal: () => Promise<typeof import('@bare-ai/core')>) => {
     const actual = await importOriginal();
     return {
       ...actual,
-      ReadManyFilesTool: vi.fn().mockImplementation(() => ({
-        name: 'read_many_files',
-        kind: 'read',
-        build: vi.fn().mockReturnValue({
-          getDescription: () => 'Read files',
-          toolLocations: () => [],
-          execute: vi.fn().mockResolvedValue({
-            llmContent: ['--- file.txt ---\n\nFile content\n\n'],
+      ReadManyFilesTool: vi.fn().mockImplementation(function () {
+        return {
+          name: 'read_many_files',
+          kind: 'read',
+          build: vi.fn().mockReturnValue({
+            getDescription: () => 'Read files',
+            toolLocations: () => [],
+            execute: vi.fn().mockResolvedValue({
+              llmContent: ['--- file.txt ---\n\nFile content\n\n'],
+            }),
           }),
-        }),
-      })),
+        };
+      }),
       logToolCall: vi.fn(),
       isWithinRoot: vi.fn().mockReturnValue(true),
       LlmRole: {
@@ -195,13 +195,15 @@ describe('GeminiAgent', () => {
     } as unknown as Mocked<acp.AgentSideConnection>;
 
     (loadCliConfig as unknown as Mock).mockResolvedValue(mockConfig);
-    (loadSettings as unknown as Mock).mockImplementation(() => ({
-      merged: {
-        security: { auth: { selectedType: AuthType.LOGIN_WITH_GOOGLE } },
-        mcpServers: {},
-      },
-      setValue: vi.fn(),
-    }));
+    (loadSettings as unknown as Mock).mockImplementation(function () {
+      return {
+        merged: {
+          security: { auth: { selectedType: AuthType.LOGIN_WITH_GOOGLE } },
+          mcpServers: {},
+        },
+        setValue: vi.fn(),
+      };
+    });
 
     agent = new GeminiAgent(mockConfig, mockSettings, mockArgv, mockConnection);
   });
@@ -434,13 +436,15 @@ describe('GeminiAgent', () => {
   });
 
   it('should fail session creation if Gemini API key is missing', async () => {
-    (loadSettings as unknown as Mock).mockImplementation(() => ({
-      merged: {
-        security: { auth: { selectedType: AuthType.USE_GEMINI } },
-        mcpServers: {},
-      },
-      setValue: vi.fn(),
-    }));
+    (loadSettings as unknown as Mock).mockImplementation(function () {
+      return {
+        merged: {
+          security: { auth: { selectedType: AuthType.USE_GEMINI } },
+          mcpServers: {},
+        },
+        setValue: vi.fn(),
+      };
+    });
     mockConfig.getContentGeneratorConfig = vi.fn().mockReturnValue({
       apiKey: undefined,
     });
@@ -1418,15 +1422,17 @@ describe('Session', () => {
     (isWithinRoot as unknown as Mock).mockReturnValue(true);
 
     const MockReadManyFilesTool = ReadManyFilesTool as unknown as Mock;
-    MockReadManyFilesTool.mockImplementationOnce(() => ({
-      name: 'read_many_files',
-      kind: 'read',
-      build: vi.fn().mockReturnValue({
-        getDescription: () => 'Read files',
-        toolLocations: () => [],
-        execute: vi.fn().mockRejectedValue(new Error('File read failed')),
-      }),
-    }));
+    MockReadManyFilesTool.mockImplementationOnce(function () {
+      return {
+        name: 'read_many_files',
+        kind: 'read',
+        build: vi.fn().mockReturnValue({
+          getDescription: () => 'Read files',
+          toolLocations: () => [],
+          execute: vi.fn().mockRejectedValue(new Error('File read failed')),
+        }),
+      };
+    });
 
     const stream = createMockStream([
       {

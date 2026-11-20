@@ -44,8 +44,7 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     KeychainTokenStorage: vi.fn(),
@@ -69,9 +68,11 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
     logExtensionUninstall: vi.fn().mockResolvedValue(undefined),
     logExtensionEnable: vi.fn().mockResolvedValue(undefined),
     logExtensionDisable: vi.fn().mockResolvedValue(undefined),
-    Config: vi.fn().mockImplementation(() => ({
-      getEnableExtensionReloading: vi.fn().mockReturnValue(true),
-    })),
+    Config: vi.fn().mockImplementation(function () {
+      return {
+        getEnableExtensionReloading: vi.fn().mockReturnValue(true),
+      };
+    }),
     KeychainService: class {
       isAvailable = vi.fn().mockResolvedValue(true);
       getPassword = vi.fn().mockResolvedValue('test-key');

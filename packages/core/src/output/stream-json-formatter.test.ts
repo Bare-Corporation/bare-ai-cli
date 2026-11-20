@@ -28,7 +28,9 @@ describe('StreamJsonFormatter', () => {
     formatter = new StreamJsonFormatter();
     stdoutWriteSpy = vi
       .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
+      .mockImplementation(function () {
+        return true;
+      });
   });
 
   afterEach(() => {

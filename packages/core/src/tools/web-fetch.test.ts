@@ -35,9 +35,11 @@ import {
 import { convert } from 'html-to-text';
 
 const mockGenerateContent = vi.fn();
-const mockGetGeminiClient = vi.fn(() => ({
-  generateContent: mockGenerateContent,
-}));
+const mockGetGeminiClient = vi.fn(function () {
+  return {
+    generateContent: mockGenerateContent,
+  };
+});
 
 vi.mock('html-to-text', () => ({
   convert: vi.fn((text) => `Converted: ${text}`),

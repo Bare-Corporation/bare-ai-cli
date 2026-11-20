@@ -30,11 +30,13 @@ import type { Config } from '../config/config.js';
 
 // Mock A2AClientManager
 vi.mock('./a2a-client-manager.js', () => ({
-  A2AClientManager: vi.fn().mockImplementation(() => ({
-    getClient: vi.fn(),
-    loadAgent: vi.fn(),
-    sendMessageStream: vi.fn(),
-  })),
+  A2AClientManager: vi.fn().mockImplementation(function () {
+    return {
+      getClient: vi.fn(),
+      loadAgent: vi.fn(),
+      sendMessageStream: vi.fn(),
+    };
+  }),
 }));
 
 // Mock A2AAuthProviderFactory

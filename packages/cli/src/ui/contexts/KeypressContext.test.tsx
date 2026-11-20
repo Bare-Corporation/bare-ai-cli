@@ -270,7 +270,9 @@ describe('KeypressContext', () => {
     });
 
     it('should stop propagation when a higher priority handler returns true', async () => {
-      const higherPriorityHandler = vi.fn(() => true);
+      const higherPriorityHandler = vi.fn(function () {
+        return true;
+      });
       const lowerPriorityHandler = vi.fn();
       const { result } = await renderHookWithProviders(() =>
         useKeypressContext(),
@@ -290,7 +292,9 @@ describe('KeypressContext', () => {
     });
 
     it('should continue propagation when a higher priority handler does not consume the event', async () => {
-      const higherPriorityHandler = vi.fn(() => false);
+      const higherPriorityHandler = vi.fn(function () {
+        return false;
+      });
       const lowerPriorityHandler = vi.fn();
       const { result } = await renderHookWithProviders(() =>
         useKeypressContext(),

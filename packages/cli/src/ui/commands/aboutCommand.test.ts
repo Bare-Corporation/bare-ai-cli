@@ -13,8 +13,7 @@ import { MessageType } from '../types.js';
 import { IdeClient, getVersion } from '@bare-ai/core';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     IdeClient: {
@@ -22,9 +21,13 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
         getDetectedIdeDisplayName: vi.fn().mockReturnValue('test-ide'),
       }),
     },
-    UserAccountManager: vi.fn().mockImplementation(() => ({
-      getCachedGoogleAccount: vi.fn().mockReturnValue('test-email@example.com'),
-    })),
+    UserAccountManager: vi.fn().mockImplementation(function () {
+      return {
+        getCachedGoogleAccount: vi
+          .fn()
+          .mockReturnValue('test-email@example.com'),
+      };
+    }),
     getVersion: vi.fn(),
   };
 });

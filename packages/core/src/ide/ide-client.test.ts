@@ -41,7 +41,9 @@ vi.mock('node:fs', async (importOriginal) => {
       readdir: vi.fn(),
     },
     realpathSync: (p: string) => p,
-    existsSync: vi.fn(() => false),
+    existsSync: vi.fn(function () {
+      return false;
+    }),
   };
 });
 vi.mock('./process-utils.js');

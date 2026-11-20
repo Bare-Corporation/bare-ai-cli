@@ -43,25 +43,29 @@ describe('useAtCompletion with Agents', () => {
 
   beforeEach(() => {
     const mockAgentRegistry = {
-      getAllDefinitions: vi.fn(() => [
-        {
-          name: 'CodebaseInvestigator',
-          description: 'Investigates codebase',
-          kind: 'local',
-        } as AgentDefinition,
-        {
-          name: 'OtherAgent',
-          description: 'Another agent',
-          kind: 'local',
-        } as AgentDefinition,
-      ]),
+      getAllDefinitions: vi.fn(function () {
+        return [
+          {
+            name: 'CodebaseInvestigator',
+            description: 'Investigates codebase',
+            kind: 'local',
+          } as AgentDefinition,
+          {
+            name: 'OtherAgent',
+            description: 'Another agent',
+            kind: 'local',
+          } as AgentDefinition,
+        ];
+      }),
     };
 
     mockConfig = {
-      getFileFilteringOptions: vi.fn(() => ({
-        respectGitIgnore: true,
-        respectGeminiIgnore: true,
-      })),
+      getFileFilteringOptions: vi.fn(function () {
+        return {
+          respectGitIgnore: true,
+          respectGeminiIgnore: true,
+        };
+      }),
       getEnableRecursiveFileSearch: () => true,
       getFileFilteringDisableFuzzySearch: () => false,
       getFileFilteringEnableFuzzySearch: () => true,

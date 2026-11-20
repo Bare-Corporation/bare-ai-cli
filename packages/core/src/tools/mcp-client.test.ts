@@ -2388,7 +2388,9 @@ describe('connectToMcpServer with OAuth', () => {
       onclose: vi.fn(),
       notification: vi.fn(),
     } as unknown as ClientLib.Client;
-    vi.mocked(ClientLib.Client).mockImplementation(() => mockedClient);
+    vi.mocked(ClientLib.Client).mockImplementation(function () {
+      return mockedClient;
+    });
 
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),
@@ -2606,7 +2608,9 @@ describe('connectToMcpServer - HTTP→SSE fallback', () => {
       onclose: vi.fn(),
       notification: vi.fn(),
     } as unknown as ClientLib.Client;
-    vi.mocked(ClientLib.Client).mockImplementation(() => mockedClient);
+    vi.mocked(ClientLib.Client).mockImplementation(function () {
+      return mockedClient;
+    });
 
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),
@@ -2738,7 +2742,9 @@ describe('connectToMcpServer - OAuth with transport fallback', () => {
       onclose: vi.fn(),
       notification: vi.fn(),
     } as unknown as ClientLib.Client;
-    vi.mocked(ClientLib.Client).mockImplementation(() => mockedClient);
+    vi.mocked(ClientLib.Client).mockImplementation(function () {
+      return mockedClient;
+    });
 
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),

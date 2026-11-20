@@ -17,7 +17,9 @@ describe('TextOutput', () => {
   beforeEach(() => {
     stdoutSpy = vi
       .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
+      .mockImplementation(function () {
+        return true;
+      });
     textOutput = new TextOutput();
   });
 

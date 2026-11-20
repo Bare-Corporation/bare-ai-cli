@@ -52,8 +52,12 @@ const mocks = vi.hoisted(() => ({
 }));
 const terminalNotificationsMocks = vi.hoisted(() => ({
   notifyViaTerminal: vi.fn().mockResolvedValue(true),
-  isNotificationsEnabled: vi.fn(() => true),
-  getNotificationMethod: vi.fn(() => 'auto'),
+  isNotificationsEnabled: vi.fn(function () {
+    return true;
+  }),
+  getNotificationMethod: vi.fn(function () {
+    return 'auto';
+  }),
   buildRunEventNotificationContent: vi.fn((event) => ({
     title: 'Mock Notification',
     subtitle: 'Mock Subtitle',
@@ -77,16 +81,22 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
         ...(args as Parameters<typeof process.stderr.write>),
       ),
     ),
-    patchStdio: vi.fn(() => () => {}),
-    createWorkingStdio: vi.fn(() => ({
-      stdout: process.stdout,
-      stderr: process.stderr,
-    })),
+    patchStdio: vi.fn(function () {
+      return () => {};
+    }),
+    createWorkingStdio: vi.fn(function () {
+      return {
+        stdout: process.stdout,
+        stderr: process.stderr,
+      };
+    }),
     enableMouseEvents: vi.fn(),
     disableMouseEvents: vi.fn(),
-    FileDiscoveryService: vi.fn().mockImplementation(() => ({
-      initialize: vi.fn(),
-    })),
+    FileDiscoveryService: vi.fn().mockImplementation(function () {
+      return {
+        initialize: vi.fn(),
+      };
+    }),
     startupProfiler: {
       flush: vi.fn(),
       start: vi.fn(),
@@ -155,7 +165,9 @@ vi.mock('./hooks/useModelCommand.js');
 vi.mock('./hooks/slashCommandProcessor.js');
 vi.mock('./hooks/useConsoleMessages.js');
 vi.mock('./hooks/useTerminalSize.js', () => ({
-  useTerminalSize: vi.fn(() => ({ columns: 80, rows: 24 })),
+  useTerminalSize: vi.fn(function () {
+    return { columns: 80, rows: 24 };
+  }),
 }));
 vi.mock('./hooks/useGeminiStream.js');
 vi.mock('./hooks/vim.js');
@@ -186,10 +198,12 @@ vi.mock('./hooks/useBanner.js', () => ({
   })),
 }));
 vi.mock('./hooks/useShellInactivityStatus.js', () => ({
-  useShellInactivityStatus: vi.fn(() => ({
-    shouldShowFocusHint: false,
-    inactivityStatus: 'none',
-  })),
+  useShellInactivityStatus: vi.fn(function () {
+    return {
+      shouldShowFocusHint: false,
+      inactivityStatus: 'none',
+    };
+  }),
 }));
 vi.mock('../utils/terminalNotifications.js', () => ({
   notifyViaTerminal: terminalNotificationsMocks.notifyViaTerminal,
@@ -701,10 +715,12 @@ describe('AppContainer State Management', () => {
         hasReceivedFocusEvent: true,
       });
       let currentStreamingState: 'idle' | 'responding' = 'responding';
-      mockedUseGeminiStream.mockImplementation(() => ({
-        ...DEFAULT_GEMINI_STREAM_MOCK,
-        streamingState: currentStreamingState,
-      }));
+      mockedUseGeminiStream.mockImplementation(function () {
+        return {
+          ...DEFAULT_GEMINI_STREAM_MOCK,
+          streamingState: currentStreamingState,
+        };
+      });
 
       const { unmount, rerender } = await act(async () => renderAppContainer());
 
@@ -732,10 +748,12 @@ describe('AppContainer State Management', () => {
         hasReceivedFocusEvent: false,
       });
       let currentStreamingState: 'idle' | 'responding' = 'responding';
-      mockedUseGeminiStream.mockImplementation(() => ({
-        ...DEFAULT_GEMINI_STREAM_MOCK,
-        streamingState: currentStreamingState,
-      }));
+      mockedUseGeminiStream.mockImplementation(function () {
+        return {
+          ...DEFAULT_GEMINI_STREAM_MOCK,
+          streamingState: currentStreamingState,
+        };
+      });
 
       const { unmount, rerender } = await act(async () => renderAppContainer());
 
@@ -766,10 +784,12 @@ describe('AppContainer State Management', () => {
         handleProQuotaChoice: vi.fn(),
       });
       let currentStreamingState: 'idle' | 'responding' = 'responding';
-      mockedUseGeminiStream.mockImplementation(() => ({
-        ...DEFAULT_GEMINI_STREAM_MOCK,
-        streamingState: currentStreamingState,
-      }));
+      mockedUseGeminiStream.mockImplementation(function () {
+        return {
+          ...DEFAULT_GEMINI_STREAM_MOCK,
+          streamingState: currentStreamingState,
+        };
+      });
 
       const { unmount, rerender } = await act(async () => renderAppContainer());
 
@@ -813,10 +833,12 @@ describe('AppContainer State Management', () => {
         },
       ];
 
-      mockedUseGeminiStream.mockImplementation(() => ({
-        ...DEFAULT_GEMINI_STREAM_MOCK,
-        pendingHistoryItems,
-      }));
+      mockedUseGeminiStream.mockImplementation(function () {
+        return {
+          ...DEFAULT_GEMINI_STREAM_MOCK,
+          pendingHistoryItems,
+        };
+      });
 
       const { unmount, rerender } = await act(async () => renderAppContainer());
 
@@ -1056,10 +1078,14 @@ describe('AppContainer State Management', () => {
       };
 
       const mockGeminiClient = {
-        isInitialized: vi.fn(() => true),
+        isInitialized: vi.fn(function () {
+          return true;
+        }),
         resumeChat: vi.fn(),
         getUserTier: vi.fn(),
-        getChatRecordingService: vi.fn(() => mockChatRecordingService),
+        getChatRecordingService: vi.fn(function () {
+          return mockChatRecordingService;
+        }),
       };
 
       const configWithRecording = makeFakeConfig();
@@ -1085,15 +1111,21 @@ describe('AppContainer State Management', () => {
         recordMessage: vi.fn(),
         recordMessageTokens: vi.fn(),
         recordToolCalls: vi.fn(),
-        getSessionId: vi.fn(() => 'test-session-123'),
+        getSessionId: vi.fn(function () {
+          return 'test-session-123';
+        }),
         getCurrentConversation: vi.fn(),
       };
 
       const mockGeminiClient = {
-        isInitialized: vi.fn(() => true),
+        isInitialized: vi.fn(function () {
+          return true;
+        }),
         resumeChat: vi.fn(),
         getUserTier: vi.fn(),
-        getChatRecordingService: vi.fn(() => mockChatRecordingService),
+        getChatRecordingService: vi.fn(function () {
+          return mockChatRecordingService;
+        }),
         setHistory: vi.fn(),
       };
 
@@ -1131,12 +1163,18 @@ describe('AppContainer State Management', () => {
         recordMessage: mockRecordMessage,
         recordMessageTokens: mockRecordMessageTokens,
         recordToolCalls: vi.fn(),
-        getSessionId: vi.fn(() => 'test-session-123'),
+        getSessionId: vi.fn(function () {
+          return 'test-session-123';
+        }),
       };
 
       const mockGeminiClient = {
-        isInitialized: vi.fn(() => true),
-        getChatRecordingService: vi.fn(() => mockChatRecordingService),
+        isInitialized: vi.fn(function () {
+          return true;
+        }),
+        getChatRecordingService: vi.fn(function () {
+          return mockChatRecordingService;
+        }),
         getUserTier: vi.fn(),
       };
 
@@ -1166,15 +1204,19 @@ describe('AppContainer State Management', () => {
     it('accepts resumed session data', async () => {
       const mockResumeChat = vi.fn();
       const mockGeminiClient = {
-        isInitialized: vi.fn(() => true),
+        isInitialized: vi.fn(function () {
+          return true;
+        }),
         resumeChat: mockResumeChat,
         getUserTier: vi.fn(),
-        getChatRecordingService: vi.fn(() => ({
-          initialize: vi.fn(),
-          recordMessage: vi.fn(),
-          recordMessageTokens: vi.fn(),
-          recordToolCalls: vi.fn(),
-        })),
+        getChatRecordingService: vi.fn(function () {
+          return {
+            initialize: vi.fn(),
+            recordMessage: vi.fn(),
+            recordMessageTokens: vi.fn(),
+            recordToolCalls: vi.fn(),
+          };
+        }),
       };
 
       const configWithClient = makeFakeConfig();
@@ -1228,7 +1270,9 @@ describe('AppContainer State Management', () => {
     it('does not attempt resume when client is not initialized', async () => {
       const mockResumeChat = vi.fn();
       const mockGeminiClient = {
-        isInitialized: vi.fn(() => false), // Not initialized
+        isInitialized: vi.fn(function () {
+          return false;
+        }), // Not initialized
         resumeChat: mockResumeChat,
         getUserTier: vi.fn(),
         getChatRecordingService: vi.fn(),
@@ -1275,18 +1319,26 @@ describe('AppContainer State Management', () => {
         recordMessage: vi.fn(),
         recordMessageTokens: vi.fn(),
         recordToolCalls: vi.fn(),
-        getSessionId: vi.fn(() => 'test-session-123'),
-        getCurrentConversation: vi.fn(() => ({
-          sessionId: 'test-session-123',
-          messages: [],
-          totalInputTokens: 150,
-          totalOutputTokens: 350,
-        })),
+        getSessionId: vi.fn(function () {
+          return 'test-session-123';
+        }),
+        getCurrentConversation: vi.fn(function () {
+          return {
+            sessionId: 'test-session-123',
+            messages: [],
+            totalInputTokens: 150,
+            totalOutputTokens: 350,
+          };
+        }),
       };
 
       const mockGeminiClient = {
-        isInitialized: vi.fn(() => true),
-        getChatRecordingService: vi.fn(() => mockChatRecordingService),
+        isInitialized: vi.fn(function () {
+          return true;
+        }),
+        getChatRecordingService: vi.fn(function () {
+          return mockChatRecordingService;
+        }),
         getUserTier: vi.fn(),
       };
 
@@ -1773,13 +1825,15 @@ describe('AppContainer State Management', () => {
 
         // Mock an active shell pty but not focused
         let lastOutputTime = startTime + 1000;
-        mockedUseGeminiStream.mockImplementation(() => ({
-          ...DEFAULT_GEMINI_STREAM_MOCK,
-          streamingState: 'responding',
-          thought: { subject: 'Executing shell command' },
-          activePtyId: 'pty-1',
-          lastOutputTime,
-        }));
+        mockedUseGeminiStream.mockImplementation(function () {
+          return {
+            ...DEFAULT_GEMINI_STREAM_MOCK,
+            streamingState: 'responding',
+            thought: { subject: 'Executing shell command' },
+            activePtyId: 'pty-1',
+            lastOutputTime,
+          };
+        });
 
         vi.spyOn(mockConfig, 'isInteractive').mockReturnValue(true);
         vi.spyOn(mockConfig, 'isInteractiveShellEnabled').mockReturnValue(true);
@@ -1798,13 +1852,15 @@ describe('AppContainer State Management', () => {
 
         // Update lastOutputTime to simulate new output
         lastOutputTime = startTime + 21000;
-        mockedUseGeminiStream.mockImplementation(() => ({
-          ...DEFAULT_GEMINI_STREAM_MOCK,
-          streamingState: 'responding',
-          thought: { subject: 'Executing shell command' },
-          activePtyId: 'pty-1',
-          lastOutputTime,
-        }));
+        mockedUseGeminiStream.mockImplementation(function () {
+          return {
+            ...DEFAULT_GEMINI_STREAM_MOCK,
+            streamingState: 'responding',
+            thought: { subject: 'Executing shell command' },
+            activePtyId: 'pty-1',
+            lastOutputTime,
+          };
+        });
 
         // Rerender to propagate the new lastOutputTime
         await act(async () => {

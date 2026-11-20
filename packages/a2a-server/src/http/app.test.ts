@@ -99,11 +99,13 @@ vi.mock('@bare-ai/core', async () => {
   const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
-    GeminiClient: vi.fn().mockImplementation(() => ({
-      sendMessageStream: sendMessageStreamSpy,
-      getUserTier: vi.fn().mockReturnValue('free'),
-      initialize: vi.fn(),
-    })),
+    GeminiClient: vi.fn().mockImplementation(function () {
+      return {
+        sendMessageStream: sendMessageStreamSpy,
+        getUserTier: vi.fn().mockReturnValue('free'),
+        initialize: vi.fn(),
+      };
+    }),
     performRestore: vi.fn(),
   };
 });
@@ -1205,9 +1207,9 @@ describe('E2E Tests', () => {
         });
 
       // Avoid process.exit if possible, or mock it if main might fail
-      const exitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => undefined as never);
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(function () {
+        return undefined as never;
+      });
 
       await main();
 

@@ -20,8 +20,7 @@ import { type IndividualToolCallDisplay } from '../types.js';
 
 // Mock IdeClient
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     IdeClient: {
@@ -166,12 +165,11 @@ describe('ToolActionsContext', () => {
       removeStatusChangeListener: vi.fn(),
     } as unknown as IdeClient;
 
-    vi.mocked(IdeClient.getInstance).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          deferredIdeClient = { resolve };
-        }),
-    );
+    vi.mocked(IdeClient.getInstance).mockImplementation(function () {
+      return new Promise((resolve) => {
+        deferredIdeClient = { resolve };
+      });
+    });
     vi.mocked(mockConfig.getIdeMode).mockReturnValue(true);
 
     const { result } = await renderHook(() => useToolActions(), {
@@ -210,12 +208,11 @@ describe('ToolActionsContext', () => {
       removeStatusChangeListener: vi.fn(),
     } as unknown as IdeClient;
 
-    vi.mocked(IdeClient.getInstance).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          deferredIdeClient = { resolve };
-        }),
-    );
+    vi.mocked(IdeClient.getInstance).mockImplementation(function () {
+      return new Promise((resolve) => {
+        deferredIdeClient = { resolve };
+      });
+    });
     vi.mocked(mockConfig.getIdeMode).mockReturnValue(true);
 
     const { result } = await renderHook(() => useToolActions(), {

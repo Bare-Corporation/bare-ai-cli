@@ -15,54 +15,120 @@ import { createTestMergedSettings } from '../config/settings.js';
  */
 export const createMockConfig = (overrides: Partial<Config> = {}): Config =>
   ({
-    getSandbox: vi.fn(() => undefined),
-    getQuestion: vi.fn(() => ''),
-    isInteractive: vi.fn(() => false),
-    isInitialized: vi.fn(() => true),
+    getSandbox: vi.fn(function () {
+      return undefined;
+    }),
+    getQuestion: vi.fn(function () {
+      return '';
+    }),
+    isInteractive: vi.fn(function () {
+      return false;
+    }),
+    isInitialized: vi.fn(function () {
+      return true;
+    }),
     setTerminalBackground: vi.fn(),
     storage: {
       getProjectTempDir: vi.fn().mockReturnValue('/tmp/gemini-test'),
       initialize: vi.fn().mockResolvedValue(undefined),
     },
-    getDebugMode: vi.fn(() => false),
-    getProjectRoot: vi.fn(() => '/'),
+    getDebugMode: vi.fn(function () {
+      return false;
+    }),
+    getProjectRoot: vi.fn(function () {
+      return '/';
+    }),
     refreshAuth: vi.fn().mockResolvedValue(undefined),
-    getRemoteAdminSettings: vi.fn(() => undefined),
+    getRemoteAdminSettings: vi.fn(function () {
+      return undefined;
+    }),
     initialize: vi.fn().mockResolvedValue(undefined),
-    getPolicyEngine: vi.fn(() => ({})),
-    getMessageBus: vi.fn(() => ({ subscribe: vi.fn() })),
-    getHookSystem: vi.fn(() => ({
-      fireSessionEndEvent: vi.fn().mockResolvedValue(undefined),
-      fireSessionStartEvent: vi.fn().mockResolvedValue(undefined),
-    })),
-    isMemoryV2Enabled: vi.fn(() => false),
-    isAutoMemoryEnabled: vi.fn(() => false),
-    getListExtensions: vi.fn(() => false),
-    getExtensions: vi.fn(() => []),
-    getListSessions: vi.fn(() => false),
-    getDeleteSession: vi.fn(() => undefined),
+    getPolicyEngine: vi.fn(function () {
+      return {};
+    }),
+    getMessageBus: vi.fn(function () {
+      return { subscribe: vi.fn() };
+    }),
+    getHookSystem: vi.fn(function () {
+      return {
+        fireSessionEndEvent: vi.fn().mockResolvedValue(undefined),
+        fireSessionStartEvent: vi.fn().mockResolvedValue(undefined),
+      };
+    }),
+    isMemoryV2Enabled: vi.fn(function () {
+      return false;
+    }),
+    isAutoMemoryEnabled: vi.fn(function () {
+      return false;
+    }),
+    getListExtensions: vi.fn(function () {
+      return false;
+    }),
+    getExtensions: vi.fn(function () {
+      return [];
+    }),
+    getListSessions: vi.fn(function () {
+      return false;
+    }),
+    getDeleteSession: vi.fn(function () {
+      return undefined;
+    }),
     setSessionId: vi.fn(),
     resetNewSessionState: vi.fn(),
     getSessionId: vi.fn().mockReturnValue('mock-session-id'),
-    getWorktreeSettings: vi.fn(() => undefined),
-    getContentGeneratorConfig: vi.fn(() => ({ authType: 'google' })),
-    getAcpMode: vi.fn(() => false),
-    isBrowserLaunchSuppressed: vi.fn(() => false),
+    getWorktreeSettings: vi.fn(function () {
+      return undefined;
+    }),
+    getContentGeneratorConfig: vi.fn(function () {
+      return { authType: 'google' };
+    }),
+    getAcpMode: vi.fn(function () {
+      return false;
+    }),
+    isBrowserLaunchSuppressed: vi.fn(function () {
+      return false;
+    }),
     setRemoteAdminSettings: vi.fn(),
-    isYoloModeDisabled: vi.fn(() => false),
-    isPlanEnabled: vi.fn(() => false),
+    isYoloModeDisabled: vi.fn(function () {
+      return false;
+    }),
+    isPlanEnabled: vi.fn(function () {
+      return false;
+    }),
     getPlanModeRoutingEnabled: vi.fn().mockResolvedValue(true),
-    getApprovedPlanPath: vi.fn(() => undefined),
-    getCoreTools: vi.fn(() => []),
-    getAllowedTools: vi.fn(() => []),
-    getApprovalMode: vi.fn(() => 'default'),
-    getFileFilteringRespectGitIgnore: vi.fn(() => true),
-    getOutputFormat: vi.fn(() => 'text'),
-    getUsageStatisticsEnabled: vi.fn(() => true),
-    getScreenReader: vi.fn(() => false),
-    getGeminiMdFileCount: vi.fn(() => 0),
-    getDeferredCommand: vi.fn(() => undefined),
-    getFileSystemService: vi.fn(() => ({})),
+    getApprovedPlanPath: vi.fn(function () {
+      return undefined;
+    }),
+    getCoreTools: vi.fn(function () {
+      return [];
+    }),
+    getAllowedTools: vi.fn(function () {
+      return [];
+    }),
+    getApprovalMode: vi.fn(function () {
+      return 'default';
+    }),
+    getFileFilteringRespectGitIgnore: vi.fn(function () {
+      return true;
+    }),
+    getOutputFormat: vi.fn(function () {
+      return 'text';
+    }),
+    getUsageStatisticsEnabled: vi.fn(function () {
+      return true;
+    }),
+    getScreenReader: vi.fn(function () {
+      return false;
+    }),
+    getGeminiMdFileCount: vi.fn(function () {
+      return 0;
+    }),
+    getDeferredCommand: vi.fn(function () {
+      return undefined;
+    }),
+    getFileSystemService: vi.fn(function () {
+      return {};
+    }),
     clientVersion: '1.0.0',
     getModel: vi.fn().mockReturnValue('gemini-pro'),
     getWorkingDir: vi.fn().mockReturnValue('/mock/cwd'),

@@ -43,8 +43,7 @@ vi.mock('node:child_process', async (importOriginal) => {
   };
 });
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     spawnAsync: vi.fn(),
@@ -53,8 +52,12 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
       warn: vi.fn(),
     },
     Storage: class {
-      getProjectTempDir = vi.fn(() => '/tmp/global');
-      initialize = vi.fn(() => Promise.resolve(undefined));
+      getProjectTempDir = vi.fn(function () {
+        return '/tmp/global';
+      });
+      initialize = vi.fn(function () {
+        return Promise.resolve(undefined);
+      });
     },
   };
 });

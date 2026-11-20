@@ -21,20 +21,23 @@ import type { CallableTool } from '@google/genai';
 import { MessageType, type HistoryItemMcpStatus } from '../types.js';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   const mockAuthenticate = vi.fn();
   return {
     ...actual,
     getMCPServerStatus: vi.fn(),
     getMCPDiscoveryState: vi.fn(),
-    MCPOAuthProvider: vi.fn(() => ({
-      authenticate: mockAuthenticate,
-    })),
-    MCPOAuthTokenStorage: vi.fn(() => ({
-      getToken: vi.fn(),
-      isTokenExpired: vi.fn(),
-    })),
+    MCPOAuthProvider: vi.fn(function () {
+      return {
+        authenticate: mockAuthenticate,
+      };
+    }),
+    MCPOAuthTokenStorage: vi.fn(function () {
+      return {
+        getToken: vi.fn(),
+        isTokenExpired: vi.fn(),
+      };
+    }),
   };
 });
 
@@ -106,11 +109,13 @@ describe('mcpCommand', () => {
         getPromptsByServer: vi.fn().mockReturnValue([]),
       }),
       getGeminiClient: vi.fn(),
-      getMcpClientManager: vi.fn().mockImplementation(() => ({
-        getBlockedMcpServers: vi.fn().mockReturnValue([]),
-        getMcpServers: vi.fn().mockReturnValue({}),
-        getLastError: vi.fn().mockReturnValue(undefined),
-      })),
+      getMcpClientManager: vi.fn().mockImplementation(function () {
+        return {
+          getBlockedMcpServers: vi.fn().mockReturnValue([]),
+          getMcpServers: vi.fn().mockReturnValue({}),
+          getLastError: vi.fn().mockReturnValue(undefined),
+        };
+      }),
       getResourceRegistry: vi.fn().mockReturnValue({
         getAllResources: vi.fn().mockReturnValue([]),
       }),

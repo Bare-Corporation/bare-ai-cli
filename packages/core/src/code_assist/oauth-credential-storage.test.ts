@@ -22,18 +22,22 @@ const mockHybridTokenStorage = vi.hoisted(() => ({
   deleteCredentials: vi.fn(),
 }));
 vi.mock('../mcp/token-storage/hybrid-token-storage.js', () => ({
-  HybridTokenStorage: vi.fn(() => mockHybridTokenStorage),
+  HybridTokenStorage: vi.fn(function () {
+    return mockHybridTokenStorage;
+  }),
 }));
 vi.mock('node:fs', () => ({
   promises: {
     readFile: vi.fn(),
     rm: vi.fn(),
   },
-  createWriteStream: vi.fn(() => ({
-    on: vi.fn(),
-    write: vi.fn(),
-    end: vi.fn(),
-  })),
+  createWriteStream: vi.fn(function () {
+    return {
+      on: vi.fn(),
+      write: vi.fn(),
+      end: vi.fn(),
+    };
+  }),
 }));
 vi.mock('node:os');
 vi.mock('node:path');

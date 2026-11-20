@@ -16,9 +16,8 @@ const mockReadServerProcessInfo = vi.hoisted(() => vi.fn());
 const mockResolveGemmaConfig = vi.hoisted(() => vi.fn());
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const { mockCoreDebugLogger } = await import(
-    '../../test-utils/mockDebugLogger.js'
-  );
+  const { mockCoreDebugLogger } =
+    await import('../../test-utils/mockDebugLogger.js');
   return mockCoreDebugLogger(
     await importOriginal<typeof import('@bare-ai/core')>(),
     {
@@ -29,7 +28,9 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
 
 vi.mock('./constants.js', () => ({
   DEFAULT_PORT: 9379,
-  getPidFilePath: vi.fn(() => '/tmp/litert-server.pid'),
+  getPidFilePath: vi.fn(function () {
+    return '/tmp/litert-server.pid';
+  }),
 }));
 
 vi.mock('./platform.js', () => ({
@@ -70,7 +71,9 @@ describe('gemma stop command', () => {
     mockIsProcessRunning.mockReturnValue(true);
     mockIsExpectedLiteRtServerProcess.mockReturnValue(false);
 
-    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(function () {
+      return true;
+    });
 
     await expect(stopServer(8123)).resolves.toBe('unexpected-process');
     expect(killSpy).not.toHaveBeenCalled();
@@ -86,7 +89,9 @@ describe('gemma stop command', () => {
     mockIsExpectedLiteRtServerProcess.mockReturnValue(true);
 
     const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
-    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(function () {
+      return true;
+    });
 
     const stopPromise = stopServer(8123);
     await vi.runAllTimersAsync();

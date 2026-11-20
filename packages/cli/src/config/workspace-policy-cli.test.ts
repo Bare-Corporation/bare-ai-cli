@@ -22,9 +22,7 @@ const mockCheckIntegrity = vi.fn();
 const mockAcceptIntegrity = vi.fn();
 
 vi.mock('@bare-ai/core', async () => {
-  const actual = await vi.importActual<typeof ServerConfig>(
-    '@bare-ai/core',
-  );
+  const actual = await vi.importActual<typeof ServerConfig>('@bare-ai/core');
   return {
     ...actual,
     loadServerHierarchicalMemory: vi.fn().mockResolvedValue({
@@ -37,10 +35,12 @@ vi.mock('@bare-ai/core', async () => {
       checkers: [],
     }),
     getVersion: vi.fn().mockResolvedValue('test-version'),
-    PolicyIntegrityManager: vi.fn().mockImplementation(() => ({
-      checkIntegrity: mockCheckIntegrity,
-      acceptIntegrity: mockAcceptIntegrity,
-    })),
+    PolicyIntegrityManager: vi.fn().mockImplementation(function () {
+      return {
+        checkIntegrity: mockCheckIntegrity,
+        acceptIntegrity: mockAcceptIntegrity,
+      };
+    }),
     IntegrityStatus: { MATCH: 'match', NEW: 'new', MISMATCH: 'mismatch' },
     debugLogger: {
       warn: vi.fn(),

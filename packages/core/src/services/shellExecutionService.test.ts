@@ -127,7 +127,9 @@ vi.mock('../utils/systemEncoding.js', () => ({
 
 const mockProcessKill = vi
   .spyOn(process, 'kill')
-  .mockImplementation(() => true);
+  .mockImplementation(function () {
+    return true;
+  });
 
 const shellExecutionConfig: ShellExecutionConfig = {
   sessionId: 'default',
@@ -621,7 +623,9 @@ describe('ShellExecutionService', () => {
     });
 
     it('should handle a synchronous spawn error', async () => {
-      mockGetPty.mockImplementation(() => null);
+      mockGetPty.mockImplementation(function () {
+        return null;
+      });
 
       mockCpSpawn.mockImplementation(() => {
         throw new Error('Simulated PTY spawn error');
@@ -1880,9 +1884,8 @@ describe('ShellExecutionService environment variables', () => {
     vi.stubEnv('GEMINI_CLI_TEST_VAR', 'test-value'); // A test var that should be kept
 
     vi.resetModules();
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } =
+      await import('./shellExecutionService.js');
 
     // Test pty path
     await ShellExecutionService.execute(
@@ -1940,9 +1943,8 @@ describe('ShellExecutionService environment variables', () => {
     vi.stubEnv('GEMINI_CLI_TEST_VAR', 'test-value'); // A test var that should be kept
 
     vi.resetModules();
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } =
+      await import('./shellExecutionService.js');
 
     // Test pty path
     await ShellExecutionService.execute(
@@ -1997,9 +1999,8 @@ describe('ShellExecutionService environment variables', () => {
     vi.stubEnv('GITHUB_SHA', '');
     vi.stubEnv('SURFACE', '');
     vi.resetModules();
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } =
+      await import('./shellExecutionService.js');
 
     // Test pty path
     await ShellExecutionService.execute(
@@ -2105,9 +2106,8 @@ describe('ShellExecutionService environment variables', () => {
     vi.stubEnv('GIT_CONFIG_KEY_1', 'pull.rebase');
     vi.stubEnv('GIT_CONFIG_VALUE_1', 'true');
 
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } =
+      await import('./shellExecutionService.js');
 
     mockGetPty.mockResolvedValue(null); // Force child_process fallback
     await ShellExecutionService.execute(
@@ -2157,9 +2157,8 @@ describe('ShellExecutionService environment variables', () => {
     vi.stubEnv('GCM_INTERACTIVE', undefined);
     vi.stubEnv('GIT_CONFIG_COUNT', undefined);
 
-    const { ShellExecutionService } = await import(
-      './shellExecutionService.js'
-    );
+    const { ShellExecutionService } =
+      await import('./shellExecutionService.js');
 
     mockGetPty.mockResolvedValue(null); // Force child_process fallback
     await ShellExecutionService.execute(

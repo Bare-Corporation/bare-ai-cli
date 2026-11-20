@@ -12,14 +12,17 @@ import { saveClipboardImage } from './clipboardUtils.js';
 // Mock dependencies
 vi.mock('node:fs/promises');
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     spawnAsync: vi.fn(),
     Storage: class {
-      getProjectTempDir = vi.fn(() => "C:\\User's Files");
-      initialize = vi.fn(() => Promise.resolve(undefined));
+      getProjectTempDir = vi.fn(function () {
+        return "C:\\User's Files";
+      });
+      initialize = vi.fn(function () {
+        return Promise.resolve(undefined);
+      });
     },
   };
 });

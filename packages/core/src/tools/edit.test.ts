@@ -24,10 +24,12 @@ vi.mock('../utils/llm-edit-fixer.js', () => ({
 }));
 
 vi.mock('../core/client.js', () => ({
-  GeminiClient: vi.fn().mockImplementation(() => ({
-    generateJson: mockGenerateJson,
-    getHistory: vi.fn().mockResolvedValue([]),
-  })),
+  GeminiClient: vi.fn().mockImplementation(function () {
+    return {
+      generateJson: mockGenerateJson,
+      getHistory: vi.fn().mockResolvedValue([]),
+    };
+  }),
 }));
 
 vi.mock('../utils/editor.js', () => ({
@@ -101,10 +103,18 @@ describe('EditTool', () => {
     fileSystemService = new StandardFileSystemService();
 
     mockConfig = {
-      getUsageStatisticsEnabled: vi.fn(() => true),
-      getSessionId: vi.fn(() => 'mock-session-id'),
-      getContentGeneratorConfig: vi.fn(() => ({ authType: 'mock' })),
-      getProxy: vi.fn(() => undefined),
+      getUsageStatisticsEnabled: vi.fn(function () {
+        return true;
+      }),
+      getSessionId: vi.fn(function () {
+        return 'mock-session-id';
+      }),
+      getContentGeneratorConfig: vi.fn(function () {
+        return { authType: 'mock' };
+      }),
+      getProxy: vi.fn(function () {
+        return undefined;
+      }),
       getGeminiClient: vi.fn().mockReturnValue(geminiClient),
       getBaseLlmClient: vi.fn().mockReturnValue(baseLlmClient),
       getTargetDir: () => rootDir,
@@ -131,9 +141,13 @@ describe('EditTool', () => {
       setGeminiMdFileCount: vi.fn(),
       getToolRegistry: () => ({}) as any,
       isInteractive: () => false,
-      getDisableLLMCorrection: vi.fn(() => true),
+      getDisableLLMCorrection: vi.fn(function () {
+        return true;
+      }),
       getExperiments: () => {},
-      isPlanMode: vi.fn(() => false),
+      isPlanMode: vi.fn(function () {
+        return false;
+      }),
       storage: {
         getProjectTempDir: vi.fn().mockReturnValue('/tmp/project'),
         getPlansDir: vi.fn().mockReturnValue('/tmp/plans'),
@@ -1262,9 +1276,8 @@ function doIt() {
 
   describe('JIT context discovery', () => {
     it('should append JIT context to output when enabled and context is found', async () => {
-      const { discoverJitContext, appendJitContext } = await import(
-        './jit-context.js'
-      );
+      const { discoverJitContext, appendJitContext } =
+        await import('./jit-context.js');
       vi.mocked(discoverJitContext).mockResolvedValue('Use the useAuth hook.');
       vi.mocked(appendJitContext).mockImplementation((content, context) => {
         if (!context) return content;
@@ -1293,9 +1306,8 @@ function doIt() {
     });
 
     it('should not append JIT context when disabled', async () => {
-      const { discoverJitContext, appendJitContext } = await import(
-        './jit-context.js'
-      );
+      const { discoverJitContext, appendJitContext } =
+        await import('./jit-context.js');
       vi.mocked(discoverJitContext).mockResolvedValue('');
       vi.mocked(appendJitContext).mockImplementation((content, context) => {
         if (!context) return content;

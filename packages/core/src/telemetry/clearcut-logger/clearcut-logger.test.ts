@@ -136,9 +136,15 @@ vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();
   return {
     ...actual,
-    cpus: vi.fn(() => [{ model: 'Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz' }]),
-    availableParallelism: vi.fn(() => 8),
-    totalmem: vi.fn(() => 32 * 1024 * 1024 * 1024),
+    cpus: vi.fn(function () {
+      return [{ model: 'Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz' }];
+    }),
+    availableParallelism: vi.fn(function () {
+      return 8;
+    }),
+    totalmem: vi.fn(function () {
+      return 32 * 1024 * 1024 * 1024;
+    }),
   };
 });
 

@@ -49,7 +49,9 @@ const { mockTrustedHooksManager, mockCoreEvents } = vi.hoisted(() => ({
 }));
 
 vi.mock('./trustedHooks.js', () => ({
-  TrustedHooksManager: vi.fn(() => mockTrustedHooksManager),
+  TrustedHooksManager: vi.fn(function () {
+    return mockTrustedHooksManager;
+  }),
 }));
 
 vi.mock('../utils/events.js', () => ({

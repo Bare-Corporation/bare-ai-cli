@@ -77,8 +77,7 @@ vi.mock('node:util', async (importOriginal) => {
 });
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     debugLogger: {
@@ -288,7 +287,9 @@ describe('sandbox', () => {
         }
         return mockSpawnProcess;
       });
-      vi.mocked(spawn).mockImplementationOnce(() => mockSpawnProcess);
+      vi.mocked(spawn).mockImplementationOnce(function () {
+        return mockSpawnProcess;
+      });
 
       const promise = start_sandbox(config, [], undefined, ['arg1']);
 
@@ -369,7 +370,9 @@ describe('sandbox', () => {
         }
         return mockSpawnProcess;
       });
-      vi.mocked(spawn).mockImplementationOnce(() => mockSpawnProcess);
+      vi.mocked(spawn).mockImplementationOnce(function () {
+        return mockSpawnProcess;
+      });
 
       await start_sandbox(config);
 
@@ -426,7 +429,9 @@ describe('sandbox', () => {
         }
         return mockSpawnProcess;
       });
-      vi.mocked(spawn).mockImplementationOnce(() => mockSpawnProcess);
+      vi.mocked(spawn).mockImplementationOnce(function () {
+        return mockSpawnProcess;
+      });
 
       await start_sandbox(config);
 
@@ -478,7 +483,9 @@ describe('sandbox', () => {
         }
         return mockSpawnProcess;
       });
-      vi.mocked(spawn).mockImplementationOnce(() => mockSpawnProcess);
+      vi.mocked(spawn).mockImplementationOnce(function () {
+        return mockSpawnProcess;
+      });
 
       await start_sandbox(config);
 
@@ -607,7 +614,9 @@ describe('sandbox', () => {
         }
         return mockSpawnProcess;
       });
-      vi.mocked(spawn).mockImplementationOnce(() => mockSpawnProcess);
+      vi.mocked(spawn).mockImplementationOnce(function () {
+        return mockSpawnProcess;
+      });
 
       await start_sandbox(config, [], undefined, ['arg1']);
 

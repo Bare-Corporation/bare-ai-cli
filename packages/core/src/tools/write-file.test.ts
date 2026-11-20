@@ -78,12 +78,16 @@ const fsService = new StandardFileSystemService();
 const mockConfigInternal = {
   getTargetDir: () => rootDir,
   getProjectRoot: () => rootDir,
-  getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
+  getApprovalMode: vi.fn(function () {
+    return ApprovalMode.DEFAULT;
+  }),
   setApprovalMode: vi.fn(),
   getGeminiClient: vi.fn(), // Initialize as a plain mock function
   getBaseLlmClient: vi.fn(), // Initialize as a plain mock function
   getFileSystemService: () => fsService,
-  getIdeMode: vi.fn(() => false),
+  getIdeMode: vi.fn(function () {
+    return false;
+  }),
   getWorkspaceContext: () => new WorkspaceContext(rootDir, [plansDir]),
   getApiKey: () => 'test-key',
   getModel: () => 'test-model',
@@ -106,8 +110,12 @@ const mockConfigInternal = {
       discoverTools: vi.fn(),
     }) as unknown as ToolRegistry,
   isInteractive: () => false,
-  getDisableLLMCorrection: vi.fn(() => true),
-  isPlanMode: vi.fn(() => false),
+  getDisableLLMCorrection: vi.fn(function () {
+    return true;
+  }),
+  isPlanMode: vi.fn(function () {
+    return false;
+  }),
   getActiveModel: () => 'test-model',
   storage: {
     getProjectTempDir: vi.fn().mockReturnValue('/tmp/project'),
@@ -179,7 +187,9 @@ describe('WriteFileTool', () => {
     mockGeminiClientInstance = new (vi.mocked(GeminiClient))(
       mockConfig,
     ) as Mocked<GeminiClient>;
-    vi.mocked(GeminiClient).mockImplementation(() => mockGeminiClientInstance);
+    vi.mocked(GeminiClient).mockImplementation(function () {
+      return mockGeminiClientInstance;
+    });
 
     // Setup BaseLlmClient mock
     mockBaseLlmClientInstance = {
@@ -431,9 +441,9 @@ describe('WriteFileTool', () => {
       fs.writeFileSync(filePath, 'content', { mode: 0o000 });
 
       const readError = new Error('Permission denied');
-      vi.spyOn(fsService, 'readTextFile').mockImplementationOnce(() =>
-        Promise.reject(readError),
-      );
+      vi.spyOn(fsService, 'readTextFile').mockImplementationOnce(function () {
+        return Promise.reject(readError);
+      });
 
       const result = await getCorrectedFileContent(
         mockConfig,
@@ -465,9 +475,9 @@ describe('WriteFileTool', () => {
       fs.writeFileSync(filePath, 'original', { mode: 0o000 });
 
       const readError = new Error('Simulated read error for confirmation');
-      vi.spyOn(fsService, 'readTextFile').mockImplementationOnce(() =>
-        Promise.reject(readError),
-      );
+      vi.spyOn(fsService, 'readTextFile').mockImplementationOnce(function () {
+        return Promise.reject(readError);
+      });
 
       const invocation = tool.build(params);
       const confirmation = await invocation.shouldConfirmExecute(abortSignal);
@@ -979,7 +989,8 @@ describe('WriteFileTool', () => {
         const content = 'test content';
 
         let existsSyncSpy: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ReturnType<typeof vi.spyOn<any, 'existsSync'>> | undefined = undefined;
+          ReturnType<typeof vi.spyOn<any, 'existsSync'>> | undefined =
+          undefined;
 
         try {
           if (mockFsExistsSync) {

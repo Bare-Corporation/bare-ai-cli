@@ -7,11 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { handleAtCommand } from './atCommandProcessor.js';
-import type {
-  Config,
-  AgentDefinition,
-  MessageBus,
-} from '@bare-ai/core';
+import type { Config, AgentDefinition, MessageBus } from '@bare-ai/core';
 import {
   FileDiscoveryService,
   GlobTool,
@@ -76,7 +72,9 @@ describe('handleAtCommand with Agents', () => {
         respectGeminiIgnore: true,
       }),
       getFileSystemService: () => new StandardFileSystemService(),
-      getEnableRecursiveFileSearch: vi.fn(() => true),
+      getEnableRecursiveFileSearch: vi.fn(function () {
+        return true;
+      }),
       getWorkspaceContext: () => ({
         isPathWithinWorkspace: (p: string) =>
           p.startsWith(testRootDir) || p.startsWith('/private' + testRootDir),

@@ -12,7 +12,9 @@ vi.mock('node:child_process', async (importOriginal) => {
   return {
     ...(actual as object),
     execSync: vi.fn(),
-    spawnSync: vi.fn(() => ({ status: 0 })),
+    spawnSync: vi.fn(function () {
+      return { status: 0 };
+    }),
   };
 });
 vi.mock('node:fs');
@@ -285,7 +287,9 @@ describe('AntigravityInstaller', () => {
   it('ignores an unsafe alias and falls back to safe commands', async () => {
     vi.stubEnv('ANTIGRAVITY_CLI_ALIAS', 'agy;malicious_command');
     const { installer } = setup();
-    vi.mocked(child_process.execSync).mockImplementationOnce(() => 'agy');
+    vi.mocked(child_process.execSync).mockImplementationOnce(function () {
+      return 'agy';
+    });
 
     const result = await installer.install();
 
@@ -312,7 +316,9 @@ describe('AntigravityInstaller', () => {
       .mockImplementationOnce(() => {
         throw new Error('Command not found');
       })
-      .mockImplementationOnce(() => 'antigravity');
+      .mockImplementationOnce(function () {
+        return 'antigravity';
+      });
 
     const result = await installer.install();
 
@@ -349,9 +355,9 @@ describe('AntigravityInstaller', () => {
       .mockImplementationOnce(() => {
         throw new Error('Command not found');
       })
-      .mockImplementationOnce(
-        () => 'C:\\Program Files\\Antigravity\\bin\\antigravity.cmd',
-      );
+      .mockImplementationOnce(function () {
+        return 'C:\\Program Files\\Antigravity\\bin\\antigravity.cmd';
+      });
 
     const result = await installer.install();
 

@@ -106,11 +106,13 @@ describe('A2AClientManager', () => {
       (_defaults, overrides) => overrides as unknown as ClientFactoryOptions,
     );
 
-    vi.mocked(createAuthenticatingFetchWithRetry).mockImplementation(() =>
-      authFetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response),
+    vi.mocked(createAuthenticatingFetchWithRetry).mockImplementation(
+      function () {
+        return authFetchMock.mockResolvedValue({
+          ok: true,
+          json: async () => ({}),
+        } as Response);
+      },
     );
 
     vi.stubGlobal(

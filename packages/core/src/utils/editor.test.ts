@@ -33,7 +33,9 @@ vi.mock('child_process', () => ({
   exec: vi.fn(),
   execSync: vi.fn(),
   spawn: vi.fn(),
-  spawnSync: vi.fn(() => ({ error: null, status: 0 })),
+  spawnSync: vi.fn(function () {
+    return { error: null, status: 0 };
+  }),
 }));
 
 const originalPlatform = process.platform;

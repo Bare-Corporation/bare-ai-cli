@@ -18,8 +18,7 @@ import { clearApiKey } from '@bare-ai/core';
 
 // Mocks
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     clearApiKey: vi.fn().mockResolvedValue(undefined),
@@ -46,9 +45,11 @@ vi.mock('../contexts/UIStateContext.js', async (importOriginal) => {
     await importOriginal<typeof import('../contexts/UIStateContext.js')>();
   return {
     ...actual,
-    useUIState: vi.fn(() => ({
-      terminalWidth: 80,
-    })),
+    useUIState: vi.fn(function () {
+      return {
+        terminalWidth: 80,
+      };
+    }),
   };
 });
 

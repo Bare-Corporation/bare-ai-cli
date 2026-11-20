@@ -11,30 +11,35 @@ import { debugLogger } from '@bare-ai/core';
 import { type Config } from '@bare-ai/core';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     writeToStdout: vi.fn(),
-    patchStdio: vi.fn(() => () => {}),
-    createWorkingStdio: vi.fn(() => ({
-      stdout: {
-        write: vi.fn(),
-        columns: 80,
-        rows: 24,
-        on: vi.fn(),
-        removeListener: vi.fn(),
-      },
-      stderr: { write: vi.fn() },
-    })),
+    patchStdio: vi.fn(function () {
+      return () => {};
+    }),
+    createWorkingStdio: vi.fn(function () {
+      return {
+        stdout: {
+          write: vi.fn(),
+          columns: 80,
+          rows: 24,
+          on: vi.fn(),
+          removeListener: vi.fn(),
+        },
+        stderr: { write: vi.fn() },
+      };
+    }),
     enableMouseEvents: vi.fn(),
     disableMouseEvents: vi.fn(),
     enterAlternateScreen: vi.fn(),
     disableLineWrapping: vi.fn(),
-    ProjectRegistry: vi.fn().mockImplementation(() => ({
-      initialize: vi.fn(),
-      getShortId: vi.fn().mockReturnValue('project-slug'),
-    })),
+    ProjectRegistry: vi.fn().mockImplementation(function () {
+      return {
+        initialize: vi.fn(),
+        getShortId: vi.fn().mockReturnValue('project-slug'),
+      };
+    }),
   };
 });
 
@@ -42,12 +47,14 @@ vi.mock('ink', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ink')>();
   return {
     ...actual,
-    render: vi.fn(() => ({
-      unmount: vi.fn(),
-      rerender: vi.fn(),
-      cleanup: vi.fn(),
-      waitUntilExit: vi.fn(),
-    })),
+    render: vi.fn(function () {
+      return {
+        unmount: vi.fn(),
+        rerender: vi.fn(),
+        cleanup: vi.fn(),
+        waitUntilExit: vi.fn(),
+      };
+    }),
   };
 });
 
@@ -67,15 +74,25 @@ vi.mock('./config/settings.js', async (importOriginal) => {
 
 vi.mock('./config/config.js', () => ({
   loadCliConfig: vi.fn().mockResolvedValue({
-    getSandbox: vi.fn(() => false),
-    getQuestion: vi.fn(() => ''),
+    getSandbox: vi.fn(function () {
+      return false;
+    }),
+    getQuestion: vi.fn(function () {
+      return '';
+    }),
     isInteractive: () => false,
     storage: { initialize: vi.fn().mockResolvedValue(undefined) },
   } as unknown as Config),
   parseArguments: vi.fn().mockResolvedValue({}),
-  isDebugMode: vi.fn(() => false),
-  getRequestedWorktreeName: vi.fn(() => undefined),
-  getWorktreeArg: vi.fn(() => undefined),
+  isDebugMode: vi.fn(function () {
+    return false;
+  }),
+  getRequestedWorktreeName: vi.fn(function () {
+    return undefined;
+  }),
+  getWorktreeArg: vi.fn(function () {
+    return undefined;
+  }),
 }));
 
 vi.mock('read-package-up', () => ({
@@ -86,7 +103,9 @@ vi.mock('read-package-up', () => ({
 }));
 
 vi.mock('update-notifier', () => ({
-  default: vi.fn(() => ({ notify: vi.fn() })),
+  default: vi.fn(function () {
+    return { notify: vi.fn() };
+  }),
 }));
 
 vi.mock('./utils/events.js', async (importOriginal) => {
@@ -95,8 +114,12 @@ vi.mock('./utils/events.js', async (importOriginal) => {
 });
 
 vi.mock('./utils/sandbox.js', () => ({
-  sandbox_command: vi.fn(() => ''),
-  start_sandbox: vi.fn(() => Promise.resolve()),
+  sandbox_command: vi.fn(function () {
+    return '';
+  }),
+  start_sandbox: vi.fn(function () {
+    return Promise.resolve();
+  }),
 }));
 
 vi.mock('./utils/relaunch.js', () => ({
@@ -183,9 +206,8 @@ describe('gemini.tsx main function cleanup', () => {
   });
 
   it.skip('should log error when cleanupExpiredSessions fails', async () => {
-    const { loadCliConfig, parseArguments } = await import(
-      './config/config.js'
-    );
+    const { loadCliConfig, parseArguments } =
+      await import('./config/config.js');
     const { loadSettings } = await import('./config/settings.js');
     cleanupMockState.shouldThrow = true;
     cleanupMockState.called = false;
@@ -205,41 +227,89 @@ describe('gemini.tsx main function cleanup', () => {
       promptInteractive: false,
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(loadCliConfig).mockResolvedValue({
-      isInteractive: vi.fn(() => false),
-      getQuestion: vi.fn(() => 'test'),
-      getSandbox: vi.fn(() => false),
-      getDebugMode: vi.fn(() => false),
+      isInteractive: vi.fn(function () {
+        return false;
+      }),
+      getQuestion: vi.fn(function () {
+        return 'test';
+      }),
+      getSandbox: vi.fn(function () {
+        return false;
+      }),
+      getDebugMode: vi.fn(function () {
+        return false;
+      }),
       getPolicyEngine: vi.fn(),
       getMessageBus: () => ({ subscribe: vi.fn() }),
-      getEnableHooks: vi.fn(() => false),
+      getEnableHooks: vi.fn(function () {
+        return false;
+      }),
       getHookSystem: () => undefined,
       initialize: vi.fn(),
       storage: { initialize: vi.fn().mockResolvedValue(undefined) },
       getContentGeneratorConfig: vi.fn(),
       getMcpServers: () => ({}),
       getMcpClientManager: vi.fn(),
-      getIdeMode: vi.fn(() => false),
-      getAcpMode: vi.fn(() => true),
-      getScreenReader: vi.fn(() => false),
-      getGeminiMdFileCount: vi.fn(() => 0),
-      getProjectRoot: vi.fn(() => '/'),
-      getListExtensions: vi.fn(() => false),
-      getListSessions: vi.fn(() => false),
-      getDeleteSession: vi.fn(() => undefined),
+      getIdeMode: vi.fn(function () {
+        return false;
+      }),
+      getAcpMode: vi.fn(function () {
+        return true;
+      }),
+      getScreenReader: vi.fn(function () {
+        return false;
+      }),
+      getGeminiMdFileCount: vi.fn(function () {
+        return 0;
+      }),
+      getProjectRoot: vi.fn(function () {
+        return '/';
+      }),
+      getListExtensions: vi.fn(function () {
+        return false;
+      }),
+      getListSessions: vi.fn(function () {
+        return false;
+      }),
+      getDeleteSession: vi.fn(function () {
+        return undefined;
+      }),
       getToolRegistry: vi.fn(),
-      getExtensions: vi.fn(() => []),
-      getModel: vi.fn(() => 'gemini-pro'),
-      getEmbeddingModel: vi.fn(() => 'embedding-001'),
-      getApprovalMode: vi.fn(() => 'default'),
-      getCoreTools: vi.fn(() => []),
-      getTelemetryEnabled: vi.fn(() => false),
-      getTelemetryLogPromptsEnabled: vi.fn(() => false),
-      getFileFilteringRespectGitIgnore: vi.fn(() => true),
-      getOutputFormat: vi.fn(() => 'text'),
-      getUsageStatisticsEnabled: vi.fn(() => false),
+      getExtensions: vi.fn(function () {
+        return [];
+      }),
+      getModel: vi.fn(function () {
+        return 'gemini-pro';
+      }),
+      getEmbeddingModel: vi.fn(function () {
+        return 'embedding-001';
+      }),
+      getApprovalMode: vi.fn(function () {
+        return 'default';
+      }),
+      getCoreTools: vi.fn(function () {
+        return [];
+      }),
+      getTelemetryEnabled: vi.fn(function () {
+        return false;
+      }),
+      getTelemetryLogPromptsEnabled: vi.fn(function () {
+        return false;
+      }),
+      getFileFilteringRespectGitIgnore: vi.fn(function () {
+        return true;
+      }),
+      getOutputFormat: vi.fn(function () {
+        return 'text';
+      }),
+      getUsageStatisticsEnabled: vi.fn(function () {
+        return false;
+      }),
       setTerminalBackground: vi.fn(),
       refreshAuth: vi.fn(),
-      getRemoteAdminSettings: vi.fn(() => undefined),
+      getRemoteAdminSettings: vi.fn(function () {
+        return undefined;
+      }),
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     await main();

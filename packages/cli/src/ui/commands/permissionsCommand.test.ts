@@ -21,7 +21,9 @@ describe('permissionsCommand', () => {
   beforeEach(() => {
     mockContext = createMockCommandContext();
     vi.mocked(fs).statSync.mockReturnValue({
-      isDirectory: vi.fn(() => true),
+      isDirectory: vi.fn(function () {
+        return true;
+      }),
     } as unknown as fs.Stats);
   });
 
@@ -105,7 +107,9 @@ describe('permissionsCommand', () => {
       (cmd) => cmd.name === 'trust',
     );
     vi.mocked(fs).statSync.mockReturnValue({
-      isDirectory: vi.fn(() => false),
+      isDirectory: vi.fn(function () {
+        return false;
+      }),
     } as unknown as fs.Stats);
     const actionResult = trustCommand?.action?.(mockContext, '/file/not/dir');
     expect(actionResult).toEqual({

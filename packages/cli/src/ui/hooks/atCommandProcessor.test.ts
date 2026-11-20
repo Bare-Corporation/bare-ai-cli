@@ -77,7 +77,9 @@ describe('handleAtCommand', () => {
         respectGeminiIgnore: true,
       }),
       getFileSystemService: () => new StandardFileSystemService(),
-      getEnableRecursiveFileSearch: vi.fn(() => true),
+      getEnableRecursiveFileSearch: vi.fn(function () {
+        return true;
+      }),
       getWorkspaceContext: () => ({
         isPathWithinWorkspace: (p: string) =>
           p.startsWith(testRootDir) || p.startsWith('/private' + testRootDir),
@@ -1415,15 +1417,19 @@ describe('handleAtCommand', () => {
         .fn()
         .mockRejectedValue(new Error('User cancelled operation')),
       displayName: 'Read Many Files',
-      build: vi.fn(() => ({
-        execute: mockToolInstance.buildAndExecute,
-        getDescription: vi.fn(() => 'Mocked tool description'),
-      })),
+      build: vi.fn(function () {
+        return {
+          execute: mockToolInstance.buildAndExecute,
+          getDescription: vi.fn(function () {
+            return 'Mocked tool description';
+          }),
+        };
+      }),
     };
     const viSpy = vi.spyOn(core, 'ReadManyFilesTool');
-    viSpy.mockImplementation(
-      () => mockToolInstance as unknown as core.ReadManyFilesTool,
-    );
+    viSpy.mockImplementation(function () {
+      return mockToolInstance as unknown as core.ReadManyFilesTool;
+    });
 
     const result = await handleAtCommand({
       query,

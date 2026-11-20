@@ -49,10 +49,12 @@ describe('useAtCompletion', () => {
 
   beforeEach(() => {
     mockConfig = {
-      getFileFilteringOptions: vi.fn(() => ({
-        respectGitIgnore: true,
-        respectGeminiIgnore: true,
-      })),
+      getFileFilteringOptions: vi.fn(function () {
+        return {
+          respectGitIgnore: true,
+          respectGeminiIgnore: true,
+        };
+      }),
       getEnableRecursiveFileSearch: () => true,
       getFileFilteringEnableFuzzySearch: () => true,
       getResourceRegistry: vi.fn().mockReturnValue({
@@ -220,12 +222,11 @@ describe('useAtCompletion', () => {
       let deferredInit: { resolve: (value?: unknown) => void };
       // Mock FileSearch to control when initialization finishes
       const mockFileSearch = {
-        initialize: vi.fn().mockImplementation(
-          () =>
-            new Promise((resolve) => {
-              deferredInit = { resolve };
-            }),
-        ),
+        initialize: vi.fn().mockImplementation(function () {
+          return new Promise((resolve) => {
+            deferredInit = { resolve };
+          });
+        }),
         search: vi.fn().mockResolvedValue([]),
       };
       vi.spyOn(FileSearchFactory, 'create').mockReturnValue(
@@ -303,12 +304,11 @@ describe('useAtCompletion', () => {
         reject: (e: Error) => void;
       };
       const mockFileSearch: FileSearch = {
-        initialize: vi.fn().mockImplementation(
-          () =>
-            new Promise((resolve, reject) => {
-              deferredInit = { resolve, reject };
-            }),
-        ),
+        initialize: vi.fn().mockImplementation(function () {
+          return new Promise((resolve, reject) => {
+            deferredInit = { resolve, reject };
+          });
+        }),
         search: vi
           .fn()
           .mockImplementation(async (pattern, options) =>
@@ -377,12 +377,11 @@ describe('useAtCompletion', () => {
         reject: (e: Error) => void;
       };
       const mockFileSearch: FileSearch = {
-        initialize: vi.fn().mockImplementation(
-          () =>
-            new Promise((resolve, reject) => {
-              deferredInit = { resolve, reject };
-            }),
-        ),
+        initialize: vi.fn().mockImplementation(function () {
+          return new Promise((resolve, reject) => {
+            deferredInit = { resolve, reject };
+          });
+        }),
         search: vi.fn().mockImplementation(async (pattern: string) => {
           const delay = pattern === 'a' ? 500 : 50;
           await new Promise((resolve) => setTimeout(resolve, delay));
@@ -467,12 +466,11 @@ describe('useAtCompletion', () => {
       };
       // Force an error during initialization
       const mockFileSearch: FileSearch = {
-        initialize: vi.fn().mockImplementation(
-          () =>
-            new Promise((resolve, reject) => {
-              deferredInit = { resolve, reject };
-            }),
-        ),
+        initialize: vi.fn().mockImplementation(function () {
+          return new Promise((resolve, reject) => {
+            deferredInit = { resolve, reject };
+          });
+        }),
         search: vi.fn(),
       };
       vi.spyOn(FileSearchFactory, 'create').mockReturnValue(mockFileSearch);
@@ -560,11 +558,13 @@ describe('useAtCompletion', () => {
 
       const createSpy = vi.spyOn(FileSearchFactory, 'create');
       const configWithWatcher = {
-        getFileFilteringOptions: vi.fn(() => ({
-          respectGitIgnore: true,
-          respectGeminiIgnore: true,
-          enableFileWatcher: true,
-        })),
+        getFileFilteringOptions: vi.fn(function () {
+          return {
+            respectGitIgnore: true,
+            respectGeminiIgnore: true,
+            enableFileWatcher: true,
+          };
+        }),
         getEnableRecursiveFileSearch: () => true,
         getFileFilteringEnableFuzzySearch: () => true,
       } as unknown as Config;
@@ -640,21 +640,22 @@ describe('useAtCompletion', () => {
 
       const nonRecursiveConfig = {
         getEnableRecursiveFileSearch: () => false,
-        getFileFilteringOptions: vi.fn(() => ({
-          respectGitIgnore: true,
-          respectGeminiIgnore: true,
-        })),
+        getFileFilteringOptions: vi.fn(function () {
+          return {
+            respectGitIgnore: true,
+            respectGeminiIgnore: true,
+          };
+        }),
         getFileFilteringEnableFuzzySearch: () => true,
       } as unknown as Config;
 
       let deferredInit: { resolve: (value?: unknown) => void };
       const mockFileSearch: FileSearch = {
-        initialize: vi.fn().mockImplementation(
-          () =>
-            new Promise((resolve) => {
-              deferredInit = { resolve };
-            }),
-        ),
+        initialize: vi.fn().mockImplementation(function () {
+          return new Promise((resolve) => {
+            deferredInit = { resolve };
+          });
+        }),
         search: vi.fn().mockResolvedValue(['src/', 'file.txt']),
       };
       vi.spyOn(FileSearchFactory, 'create').mockReturnValue(
@@ -707,7 +708,9 @@ describe('useAtCompletion', () => {
         ...mockConfig,
         getWorkspaceContext: vi.fn().mockReturnValue({
           getDirectories: () => [cwdDir, addedDir],
-          onDirectoriesChanged: vi.fn(() => () => {}),
+          onDirectoriesChanged: vi.fn(function () {
+            return () => {};
+          }),
         }),
       } as unknown as Config;
 
@@ -785,7 +788,9 @@ describe('useAtCompletion', () => {
         ...mockConfig,
         getWorkspaceContext: vi.fn().mockReturnValue({
           getDirectories: () => [dir1, dir2],
-          onDirectoriesChanged: vi.fn(() => () => {}),
+          onDirectoriesChanged: vi.fn(function () {
+            return () => {};
+          }),
         }),
       } as unknown as Config;
 

@@ -244,11 +244,15 @@ vi.mock('../contexts/SessionContext.js', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
   return {
     ...actual,
-    useSessionStats: vi.fn(() => ({
-      startNewPrompt: mockStartNewPrompt,
-      addUsage: mockAddUsage,
-      getPromptCount: vi.fn(() => 5),
-    })),
+    useSessionStats: vi.fn(function () {
+      return {
+        startNewPrompt: mockStartNewPrompt,
+        addUsage: mockAddUsage,
+        getPromptCount: vi.fn(function () {
+          return 5;
+        }),
+      };
+    }),
   };
 });
 
@@ -257,7 +261,9 @@ vi.mock('./slashCommandProcessor.js', () => ({
 }));
 
 vi.mock('./useAlternateBuffer.js', () => ({
-  useAlternateBuffer: vi.fn(() => false),
+  useAlternateBuffer: vi.fn(function () {
+    return false;
+  }),
 }));
 
 // --- END MOCKS ---
@@ -274,9 +280,13 @@ describe('useGeminiStream', () => {
 
   const emptyHistory: any[] = [];
   let capturedOnComplete: any = null;
-  const mockGetPreferredEditor = vi.fn(() => 'vscode' as EditorType);
+  const mockGetPreferredEditor = vi.fn(function () {
+    return 'vscode' as EditorType;
+  });
   const mockOnAuthError = vi.fn();
-  const mockPerformMemoryRefresh = vi.fn(() => Promise.resolve());
+  const mockPerformMemoryRefresh = vi.fn(function () {
+    return Promise.resolve();
+  });
   const mockSetModelSwitchedFromQuotaError = vi.fn();
   const mockOnCancelSubmit = vi.fn();
   const mockSetShellInputFocused = vi.fn();
@@ -311,48 +321,84 @@ describe('useGeminiStream', () => {
     showMemoryUsage: false,
     contextFileName: undefined,
     storage: {
-      getProjectTempDir: vi.fn(() => '/test/temp'),
-      getProjectTempCheckpointsDir: vi.fn(() => '/test/temp/checkpoints'),
+      getProjectTempDir: vi.fn(function () {
+        return '/test/temp';
+      }),
+      getProjectTempCheckpointsDir: vi.fn(function () {
+        return '/test/temp/checkpoints';
+      }),
     } as any,
-    getToolRegistry: vi.fn(
-      () => ({ getToolSchemaList: vi.fn(() => []) }) as any,
-    ),
-    getProjectRoot: vi.fn(() => '/test/dir'),
-    getCheckpointingEnabled: vi.fn(() => false),
+    getToolRegistry: vi.fn(function () {
+      return { getToolSchemaList: vi.fn(() => []) } as any;
+    }),
+    getProjectRoot: vi.fn(function () {
+      return '/test/dir';
+    }),
+    getCheckpointingEnabled: vi.fn(function () {
+      return false;
+    }),
     getGeminiClient: mockGetGeminiClient,
     getMcpClientManager: () => mockMcpClientManager as any,
-    getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
+    getApprovalMode: vi.fn(function () {
+      return ApprovalMode.DEFAULT;
+    }),
     getUsageStatisticsEnabled: () => true,
     getDebugMode: () => false,
     addHistory: vi.fn(),
-    getSessionId: vi.fn(() => 'test-session-id'),
+    getSessionId: vi.fn(function () {
+      return 'test-session-id';
+    }),
     setQuotaErrorOccurred: vi.fn(),
     resetBillingTurnState: vi.fn(),
-    getQuotaErrorOccurred: vi.fn(() => false),
-    getModel: vi.fn(() => 'gemini-2.5-pro'),
-    getContentGeneratorConfig: vi.fn(() => ({
-      model: 'test-model',
-      apiKey: 'test-key',
-      vertexai: false,
-      authType: AuthType.USE_GEMINI,
-    })),
+    getQuotaErrorOccurred: vi.fn(function () {
+      return false;
+    }),
+    getModel: vi.fn(function () {
+      return 'gemini-2.5-pro';
+    }),
+    getContentGeneratorConfig: vi.fn(function () {
+      return {
+        model: 'test-model',
+        apiKey: 'test-key',
+        vertexai: false,
+        authType: AuthType.USE_GEMINI,
+      };
+    }),
     getContentGenerator: vi.fn(),
     isInteractive: () => false,
     getExperiments: () => {},
-    getMaxSessionTurns: vi.fn(() => 100),
-    isJitContextEnabled: vi.fn(() => false),
-    getGlobalMemory: vi.fn(() => ''),
-    getUserMemory: vi.fn(() => ''),
-    getMessageBus: vi.fn(() => mockMessageBus),
-    getBaseLlmClient: vi.fn(() => ({
-      generateContent: vi.fn().mockResolvedValue({
-        candidates: [
-          { content: { parts: [{ text: 'Got it. Focusing on tests only.' }] } },
-        ],
-      }),
-    })),
-    getIdeMode: vi.fn(() => false),
-    getEnableHooks: vi.fn(() => false),
+    getMaxSessionTurns: vi.fn(function () {
+      return 100;
+    }),
+    isJitContextEnabled: vi.fn(function () {
+      return false;
+    }),
+    getGlobalMemory: vi.fn(function () {
+      return '';
+    }),
+    getUserMemory: vi.fn(function () {
+      return '';
+    }),
+    getMessageBus: vi.fn(function () {
+      return mockMessageBus;
+    }),
+    getBaseLlmClient: vi.fn(function () {
+      return {
+        generateContent: vi.fn().mockResolvedValue({
+          candidates: [
+            {
+              content: { parts: [{ text: 'Got it. Focusing on tests only.' }] },
+            },
+          ],
+        }),
+      };
+    }),
+    getIdeMode: vi.fn(function () {
+      return false;
+    }),
+    getEnableHooks: vi.fn(function () {
+      return false;
+    }),
   } as unknown as Config;
 
   beforeEach(() => {
@@ -2091,10 +2137,14 @@ describe('useGeminiStream', () => {
       // note on lowVerbositySettings above.
       const testConfig = Object.assign({}, mockConfig, {
         getContentGenerator: vi.fn(),
-        getContentGeneratorConfig: vi.fn(() => ({
-          authType: mockAuthType,
-        })),
-        getModel: vi.fn(() => 'gemini-2.5-pro'),
+        getContentGeneratorConfig: vi.fn(function () {
+          return {
+            authType: mockAuthType,
+          };
+        }),
+        getModel: vi.fn(function () {
+          return 'gemini-2.5-pro';
+        }),
       }) as unknown as Config;
 
       const { result } = renderHookWithProviders(() =>

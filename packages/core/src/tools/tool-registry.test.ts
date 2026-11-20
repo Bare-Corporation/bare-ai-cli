@@ -58,29 +58,35 @@ const mockStdioTransportClose = vi.fn();
 const mockSseTransportClose = vi.fn();
 
 vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
-  const MockClient = vi.fn().mockImplementation(() => ({
-    connect: mockMcpClientConnect,
-    set onerror(handler: any) {
-      mockMcpClientOnError(handler);
-    },
-  }));
+  const MockClient = vi.fn().mockImplementation(function () {
+    return {
+      connect: mockMcpClientConnect,
+      set onerror(handler: any) {
+        mockMcpClientOnError(handler);
+      },
+    };
+  });
   return { Client: MockClient };
 });
 
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => {
-  const MockStdioClientTransport = vi.fn().mockImplementation(() => ({
-    stderr: {
-      on: vi.fn(),
-    },
-    close: mockStdioTransportClose,
-  }));
+  const MockStdioClientTransport = vi.fn().mockImplementation(function () {
+    return {
+      stderr: {
+        on: vi.fn(),
+      },
+      close: mockStdioTransportClose,
+    };
+  });
   return { StdioClientTransport: MockStdioClientTransport };
 });
 
 vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => {
-  const MockSSEClientTransport = vi.fn().mockImplementation(() => ({
-    close: mockSseTransportClose,
-  }));
+  const MockSSEClientTransport = vi.fn().mockImplementation(function () {
+    return {
+      close: mockSseTransportClose,
+    };
+  });
   return { SSEClientTransport: MockSSEClientTransport };
 });
 
@@ -90,10 +96,12 @@ vi.mock('@google/genai', async () => {
     await vi.importActual<typeof import('@google/genai')>('@google/genai');
   return {
     ...actualGenai,
-    mcpToTool: vi.fn().mockImplementation(() => ({
-      tool: vi.fn().mockResolvedValue({ functionDeclarations: [] }),
-      callTool: vi.fn(),
-    })),
+    mcpToTool: vi.fn().mockImplementation(function () {
+      return {
+        tool: vi.fn().mockResolvedValue({ functionDeclarations: [] }),
+        callTool: vi.fn(),
+      };
+    }),
   };
 });
 

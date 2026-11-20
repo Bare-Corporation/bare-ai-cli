@@ -16,28 +16,40 @@ vi.mock('node:fs', async () => {
     default: {
       // @ts-expect-error - Property 'default' does not exist on type 'typeof import("node:fs")'
       ...actual.default,
-      existsSync: vi.fn(() => true),
+      existsSync: vi.fn(function () {
+        return true;
+      }),
       realpathSync: vi.fn((p) => p.toString()),
-      statSync: vi.fn(() => ({ isDirectory: () => true }) as fs.Stats),
+      statSync: vi.fn(function () {
+        return { isDirectory: () => true };
+      } as fs.Stats),
       mkdirSync: vi.fn(),
       mkdtempSync: vi.fn((prefix: string) => prefix + 'mocked'),
       openSync: vi.fn(),
       closeSync: vi.fn(),
       writeFileSync: vi.fn(),
-      readdirSync: vi.fn(() => []),
+      readdirSync: vi.fn(function () {
+        return [];
+      }),
       chmodSync: vi.fn(),
       unlinkSync: vi.fn(),
       rmSync: vi.fn(),
     },
-    existsSync: vi.fn(() => true),
+    existsSync: vi.fn(function () {
+      return true;
+    }),
     realpathSync: vi.fn((p) => p.toString()),
-    statSync: vi.fn(() => ({ isDirectory: () => true }) as fs.Stats),
+    statSync: vi.fn(function () {
+      return { isDirectory: () => true };
+    } as fs.Stats),
     mkdirSync: vi.fn(),
     mkdtempSync: vi.fn((prefix: string) => prefix + 'mocked'),
     openSync: vi.fn(),
     closeSync: vi.fn(),
     writeFileSync: vi.fn(),
-    readdirSync: vi.fn(() => []),
+    readdirSync: vi.fn(function () {
+      return [];
+    }),
     chmodSync: vi.fn(),
     unlinkSync: vi.fn(),
     rmSync: vi.fn(),
@@ -49,9 +61,9 @@ vi.mock('../../utils/shell-utils.js', async (importOriginal) => {
     await importOriginal<typeof import('../../utils/shell-utils.js')>();
   return {
     ...actual,
-    spawnAsync: vi.fn(() =>
-      Promise.resolve({ status: 0, stdout: Buffer.from('') }),
-    ),
+    spawnAsync: vi.fn(function () {
+      return Promise.resolve({ status: 0, stdout: Buffer.from('') });
+    }),
     initializeShellParsers: vi.fn(),
     isStrictlyApproved: vi.fn().mockResolvedValue(true),
   };

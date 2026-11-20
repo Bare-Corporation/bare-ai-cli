@@ -13,8 +13,7 @@ import * as fs from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
     homedir: () => mockHomeDir,
@@ -33,7 +32,9 @@ vi.mock('node:os', async (importOriginal) => {
   const original = await importOriginal<typeof osActual>();
   return {
     ...original,
-    homedir: vi.fn(() => mockHomeDir),
+    homedir: vi.fn(function () {
+      return mockHomeDir;
+    }),
   };
 });
 

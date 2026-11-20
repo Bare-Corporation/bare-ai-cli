@@ -24,13 +24,14 @@ vi.mock('node:os', async (importOriginal) => {
   return {
     ...actualOs,
     homedir: vi.fn(),
-    platform: vi.fn(() => 'linux'),
+    platform: vi.fn(function () {
+      return 'linux';
+    }),
   };
 });
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: () => os.homedir(),

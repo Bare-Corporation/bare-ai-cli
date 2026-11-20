@@ -14,7 +14,9 @@ vi.mock('ink', async () => {
   const actual = await vi.importActual('ink');
   return {
     ...actual,
-    useIsScreenReaderEnabled: vi.fn(() => false),
+    useIsScreenReaderEnabled: vi.fn(function () {
+      return false;
+    }),
   };
 });
 
@@ -22,7 +24,9 @@ vi.mock('@bare-ai/core', async () => {
   const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
-    supportsTrueColor: vi.fn(() => true),
+    supportsTrueColor: vi.fn(function () {
+      return true;
+    }),
   };
 });
 

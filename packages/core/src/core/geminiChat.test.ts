@@ -62,10 +62,12 @@ vi.mock('node:fs', () => {
       });
     }),
     existsSync: vi.fn((path: string) => mockFileSystem.has(path)),
-    createWriteStream: vi.fn(() => ({
-      write: vi.fn(),
-      on: vi.fn(),
-    })),
+    createWriteStream: vi.fn(function () {
+      return {
+        write: vi.fn(),
+        on: vi.fn(),
+      };
+    }),
   };
 
   return {
@@ -157,11 +159,15 @@ describe('GeminiChat', () => {
       getTelemetryTracesEnabled: () => false,
       getUsageStatisticsEnabled: () => true,
       getDebugMode: () => false,
-      getContentGeneratorConfig: vi.fn().mockImplementation(() => ({
-        authType: 'oauth-personal',
-        model: currentModel,
-      })),
-      getModel: vi.fn().mockImplementation(() => currentModel),
+      getContentGeneratorConfig: vi.fn().mockImplementation(function () {
+        return {
+          authType: 'oauth-personal',
+          model: currentModel,
+        };
+      }),
+      getModel: vi.fn().mockImplementation(function () {
+        return currentModel;
+      }),
       setModel: vi.fn().mockImplementation((m: string) => {
         currentModel = m;
         // When model is explicitly set, active model usually resets or updates to it
@@ -205,7 +211,9 @@ describe('GeminiChat', () => {
       },
       isInteractive: vi.fn().mockReturnValue(false),
       getEnableHooks: vi.fn().mockReturnValue(false),
-      getActiveModel: vi.fn().mockImplementation(() => currentActiveModel),
+      getActiveModel: vi.fn().mockImplementation(function () {
+        return currentActiveModel;
+      }),
       setActiveModel: vi
         .fn()
         .mockImplementation((m: string) => (currentActiveModel = m)),
@@ -2144,9 +2152,9 @@ describe('GeminiChat', () => {
 
       // Stateful mock for activeModel
       let activeModel = 'model-a';
-      vi.mocked(mockConfig.getActiveModel).mockImplementation(
-        () => activeModel,
-      );
+      vi.mocked(mockConfig.getActiveModel).mockImplementation(function () {
+        return activeModel;
+      });
       vi.mocked(mockConfig.setActiveModel).mockImplementation((model) => {
         activeModel = model;
       });
@@ -2307,9 +2315,9 @@ describe('GeminiChat', () => {
     it('re-resolves generateContentConfig when active model changes between retries', async () => {
       // Availability enabled with stateful active model
       let activeModel = 'model-a';
-      vi.mocked(mockConfig.getActiveModel).mockImplementation(
-        () => activeModel,
-      );
+      vi.mocked(mockConfig.getActiveModel).mockImplementation(function () {
+        return activeModel;
+      });
       vi.mocked(mockConfig.setActiveModel).mockImplementation((model) => {
         activeModel = model;
       });

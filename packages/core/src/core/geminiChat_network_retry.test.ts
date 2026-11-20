@@ -30,7 +30,9 @@ vi.mock('node:fs', async (importOriginal) => {
         (error as NodeJS.ErrnoException).code = 'ENOENT';
         throw error;
       }),
-      existsSync: vi.fn(() => false),
+      existsSync: vi.fn(function () {
+        return false;
+      }),
     },
   };
 });

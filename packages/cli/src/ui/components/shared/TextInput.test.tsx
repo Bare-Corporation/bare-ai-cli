@@ -68,8 +68,12 @@ vi.mock('./text-buffer.js', async (importOriginal) => {
 
   return {
     ...actual,
-    useTextBuffer: vi.fn(() => mockTextBuffer as unknown as TextBuffer),
-    TextBuffer: vi.fn(() => mockTextBuffer as unknown as TextBuffer),
+    useTextBuffer: vi.fn(function () {
+      return mockTextBuffer as unknown as TextBuffer;
+    }),
+    TextBuffer: vi.fn(function () {
+      return mockTextBuffer as unknown as TextBuffer;
+    }),
   };
 });
 

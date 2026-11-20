@@ -94,14 +94,18 @@ describe('useLoadingIndicator', () => {
   };
 
   it('should initialize with default values when Idle', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    }); // Always witty
     const { result } = await renderLoadingIndicatorHook(StreamingState.Idle);
     expect(result.current.elapsedTime).toBe(0);
     expect(result.current.currentLoadingPhrase).toBeUndefined();
   });
 
   it('should show interactive shell waiting phrase when shouldShowFocusHint is true', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    }); // Always witty
     const { result, rerender } = await renderLoadingIndicatorHook(
       StreamingState.Responding,
       false,
@@ -125,7 +129,9 @@ describe('useLoadingIndicator', () => {
   });
 
   it('should reflect values when Responding', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty for subsequent phrases
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    }); // Always witty for subsequent phrases
     const { result } = await renderLoadingIndicatorHook(
       StreamingState.Responding,
     );
@@ -171,7 +177,9 @@ describe('useLoadingIndicator', () => {
   });
 
   it('should reset elapsedTime and use a witty phrase when transitioning from WaitingForConfirmation to Responding', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    }); // Always witty
     const { result, rerender } = await renderLoadingIndicatorHook(
       StreamingState.Responding,
     );
@@ -204,7 +212,9 @@ describe('useLoadingIndicator', () => {
   });
 
   it('should reset timer and phrase when streamingState changes from Responding to Idle', async () => {
-    vi.spyOn(Math, 'random').mockImplementation(() => 0.5); // Always witty
+    vi.spyOn(Math, 'random').mockImplementation(function () {
+      return 0.5;
+    }); // Always witty
     const { result, rerender } = await renderLoadingIndicatorHook(
       StreamingState.Responding,
     );

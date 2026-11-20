@@ -20,10 +20,12 @@ vi.mock('./headless.js', () => ({
 }));
 vi.mock('./stdio.js', () => ({
   writeToStdout: vi.fn(),
-  createWorkingStdio: vi.fn(() => ({
-    stdout: process.stdout,
-    stderr: process.stderr,
-  })),
+  createWorkingStdio: vi.fn(function () {
+    return {
+      stdout: process.stdout,
+      stderr: process.stderr,
+    };
+  }),
 }));
 
 describe('getConsentForOauth', () => {

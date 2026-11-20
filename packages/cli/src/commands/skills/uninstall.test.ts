@@ -13,9 +13,8 @@ vi.mock('../../utils/skillUtils.js', () => ({
 }));
 
 const { debugLogger, emitConsoleLog } = await vi.hoisted(async () => {
-  const { createMockDebugLogger } = await import(
-    '../../test-utils/mockDebugLogger.js'
-  );
+  const { createMockDebugLogger } =
+    await import('../../test-utils/mockDebugLogger.js');
   return createMockDebugLogger({ stripAnsi: true });
 });
 
@@ -31,7 +30,9 @@ import { handleUninstall, uninstallCommand } from './uninstall.js';
 describe('skill uninstall command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
   });
 
   describe('uninstallCommand', () => {

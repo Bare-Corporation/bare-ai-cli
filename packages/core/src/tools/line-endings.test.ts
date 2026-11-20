@@ -56,12 +56,16 @@ const mockEnsureCorrectFileContent = vi.fn<typeof ensureCorrectFileContent>();
 const fsService = new StandardFileSystemService();
 const mockConfigInternal = {
   getTargetDir: () => rootDir,
-  getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
+  getApprovalMode: vi.fn(function () {
+    return ApprovalMode.DEFAULT;
+  }),
   setApprovalMode: vi.fn(),
   getGeminiClient: vi.fn(),
   getBaseLlmClient: vi.fn(),
   getFileSystemService: () => fsService,
-  getIdeMode: vi.fn(() => false),
+  getIdeMode: vi.fn(function () {
+    return false;
+  }),
   getWorkspaceContext: () => new WorkspaceContext(rootDir),
   getApiKey: () => 'test-key',
   getModel: () => 'test-model',
@@ -77,7 +81,9 @@ const mockConfigInternal = {
   setUserMemory: vi.fn(),
   getGeminiMdFileCount: () => 0,
   setGeminiMdFileCount: vi.fn(),
-  getDisableLLMCorrection: vi.fn(() => false),
+  getDisableLLMCorrection: vi.fn(function () {
+    return false;
+  }),
   getActiveModel: () => 'test-model',
   validatePathAccess: vi.fn().mockReturnValue(null),
   getToolRegistry: () =>
@@ -116,7 +122,9 @@ describe('Line Ending Preservation', () => {
     mockGeminiClientInstance = new (vi.mocked(GeminiClient))(
       mockConfig,
     ) as Mocked<GeminiClient>;
-    vi.mocked(GeminiClient).mockImplementation(() => mockGeminiClientInstance);
+    vi.mocked(GeminiClient).mockImplementation(function () {
+      return mockGeminiClientInstance;
+    });
 
     mockBaseLlmClientInstance = {
       generateJson: vi.fn(),

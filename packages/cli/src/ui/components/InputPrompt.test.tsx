@@ -62,7 +62,9 @@ vi.mock('clipboardy');
 vi.mock('../utils/clipboardUtils.js');
 vi.mock('../hooks/useKittyKeyboardProtocol.js');
 vi.mock('../utils/terminalUtils.js', () => ({
-  isLowColorDepth: vi.fn(() => false),
+  isLowColorDepth: vi.fn(function () {
+    return false;
+  }),
 }));
 
 // Mock ink BEFORE importing components that use it to intercept terminalCursorPosition

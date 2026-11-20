@@ -10,18 +10,22 @@ import { ServiceAccountImpersonationProvider } from './sa-impersonation-provider
 import type { MCPServerConfig } from '../config/config.js';
 
 const mockRequest = vi.fn();
-const mockGetClient = vi.fn(() => ({
-  request: mockRequest,
-}));
+const mockGetClient = vi.fn(function () {
+  return {
+    request: mockRequest,
+  };
+});
 
 // Mock the google-auth-library to use a shared mock function
 vi.mock('google-auth-library', async (importOriginal) => {
   const actual = await importOriginal<typeof import('google-auth-library')>();
   return {
     ...actual,
-    GoogleAuth: vi.fn().mockImplementation(() => ({
-      getClient: mockGetClient,
-    })),
+    GoogleAuth: vi.fn().mockImplementation(function () {
+      return {
+        getClient: mockGetClient,
+      };
+    }),
   };
 });
 

@@ -14,8 +14,12 @@ vi.mock('os', async (importOriginal) => {
   const actualOs = await importOriginal<typeof osActual>();
   return {
     ...actualOs,
-    homedir: vi.fn(() => '/mock/home/user'),
-    platform: vi.fn(() => 'linux'),
+    homedir: vi.fn(function () {
+      return '/mock/home/user';
+    }),
+    platform: vi.fn(function () {
+      return 'linux';
+    }),
   };
 });
 
@@ -126,8 +130,7 @@ const mockCoreEvents = vi.hoisted(() => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   const os = await import('node:os');
   const pathMod = await import('node:path');
   const fsMod = await import('node:fs');
@@ -156,7 +159,9 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
   return {
     ...actual,
     coreEvents: mockCoreEvents,
-    homedir: vi.fn(() => os.homedir()),
+    homedir: vi.fn(function () {
+      return os.homedir();
+    }),
   };
 });
 
@@ -186,7 +191,9 @@ describe('Settings Loading and Merging', () => {
     );
     (mockFsExistsSync as Mock).mockReturnValue(false);
     (fs.readFileSync as Mock).mockReturnValue('{}'); // Return valid empty JSON
-    (mockFsMkdirSync as Mock).mockImplementation(() => undefined);
+    (mockFsMkdirSync as Mock).mockImplementation(function () {
+      return undefined;
+    });
     vi.spyOn(trustedFolders, 'isWorkspaceTrusted').mockReturnValue({
       isTrusted: true,
       source: 'file',

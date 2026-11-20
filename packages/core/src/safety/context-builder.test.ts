@@ -23,7 +23,9 @@ describe('ContextBuilder', () => {
     mockHistory = [];
 
     const mockGeminiClient = {
-      getHistory: vi.fn().mockImplementation(() => mockHistory),
+      getHistory: vi.fn().mockImplementation(function () {
+        return mockHistory;
+      }),
     };
     mockConfig = {
       get config() {

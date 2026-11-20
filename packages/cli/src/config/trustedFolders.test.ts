@@ -9,11 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import {
-  FatalConfigError,
-  ideContextStore,
-  coreEvents,
-} from '@bare-ai/core';
+import { FatalConfigError, ideContextStore, coreEvents } from '@bare-ai/core';
 import {
   loadTrustedFolders,
   TrustLevel,
@@ -27,12 +23,13 @@ import { createMockSettings } from '../test-utils/settings.js';
 // we are testing the actual behavior on the real file system.
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: () => '/mock/home/user',
-    isHeadlessMode: vi.fn(() => false),
+    isHeadlessMode: vi.fn(function () {
+      return false;
+    }),
     coreEvents: {
       emitFeedback: vi.fn(),
     },
@@ -347,7 +344,9 @@ describe('Trusted Folders', () => {
       };
       fs.writeFileSync(trustedFoldersPath, JSON.stringify(config), 'utf-8');
 
-      vi.spyOn(process, 'cwd').mockImplementation(() => '/untrusted');
+      vi.spyOn(process, 'cwd').mockImplementation(function () {
+        return '/untrusted';
+      });
 
       // process.cwd() is untrusted, but workspaceDir is trusted
       expect(isWorkspaceTrusted(mockSettings, '/projectA')).toEqual({

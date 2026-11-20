@@ -68,14 +68,13 @@ describe('setupUser', () => {
     });
     mockGetOperation = vi.fn();
 
-    vi.mocked(CodeAssistServer).mockImplementation(
-      () =>
-        ({
-          loadCodeAssist: mockLoad,
-          onboardUser: mockOnboardUser,
-          getOperation: mockGetOperation,
-        }) as unknown as CodeAssistServer,
-    );
+    vi.mocked(CodeAssistServer).mockImplementation(function () {
+      return {
+        loadCodeAssist: mockLoad,
+        onboardUser: mockOnboardUser,
+        getOperation: mockGetOperation,
+      } as unknown as CodeAssistServer;
+    });
 
     mockValidationHandler = vi.fn();
     mockConfig = {

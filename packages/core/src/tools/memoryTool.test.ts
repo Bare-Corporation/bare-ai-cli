@@ -48,11 +48,13 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 
 vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
-  createWriteStream: vi.fn(() => ({
-    on: vi.fn(),
-    write: vi.fn(),
-    end: vi.fn(),
-  })),
+  createWriteStream: vi.fn(function () {
+    return {
+      on: vi.fn(),
+      write: vi.fn(),
+      end: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('os');

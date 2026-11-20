@@ -30,9 +30,9 @@ const mockedRunExitCleanup = runExitCleanup as Mock;
 
 describe('LoginWithGoogleRestartDialog', () => {
   const onDismiss = vi.fn();
-  const exitSpy = vi
-    .spyOn(process, 'exit')
-    .mockImplementation(() => undefined as never);
+  const exitSpy = vi.spyOn(process, 'exit').mockImplementation(function () {
+    return undefined as never;
+  });
 
   const mockConfig = {
     getRemoteAdminSettings: vi.fn(),

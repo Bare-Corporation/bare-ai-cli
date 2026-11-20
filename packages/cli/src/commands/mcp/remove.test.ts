@@ -43,11 +43,15 @@ vi.mock('../utils.js', () => ({
 }));
 
 vi.mock('../../config/trustedFolders.js', () => ({
-  isWorkspaceTrusted: vi.fn(() => ({
-    isTrusted: true,
-    source: undefined,
-  })),
-  isFolderTrustEnabled: vi.fn(() => false),
+  isWorkspaceTrusted: vi.fn(function () {
+    return {
+      isTrusted: true,
+      source: undefined,
+    };
+  }),
+  isFolderTrustEnabled: vi.fn(function () {
+    return false;
+  }),
 }));
 
 describe('mcp remove command', () => {

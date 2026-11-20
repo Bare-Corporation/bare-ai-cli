@@ -17,10 +17,12 @@ vi.mock('../contexts/MouseContext.js', async (importOriginal) => {
   const unsubscribe = vi.fn();
   return {
     ...actual,
-    useMouseContext: vi.fn(() => ({
-      subscribe,
-      unsubscribe,
-    })),
+    useMouseContext: vi.fn(function () {
+      return {
+        subscribe,
+        unsubscribe,
+      };
+    }),
   };
 });
 

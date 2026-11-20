@@ -50,14 +50,18 @@ vi.mock('../hooks/useFlickerDetector.js', () => ({
 }));
 
 vi.mock('../hooks/useAlternateBuffer.js', () => ({
-  useAlternateBuffer: vi.fn(() => false),
+  useAlternateBuffer: vi.fn(function () {
+    return false;
+  }),
 }));
 
 vi.mock('../contexts/ConfigContext.js', () => ({
   useConfig: () => ({
-    getAccessibility: vi.fn(() => ({
-      enableLoadingPhrases: true,
-    })),
+    getAccessibility: vi.fn(function () {
+      return {
+        enableLoadingPhrases: true,
+      };
+    }),
   }),
 }));
 

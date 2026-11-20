@@ -55,7 +55,9 @@ describe('migrate command', () => {
 
     // Mock process.cwd()
     originalCwd = process.cwd;
-    process.cwd = vi.fn(() => '/test/project');
+    process.cwd = vi.fn(function () {
+      return '/test/project';
+    });
 
     mockedLoadSettings.mockReturnValue({
       merged: {

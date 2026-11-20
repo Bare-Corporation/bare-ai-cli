@@ -19,7 +19,9 @@ import { terminalCapabilityManager } from '../utils/terminalCapabilityManager.js
 
 vi.mock('../utils/terminalCapabilityManager.js', () => ({
   terminalCapabilityManager: {
-    isGhosttyTerminal: vi.fn(() => false),
+    isGhosttyTerminal: vi.fn(function () {
+      return false;
+    }),
   },
 }));
 
@@ -45,7 +47,9 @@ vi.mock('ink', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ink')>();
   return {
     ...actual,
-    getBoundingBox: vi.fn(() => ({ x: 0, y: 0, width: 10, height: 10 })),
+    getBoundingBox: vi.fn(function () {
+      return { x: 0, y: 0, width: 10, height: 10 };
+    }),
   };
 });
 
@@ -93,11 +97,13 @@ describe('ScrollProvider', () => {
   describe('Event Handling Status', () => {
     it('returns true when scroll event is handled', async () => {
       const scrollBy = vi.fn();
-      const getScrollState = vi.fn(() => ({
-        scrollTop: 0,
-        scrollHeight: 100,
-        innerHeight: 10,
-      }));
+      const getScrollState = vi.fn(function () {
+        return {
+          scrollTop: 0,
+          scrollHeight: 100,
+          innerHeight: 10,
+        };
+      });
 
       await render(
         <ScrollProvider>
@@ -131,11 +137,13 @@ describe('ScrollProvider', () => {
     it('returns false when scroll event is ignored (cannot scroll further)', async () => {
       const scrollBy = vi.fn();
       // Already at bottom
-      const getScrollState = vi.fn(() => ({
-        scrollTop: 90,
-        scrollHeight: 100,
-        innerHeight: 10,
-      }));
+      const getScrollState = vi.fn(function () {
+        return {
+          scrollTop: 90,
+          scrollHeight: 100,
+          innerHeight: 10,
+        };
+      });
 
       await render(
         <ScrollProvider>
@@ -170,11 +178,13 @@ describe('ScrollProvider', () => {
   it('calls scrollTo when clicking scrollbar track if available', async () => {
     const scrollBy = vi.fn();
     const scrollTo = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -214,11 +224,13 @@ describe('ScrollProvider', () => {
 
   it('calls scrollBy when clicking scrollbar track if scrollTo is not available', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -247,11 +259,13 @@ describe('ScrollProvider', () => {
 
   it('batches multiple scroll events into a single update', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -292,11 +306,13 @@ describe('ScrollProvider', () => {
 
   it('handles mixed direction scroll events in batch', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 10,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 10,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -350,11 +366,13 @@ describe('ScrollProvider', () => {
   it('respects scroll limits during batching', async () => {
     const scrollBy = vi.fn();
     // Start near bottom
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 89,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 89,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -411,11 +429,13 @@ describe('ScrollProvider', () => {
   it('calls scrollTo when dragging scrollbar thumb if available', async () => {
     const scrollBy = vi.fn();
     const scrollTo = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -473,11 +493,13 @@ describe('ScrollProvider', () => {
 
   it('calls scrollBy when dragging scrollbar thumb if scrollTo is not available', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -533,11 +555,13 @@ describe('ScrollProvider', () => {
   describe('Scroll Acceleration', () => {
     it('accelerates scroll for non-Ghostty terminals during rapid scrolling', async () => {
       const scrollBy = vi.fn();
-      const getScrollState = vi.fn(() => ({
-        scrollTop: 50,
-        scrollHeight: 1000,
-        innerHeight: 10,
-      }));
+      const getScrollState = vi.fn(function () {
+        return {
+          scrollTop: 50,
+          scrollHeight: 1000,
+          innerHeight: 10,
+        };
+      });
 
       vi.mocked(terminalCapabilityManager.isGhosttyTerminal).mockReturnValue(
         false,
@@ -585,11 +609,13 @@ describe('ScrollProvider', () => {
 
     it('does not accelerate for Ghostty terminals even during rapid scrolling', async () => {
       const scrollBy = vi.fn();
-      const getScrollState = vi.fn(() => ({
-        scrollTop: 50,
-        scrollHeight: 1000,
-        innerHeight: 10,
-      }));
+      const getScrollState = vi.fn(function () {
+        return {
+          scrollTop: 50,
+          scrollHeight: 1000,
+          innerHeight: 10,
+        };
+      });
 
       vi.mocked(terminalCapabilityManager.isGhosttyTerminal).mockReturnValue(
         true,
@@ -634,11 +660,13 @@ describe('ScrollProvider', () => {
 
     it('resets acceleration count if scrolling is slow', async () => {
       const scrollBy = vi.fn();
-      const getScrollState = vi.fn(() => ({
-        scrollTop: 50,
-        scrollHeight: 1000,
-        innerHeight: 10,
-      }));
+      const getScrollState = vi.fn(function () {
+        return {
+          scrollTop: 50,
+          scrollHeight: 1000,
+          innerHeight: 10,
+        };
+      });
 
       vi.mocked(terminalCapabilityManager.isGhosttyTerminal).mockReturnValue(
         false,

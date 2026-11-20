@@ -24,11 +24,10 @@ import {
 
 // Mock dependencies
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
-    Config: vi.fn().mockImplementation((params) => {
+    Config: vi.fn().mockImplementation(function (params) {
       const mockConfig = {
         ...params,
         initialize: vi.fn(),
@@ -105,7 +104,7 @@ describe('loadConfig', () => {
       beforeEach(() => {
         // We need to cast to any here to modify the mock implementation
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (Config as any).mockImplementation((params: unknown) => {
+        (Config as any).mockImplementation(function (params: unknown) {
           const mockConfig = {
             ...(params as object),
             initialize: vi.fn(),
@@ -385,18 +384,17 @@ describe('loadConfig', () => {
         });
 
         // Update the mock implementation for this test
-        vi.mocked(Config).mockImplementation(
-          (params: unknown) =>
-            ({
-              ...(params as object),
-              initialize: vi.fn(),
-              waitForMcpInit: vi.fn(),
-              refreshAuth: refreshAuthMock,
-              getExperiments: vi.fn().mockReturnValue({ flags: {} }),
-              getRemoteAdminSettings: vi.fn(),
-              setRemoteAdminSettings: vi.fn(),
-            }) as unknown as Config,
-        );
+        vi.mocked(Config).mockImplementation(function (params: unknown) {
+          return {
+            ...(params as object),
+            initialize: vi.fn(),
+            waitForMcpInit: vi.fn(),
+            refreshAuth: refreshAuthMock,
+            getExperiments: vi.fn().mockReturnValue({ flags: {} }),
+            getRemoteAdminSettings: vi.fn(),
+            setRemoteAdminSettings: vi.fn(),
+          } as unknown as Config;
+        });
 
         await loadConfig(mockSettings, mockExtensionLoader, taskId);
 
@@ -415,18 +413,17 @@ describe('loadConfig', () => {
           return Promise.resolve();
         });
 
-        vi.mocked(Config).mockImplementation(
-          (params: unknown) =>
-            ({
-              ...(params as object),
-              initialize: vi.fn(),
-              waitForMcpInit: vi.fn(),
-              refreshAuth: refreshAuthMock,
-              getExperiments: vi.fn().mockReturnValue({ flags: {} }),
-              getRemoteAdminSettings: vi.fn(),
-              setRemoteAdminSettings: vi.fn(),
-            }) as unknown as Config,
-        );
+        vi.mocked(Config).mockImplementation(function (params: unknown) {
+          return {
+            ...(params as object),
+            initialize: vi.fn(),
+            waitForMcpInit: vi.fn(),
+            refreshAuth: refreshAuthMock,
+            getExperiments: vi.fn().mockReturnValue({ flags: {} }),
+            getRemoteAdminSettings: vi.fn(),
+            setRemoteAdminSettings: vi.fn(),
+          } as unknown as Config;
+        });
 
         await expect(
           loadConfig(mockSettings, mockExtensionLoader, taskId),
@@ -444,18 +441,17 @@ describe('loadConfig', () => {
 
         const refreshAuthMock = vi.fn().mockResolvedValue(undefined);
 
-        vi.mocked(Config).mockImplementation(
-          (params: unknown) =>
-            ({
-              ...(params as object),
-              initialize: vi.fn(),
-              waitForMcpInit: vi.fn(),
-              refreshAuth: refreshAuthMock,
-              getExperiments: vi.fn().mockReturnValue({ flags: {} }),
-              getRemoteAdminSettings: vi.fn(),
-              setRemoteAdminSettings: vi.fn(),
-            }) as unknown as Config,
-        );
+        vi.mocked(Config).mockImplementation(function (params: unknown) {
+          return {
+            ...(params as object),
+            initialize: vi.fn(),
+            waitForMcpInit: vi.fn(),
+            refreshAuth: refreshAuthMock,
+            getExperiments: vi.fn().mockReturnValue({ flags: {} }),
+            getRemoteAdminSettings: vi.fn(),
+            setRemoteAdminSettings: vi.fn(),
+          } as unknown as Config;
+        });
 
         await loadConfig(mockSettings, mockExtensionLoader, taskId);
 
@@ -471,18 +467,17 @@ describe('loadConfig', () => {
 
         const refreshAuthMock = vi.fn().mockResolvedValue(undefined);
 
-        vi.mocked(Config).mockImplementation(
-          (params: unknown) =>
-            ({
-              ...(params as object),
-              initialize: vi.fn(),
-              waitForMcpInit: vi.fn(),
-              refreshAuth: refreshAuthMock,
-              getExperiments: vi.fn().mockReturnValue({ flags: {} }),
-              getRemoteAdminSettings: vi.fn(),
-              setRemoteAdminSettings: vi.fn(),
-            }) as unknown as Config,
-        );
+        vi.mocked(Config).mockImplementation(function (params: unknown) {
+          return {
+            ...(params as object),
+            initialize: vi.fn(),
+            waitForMcpInit: vi.fn(),
+            refreshAuth: refreshAuthMock,
+            getExperiments: vi.fn().mockReturnValue({ flags: {} }),
+            getRemoteAdminSettings: vi.fn(),
+            setRemoteAdminSettings: vi.fn(),
+          } as unknown as Config;
+        });
 
         await loadConfig(mockSettings, mockExtensionLoader, taskId);
 
@@ -497,18 +492,17 @@ describe('loadConfig', () => {
 
         const refreshAuthMock = vi.fn().mockResolvedValue(undefined);
 
-        vi.mocked(Config).mockImplementation(
-          (params: unknown) =>
-            ({
-              ...(params as object),
-              initialize: vi.fn(),
-              waitForMcpInit: vi.fn(),
-              refreshAuth: refreshAuthMock,
-              getExperiments: vi.fn().mockReturnValue({ flags: {} }),
-              getRemoteAdminSettings: vi.fn(),
-              setRemoteAdminSettings: vi.fn(),
-            }) as unknown as Config,
-        );
+        vi.mocked(Config).mockImplementation(function (params: unknown) {
+          return {
+            ...(params as object),
+            initialize: vi.fn(),
+            waitForMcpInit: vi.fn(),
+            refreshAuth: refreshAuthMock,
+            getExperiments: vi.fn().mockReturnValue({ flags: {} }),
+            getRemoteAdminSettings: vi.fn(),
+            setRemoteAdminSettings: vi.fn(),
+          } as unknown as Config;
+        });
 
         await expect(
           loadConfig(mockSettings, mockExtensionLoader, taskId),
@@ -533,18 +527,17 @@ describe('loadConfig', () => {
           return Promise.resolve();
         });
 
-        vi.mocked(Config).mockImplementation(
-          (params: unknown) =>
-            ({
-              ...(params as object),
-              initialize: vi.fn(),
-              waitForMcpInit: vi.fn(),
-              refreshAuth: refreshAuthMock,
-              getExperiments: vi.fn().mockReturnValue({ flags: {} }),
-              getRemoteAdminSettings: vi.fn(),
-              setRemoteAdminSettings: vi.fn(),
-            }) as unknown as Config,
-        );
+        vi.mocked(Config).mockImplementation(function (params: unknown) {
+          return {
+            ...(params as object),
+            initialize: vi.fn(),
+            waitForMcpInit: vi.fn(),
+            refreshAuth: refreshAuthMock,
+            getExperiments: vi.fn().mockReturnValue({ flags: {} }),
+            getRemoteAdminSettings: vi.fn(),
+            setRemoteAdminSettings: vi.fn(),
+          } as unknown as Config;
+        });
 
         await expect(
           loadConfig(mockSettings, mockExtensionLoader, taskId),

@@ -35,8 +35,7 @@ vi.mock('os', async (importOriginal) => {
 });
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     KeychainTokenStorage: vi.fn(),
@@ -79,7 +78,8 @@ describe('extensionSettings', () => {
         } as unknown as KeychainTokenStorage;
       },
     );
-    tempHomeDir = os.tmpdir() + path.sep + `bare-ai-cli-test-home-${Date.now()}`;
+    tempHomeDir =
+      os.tmpdir() + path.sep + `bare-ai-cli-test-home-${Date.now()}`;
     tempWorkspaceDir = path.join(
       os.tmpdir(),
       `bare-ai-cli-test-workspace-${Date.now()}`,
@@ -433,16 +433,15 @@ describe('extensionSettings', () => {
       const mockIsAvailable = vi.fn().mockResolvedValue(false);
       const mockListSecrets = vi.fn();
 
-      vi.mocked(KeychainTokenStorage).mockImplementation(
-        () =>
-          ({
-            isAvailable: mockIsAvailable,
-            listSecrets: mockListSecrets,
-            deleteSecret: vi.fn(),
-            getSecret: vi.fn(),
-            setSecret: vi.fn(),
-          }) as unknown as KeychainTokenStorage,
-      );
+      vi.mocked(KeychainTokenStorage).mockImplementation(function () {
+        return {
+          isAvailable: mockIsAvailable,
+          listSecrets: mockListSecrets,
+          deleteSecret: vi.fn(),
+          getSecret: vi.fn(),
+          setSecret: vi.fn(),
+        } as unknown as KeychainTokenStorage;
+      });
 
       const config: ExtensionConfig = {
         name: 'test-ext',

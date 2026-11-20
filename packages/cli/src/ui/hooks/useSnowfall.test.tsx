@@ -18,7 +18,9 @@ vi.mock('../themes/theme-manager.js', () => ({
   themeManager: {
     getActiveTheme: vi.fn(),
     setTerminalBackground: vi.fn(),
-    getAllThemes: vi.fn(() => []),
+    getAllThemes: vi.fn(function () {
+      return [];
+    }),
     setActiveTheme: vi.fn(),
   },
   DEFAULT_THEME: { name: 'Default' },
@@ -29,7 +31,9 @@ vi.mock('../themes/builtin/dark/holiday-dark.js', () => ({
 }));
 
 vi.mock('./useTerminalSize.js', () => ({
-  useTerminalSize: vi.fn(() => ({ columns: 120, rows: 20 })),
+  useTerminalSize: vi.fn(function () {
+    return { columns: 120, rows: 20 };
+  }),
 }));
 
 describe('useSnowfall', () => {

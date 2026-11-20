@@ -36,8 +36,7 @@ vi.mock('../../config/extensions/storage.js', () => ({
 }));
 vi.mock('../../config/extension-manager.js');
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
     createTransport: vi.fn(),
@@ -108,8 +107,12 @@ describe('mcp list command', () => {
       loadExtensions: vi.fn(),
     };
 
-    MockedClient.mockImplementation(() => mockClient);
-    MockedExtensionManager.mockImplementation(() => mockExtensionManager);
+    MockedClient.mockImplementation(function () {
+      return mockClient;
+    });
+    MockedExtensionManager.mockImplementation(function () {
+      return mockExtensionManager;
+    });
     mockedCreateTransport.mockResolvedValue(mockTransport);
     mockExtensionManager.loadExtensions.mockReturnValue([]);
     mockedGetUserExtensionsDir.mockReturnValue('/mocked/extensions/dir');

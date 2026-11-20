@@ -80,7 +80,9 @@ describe('SettingsContext', () => {
           listeners = listeners.filter((l) => l !== listener);
         };
       }),
-      getSnapshot: vi.fn(() => mockSnapshot),
+      getSnapshot: vi.fn(function () {
+        return mockSnapshot;
+      }),
       setValue: vi.fn(),
     } as unknown as LoadedSettings;
   });

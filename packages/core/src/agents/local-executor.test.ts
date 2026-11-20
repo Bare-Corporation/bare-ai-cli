@@ -132,26 +132,30 @@ const mockSetHistory = vi.fn((newHistory: Content[]) => {
 });
 
 vi.mock('../context/chatCompressionService.js', () => ({
-  ChatCompressionService: vi.fn().mockImplementation(() => ({
-    compress: mockCompress,
-  })),
+  ChatCompressionService: vi.fn().mockImplementation(function () {
+    return {
+      compress: mockCompress,
+    };
+  }),
 }));
 
 vi.mock('../core/geminiChat.js', () => ({
   StreamEventType: {
     CHUNK: 'chunk',
   },
-  GeminiChat: vi.fn().mockImplementation(() => ({
-    initialize: vi.fn(),
-    sendMessageStream: mockSendMessageStream,
-    getHistory: vi.fn((_curated?: boolean) => [...mockChatHistory]),
-    setHistory: mockSetHistory,
-    setSystemInstruction: mockSetSystemInstruction,
-    recordCompletedToolCalls: mockRecordCompletedToolCalls,
-    getChatRecordingService: vi.fn().mockReturnValue({
-      saveSummary: mockSaveSummary,
-    }),
-  })),
+  GeminiChat: vi.fn().mockImplementation(function () {
+    return {
+      initialize: vi.fn(),
+      sendMessageStream: mockSendMessageStream,
+      getHistory: vi.fn((_curated?: boolean) => [...mockChatHistory]),
+      setHistory: mockSetHistory,
+      setSystemInstruction: mockSetSystemInstruction,
+      recordCompletedToolCalls: mockRecordCompletedToolCalls,
+      getChatRecordingService: vi.fn().mockReturnValue({
+        saveSummary: mockSaveSummary,
+      }),
+    };
+  }),
 }));
 
 vi.mock('./agent-scheduler.js', () => ({
@@ -425,29 +429,30 @@ describe('LocalAgentExecutor', () => {
     mockedPromptIdContext.getStore.mockReset();
     mockedPromptIdContext.run.mockImplementation((_id, fn) => fn());
 
-    (ChatCompressionService as Mock).mockImplementation(() => ({
-      compress: mockCompress,
-    }));
+    (ChatCompressionService as Mock).mockImplementation(function () {
+      return {
+        compress: mockCompress,
+      };
+    });
     mockCompress.mockResolvedValue({
       newHistory: null,
       info: { compressionStatus: CompressionStatus.NOOP },
     });
 
-    MockedGeminiChat.mockImplementation(
-      () =>
-        ({
-          initialize: vi.fn(),
-          sendMessageStream: mockSendMessageStream,
-          setSystemInstruction: mockSetSystemInstruction,
-          getHistory: vi.fn((_curated?: boolean) => [...mockChatHistory]),
-          getLastPromptTokenCount: vi.fn(() => 100),
-          setHistory: mockSetHistory,
-          recordCompletedToolCalls: mockRecordCompletedToolCalls,
-          getChatRecordingService: vi.fn().mockReturnValue({
-            saveSummary: mockSaveSummary,
-          }),
-        }) as unknown as GeminiChat,
-    );
+    MockedGeminiChat.mockImplementation(function () {
+      return {
+        initialize: vi.fn(),
+        sendMessageStream: mockSendMessageStream,
+        setSystemInstruction: mockSetSystemInstruction,
+        getHistory: vi.fn((_curated?: boolean) => [...mockChatHistory]),
+        getLastPromptTokenCount: vi.fn(() => 100),
+        setHistory: mockSetHistory,
+        recordCompletedToolCalls: mockRecordCompletedToolCalls,
+        getChatRecordingService: vi.fn().mockReturnValue({
+          saveSummary: mockSaveSummary,
+        }),
+      } as unknown as GeminiChat;
+    });
 
     vi.useFakeTimers();
 
@@ -1831,7 +1836,7 @@ describe('LocalAgentExecutor', () => {
     it('should throw and log if GeminiChat creation fails', async () => {
       const definition = createTestDefinition();
       const initError = new Error('Chat creation failed');
-      MockedGeminiChat.mockImplementationOnce(() => {
+      MockedGeminiChat.mockImplementationOnce(function () {
         throw initError;
       });
 

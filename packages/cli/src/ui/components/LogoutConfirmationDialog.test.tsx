@@ -15,7 +15,9 @@ import {
 import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 
 vi.mock('./shared/RadioButtonSelect.js', () => ({
-  RadioButtonSelect: vi.fn(() => null),
+  RadioButtonSelect: vi.fn(function () {
+    return null;
+  }),
 }));
 
 describe('LogoutConfirmationDialog', () => {

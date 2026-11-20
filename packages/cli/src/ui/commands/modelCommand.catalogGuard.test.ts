@@ -299,7 +299,9 @@ describe('modelCommand catalogue narrowing (ticket 208)', () => {
     // it still fires.
     const stderrSpy = vi
       .spyOn(process.stderr, 'write')
-      .mockImplementation(() => true);
+      .mockImplementation(function () {
+        return true;
+      });
     const context = createMockCommandContext();
 
     await modelCommand.action!(context, '991');

@@ -38,7 +38,9 @@ vi.mock('ink', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ink')>();
   return {
     ...actual,
-    getBoundingBox: vi.fn(() => ({ x: 0, y: 0, width: 10, height: 10 })),
+    getBoundingBox: vi.fn(function () {
+      return { x: 0, y: 0, width: 10, height: 10 };
+    }),
   };
 });
 
@@ -82,11 +84,13 @@ describe('ScrollProvider Drag', () => {
 
   it('drags the scrollbar thumb', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -185,11 +189,13 @@ describe('ScrollProvider Drag', () => {
 
   it('jumps to position and starts drag when clicking track below thumb', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -248,11 +254,13 @@ describe('ScrollProvider Drag', () => {
   it('jumps to position when clicking track above thumb', async () => {
     const scrollBy = vi.fn();
     // Start scrolled down
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 50,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 50,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -286,11 +294,13 @@ describe('ScrollProvider Drag', () => {
 
   it('jumps to top when clicking very top of track', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 50,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 50,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -324,11 +334,13 @@ describe('ScrollProvider Drag', () => {
 
   it('jumps to bottom when clicking very bottom of track', async () => {
     const scrollBy = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     await render(
       <ScrollProvider>
@@ -363,11 +375,13 @@ describe('ScrollProvider Drag', () => {
   it('uses scrollTo with 0 duration if provided', async () => {
     const scrollBy = vi.fn();
     const scrollTo = vi.fn();
-    const getScrollState = vi.fn(() => ({
-      scrollTop: 0,
-      scrollHeight: 100,
-      innerHeight: 10,
-    }));
+    const getScrollState = vi.fn(function () {
+      return {
+        scrollTop: 0,
+        scrollHeight: 100,
+        innerHeight: 10,
+      };
+    });
 
     // Custom component that provides scrollTo
     const TestScrollableWithScrollTo = forwardRef(

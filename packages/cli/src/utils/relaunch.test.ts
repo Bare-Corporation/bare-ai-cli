@@ -23,8 +23,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     writeToStderr: mocks.writeToStderr,
@@ -54,7 +53,9 @@ describe('relaunchOnExitCode', () => {
     });
     stdinResumeSpy = vi
       .spyOn(process.stdin, 'resume')
-      .mockImplementation(() => process.stdin);
+      .mockImplementation(function () {
+        return process.stdin;
+      });
     vi.clearAllMocks();
     mocks.writeToStderr.mockClear();
   });
@@ -138,10 +139,14 @@ describe('relaunchAppInChildProcess', () => {
     });
     stdinPauseSpy = vi
       .spyOn(process.stdin, 'pause')
-      .mockImplementation(() => process.stdin);
+      .mockImplementation(function () {
+        return process.stdin;
+      });
     stdinResumeSpy = vi
       .spyOn(process.stdin, 'resume')
-      .mockImplementation(() => process.stdin);
+      .mockImplementation(function () {
+        return process.stdin;
+      });
   });
 
   afterEach(() => {

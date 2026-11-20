@@ -22,7 +22,9 @@ import { makeFakeConfig } from '@bare-ai/core';
 
 // Mock child components
 vi.mock('./messages/ToolGroupMessage.js', () => ({
-  ToolGroupMessage: vi.fn(() => <div />),
+  ToolGroupMessage: vi.fn(function () {
+    return <div />;
+  }),
 }));
 
 describe('<HistoryItemDisplay />', () => {

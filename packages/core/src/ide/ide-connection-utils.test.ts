@@ -34,7 +34,9 @@ vi.mock('node:fs', async (importOriginal) => {
       readdir: vi.fn(),
     },
     realpathSync: (p: string) => p,
-    existsSync: vi.fn(() => false),
+    existsSync: vi.fn(function () {
+      return false;
+    }),
   };
 });
 vi.mock('node:os');
@@ -51,7 +53,9 @@ describe('ide-connection-utils', () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/test/workspace/sub-dir');
     vi.mocked(os.tmpdir).mockReturnValue('/tmp');
     vi.mocked(os.platform).mockReturnValue('linux');
-    vi.spyOn(process, 'kill').mockImplementation(() => true);
+    vi.spyOn(process, 'kill').mockImplementation(function () {
+      return true;
+    });
   });
 
   afterEach(() => {
@@ -269,7 +273,9 @@ describe('ide-connection-utils', () => {
       ]);
 
       // Both are alive
-      vi.spyOn(process, 'kill').mockImplementation(() => true);
+      vi.spyOn(process, 'kill').mockImplementation(function () {
+        return true;
+      });
 
       vi.mocked(fs.promises.readFile)
         .mockResolvedValueOnce(JSON.stringify(newConfig))
@@ -700,9 +706,8 @@ describe('ide-connection-utils', () => {
 
   describe('createProxyAwareFetch', () => {
     it('should return a proxy-aware fetcher function', async () => {
-      const { createProxyAwareFetch } = await import(
-        './ide-connection-utils.js'
-      );
+      const { createProxyAwareFetch } =
+        await import('./ide-connection-utils.js');
       const fetcher = await createProxyAwareFetch('127.0.0.1');
       expect(typeof fetcher).toBe('function');
     });
