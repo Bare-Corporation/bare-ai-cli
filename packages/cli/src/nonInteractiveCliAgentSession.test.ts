@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -56,8 +57,7 @@ const mockCoreEvents = vi.hoisted(() => ({
 const mockSchedulerSchedule = vi.hoisted(() => vi.fn());
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
 
   class MockChatRecordingService {
     initialize = vi.fn();
@@ -81,10 +81,12 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
     LegacyAgentSession: original.LegacyAgentSession,
     geminiPartsToContentParts: original.geminiPartsToContentParts,
     coreEvents: mockCoreEvents,
-    createWorkingStdio: vi.fn(() => ({
-      stdout: process.stdout,
-      stderr: process.stderr,
-    })),
+    createWorkingStdio: vi.fn(function () {
+      return {
+        stdout: process.stdout,
+        stderr: process.stderr,
+      };
+    }),
   };
 });
 
@@ -145,11 +147,17 @@ describe('runNonInteractive', () => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     processStdoutSpy = vi
       .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
-    vi.spyOn(process.stdout, 'on').mockImplementation(() => process.stdout);
+      .mockImplementation(function () {
+        return true;
+      });
+    vi.spyOn(process.stdout, 'on').mockImplementation(function () {
+      return process.stdout;
+    });
     processStderrSpy = vi
       .spyOn(process.stderr, 'write')
-      .mockImplementation(() => true);
+      .mockImplementation(function () {
+        return true;
+      });
     vi.spyOn(process, 'exit').mockImplementation((code) => {
       throw new Error(`process.exit(${code}) called`);
     });
@@ -162,13 +170,17 @@ describe('runNonInteractive', () => {
     mockGeminiClient = {
       sendMessageStream: vi.fn(),
       resumeChat: vi.fn().mockResolvedValue(undefined),
-      getChatRecordingService: vi.fn(() => ({
-        initialize: vi.fn(),
-        recordMessage: vi.fn(),
-        recordMessageTokens: vi.fn(),
-        recordToolCalls: vi.fn(),
-      })),
-      getChat: vi.fn(() => ({ recordCompletedToolCalls: vi.fn() })),
+      getChatRecordingService: vi.fn(function () {
+        return {
+          initialize: vi.fn(),
+          recordMessage: vi.fn(),
+          recordMessageTokens: vi.fn(),
+          recordToolCalls: vi.fn(),
+        };
+      }),
+      getChat: vi.fn(function () {
+        return { recordCompletedToolCalls: vi.fn() };
+      }),
       getCurrentSequenceModel: vi.fn().mockReturnValue(null),
     };
 
@@ -220,9 +232,8 @@ describe('runNonInteractive', () => {
       computeMergedSettings: vi.fn(),
     } as unknown as LoadedSettings;
 
-    const { handleAtCommand } = await import(
-      './ui/hooks/atCommandProcessor.js'
-    );
+    const { handleAtCommand } =
+      await import('./ui/hooks/atCommandProcessor.js');
     vi.mocked(handleAtCommand).mockImplementation(async ({ query }) => ({
       processedQuery: [{ text: query }],
     }));
@@ -692,9 +703,8 @@ describe('runNonInteractive', () => {
 
   it('should preprocess @include commands before sending to the model', async () => {
     // 1. Mock the imported atCommandProcessor
-    const { handleAtCommand } = await import(
-      './ui/hooks/atCommandProcessor.js'
-    );
+    const { handleAtCommand } =
+      await import('./ui/hooks/atCommandProcessor.js');
     const mockHandleAtCommand = vi.mocked(handleAtCommand);
 
     // 2. Define the raw input and the expected processed output
@@ -1124,9 +1134,8 @@ describe('runNonInteractive', () => {
   });
 
   it('should handle slash commands', async () => {
-    const nonInteractiveCliCommands = await import(
-      './nonInteractiveCliCommands.js'
-    );
+    const nonInteractiveCliCommands =
+      await import('./nonInteractiveCliCommands.js');
     const handleSlashCommandSpy = vi.spyOn(
       nonInteractiveCliCommands,
       'handleSlashCommand',
@@ -1186,13 +1195,25 @@ describe('runNonInteractive', () => {
 
     const stdinOnSpy = vi
       .spyOn(process.stdin, 'on')
-      .mockImplementation(() => process.stdin);
+      .mockImplementation(function () {
+        return process.stdin;
+      });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.spyOn(process.stdin as any, 'setRawMode').mockImplementation(() => true);
-    vi.spyOn(process.stdin, 'resume').mockImplementation(() => process.stdin);
-    vi.spyOn(process.stdin, 'pause').mockImplementation(() => process.stdin);
+    vi.spyOn(process.stdin as any, 'setRawMode').mockImplementation(
+      function () {
+        return true;
+      },
+    );
+    vi.spyOn(process.stdin, 'resume').mockImplementation(function () {
+      return process.stdin;
+    });
+    vi.spyOn(process.stdin, 'pause').mockImplementation(function () {
+      return process.stdin;
+    });
     vi.spyOn(process.stdin, 'removeAllListeners').mockImplementation(
-      () => process.stdin,
+      function () {
+        return process.stdin;
+      },
     );
 
     // Cancellation will throw FatalCancellationError directly
@@ -1293,11 +1314,21 @@ describe('runNonInteractive', () => {
         },
       );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.spyOn(process.stdin as any, 'setRawMode').mockImplementation(() => true);
-    vi.spyOn(process.stdin, 'resume').mockImplementation(() => process.stdin);
-    vi.spyOn(process.stdin, 'pause').mockImplementation(() => process.stdin);
+    vi.spyOn(process.stdin as any, 'setRawMode').mockImplementation(
+      function () {
+        return true;
+      },
+    );
+    vi.spyOn(process.stdin, 'resume').mockImplementation(function () {
+      return process.stdin;
+    });
+    vi.spyOn(process.stdin, 'pause').mockImplementation(function () {
+      return process.stdin;
+    });
     vi.spyOn(process.stdin, 'removeAllListeners').mockImplementation(
-      () => process.stdin,
+      function () {
+        return process.stdin;
+      },
     );
 
     // Cancellation will throw FatalCancellationError directly
@@ -1448,13 +1479,11 @@ describe('runNonInteractive', () => {
 
   it('should instantiate CommandService with correct loaders for slash commands', async () => {
     // This test indirectly checks that handleSlashCommand is using the right loaders.
-    const { FileCommandLoader } = await import(
-      './services/FileCommandLoader.js'
-    );
+    const { FileCommandLoader } =
+      await import('./services/FileCommandLoader.js');
     const { McpPromptLoader } = await import('./services/McpPromptLoader.js');
-    const { BuiltinCommandLoader } = await import(
-      './services/BuiltinCommandLoader.js'
-    );
+    const { BuiltinCommandLoader } =
+      await import('./services/BuiltinCommandLoader.js');
     mockGetCommands.mockReturnValue([]); // No commands found, so it will fall through
     const events: ServerGeminiStreamEvent[] = [
       { type: GeminiEventType.Content, value: 'Acknowledged' },

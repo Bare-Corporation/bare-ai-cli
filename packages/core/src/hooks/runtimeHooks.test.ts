@@ -67,10 +67,12 @@ describe('Runtime Hooks', () => {
   it('should execute a runtime hook', async () => {
     await hookSystem.initialize();
 
-    const action = vi.fn().mockImplementation(async () => ({
-      decision: 'allow',
-      systemMessage: 'Hook ran',
-    }));
+    const action = vi.fn().mockImplementation(async function () {
+      return {
+        decision: 'allow',
+        systemMessage: 'Hook ran',
+      };
+    });
 
     hookSystem.registerHook(
       {

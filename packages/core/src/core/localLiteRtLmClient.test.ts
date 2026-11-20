@@ -12,11 +12,13 @@ import { GoogleGenAI } from '@google/genai';
 const mockGenerateContent = vi.fn();
 
 vi.mock('@google/genai', () => {
-  const GoogleGenAI = vi.fn().mockImplementation(() => ({
-    models: {
-      generateContent: mockGenerateContent,
-    },
-  }));
+  const GoogleGenAI = vi.fn().mockImplementation(function () {
+    return {
+      models: {
+        generateContent: mockGenerateContent,
+      },
+    };
+  });
   return { GoogleGenAI };
 });
 

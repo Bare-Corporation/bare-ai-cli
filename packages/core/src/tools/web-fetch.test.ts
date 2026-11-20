@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -34,9 +35,11 @@ import {
 import { convert } from 'html-to-text';
 
 const mockGenerateContent = vi.fn();
-const mockGetGeminiClient = vi.fn(() => ({
-  generateContent: mockGenerateContent,
-}));
+const mockGetGeminiClient = vi.fn(function () {
+  return {
+    generateContent: mockGenerateContent,
+  };
+});
 
 vi.mock('html-to-text', () => ({
   convert: vi.fn((text) => `Converted: ${text}`),

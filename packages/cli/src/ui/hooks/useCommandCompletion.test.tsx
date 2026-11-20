@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -39,30 +40,36 @@ vi.mock('./useAtCompletion', () => ({
 }));
 
 vi.mock('./usePromptCompletion', () => ({
-  usePromptCompletion: vi.fn(() => ({
-    text: '',
-    isLoading: false,
-    isActive: false,
-    accept: vi.fn(),
-    clear: vi.fn(),
-    markSelected: vi.fn(),
-  })),
+  usePromptCompletion: vi.fn(function () {
+    return {
+      text: '',
+      isLoading: false,
+      isActive: false,
+      accept: vi.fn(),
+      clear: vi.fn(),
+      markSelected: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('./useSlashCompletion', () => ({
-  useSlashCompletion: vi.fn(() => ({
-    completionStart: 0,
-    completionEnd: 0,
-  })),
+  useSlashCompletion: vi.fn(function () {
+    return {
+      completionStart: 0,
+      completionEnd: 0,
+    };
+  }),
 }));
 
 vi.mock('./useShellCompletion', () => ({
-  useShellCompletion: vi.fn(() => ({
-    completionStart: 0,
-    completionEnd: 0,
-    query: '',
-    activeStart: 0,
-  })),
+  useShellCompletion: vi.fn(function () {
+    return {
+      completionStart: 0,
+      completionEnd: 0,
+      query: '',
+      activeStart: 0,
+    };
+  }),
 }));
 
 // Helper to set up mocks in a consistent way for both child hooks

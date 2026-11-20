@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -218,31 +219,33 @@ describe('getLatestRelease', async () => {
   });
 
   it('throws an error if the fetch fails', async () => {
-    global.fetch = vi.fn(() => Promise.reject('nope'));
+    global.fetch = vi.fn(function () {
+      return Promise.reject('nope');
+    });
     await expect(getLatestGitHubRelease()).rejects.toThrowError(
       /Unable to determine the latest/,
     );
   });
 
   it('throws an error if the fetch does not return a json body', async () => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
+    global.fetch = vi.fn(function () {
+      return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ foo: 'bar' }),
-      } as Response),
-    );
+      } as Response);
+    });
     await expect(getLatestGitHubRelease()).rejects.toThrowError(
       /Unable to determine the latest/,
     );
   });
 
   it('returns the release version', async () => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
+    global.fetch = vi.fn(function () {
+      return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ tag_name: 'v1.2.3' }),
-      } as Response),
-    );
+      } as Response);
+    });
     await expect(getLatestGitHubRelease()).resolves.toBe('v1.2.3');
   });
 });

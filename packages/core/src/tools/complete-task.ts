@@ -19,7 +19,7 @@ import {
 import { type OutputConfig } from '../agents/types.js';
 import { type z } from 'zod';
 import { type MessageBus } from '../confirmation-bus/message-bus.js';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { zodSchemaToJsonSchema } from '../utils/zodJsonSchema.js';
 
 /**
  * Tool for signaling task completion and optionally returning structured output.
@@ -51,7 +51,7 @@ export class CompleteTaskTool<
     outputConfig?: OutputConfig<z.ZodTypeAny>,
   ): unknown {
     if (outputConfig) {
-      const jsonSchema = zodToJsonSchema(outputConfig.schema);
+      const jsonSchema = zodSchemaToJsonSchema(outputConfig.schema);
       const {
         $schema: _$schema,
         definitions: _definitions,

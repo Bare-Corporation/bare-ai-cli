@@ -15,7 +15,9 @@ import type { Content } from '@google/genai';
 /** Builds a minimal mock GeminiChat around a mutable history array. */
 function createMockChat(history: Content[]): GeminiChat {
   return {
-    getHistory: vi.fn(() => [...history]),
+    getHistory: vi.fn(function () {
+      return [...history];
+    }),
     setHistory: vi.fn((newHistory: readonly Content[]) => {
       history.length = 0;
       history.push(...newHistory);

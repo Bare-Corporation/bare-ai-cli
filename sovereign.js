@@ -28,8 +28,13 @@
  * REQUIRED Environment Variables (Set in your shell/profile):
  * export VAULT_ADDR="https://your-vault-ip:8200"
  * export VAULT_ROLE_ID="your-role-id"
- * export VAULT_SECRET_ID="your-secret-id"
  * export VAULT_SECRET_PATH="secret/data/models/gemini-flash"
+ *
+ * OPTIONAL, and only for a NON-CIDR-bound AppRole:
+ * export VAULT_SECRET_ID="your-secret-id"
+ * A CIDR-bound AppRole (bind_secret_id=false) authenticates with role_id
+ * alone, and the node-local vault.env retires this line once that binding is
+ * in place. Leave it unset rather than exporting an empty string.
  *
  * OPTIONAL system-prompt handoff (PREFERRED - see loadSystemPrompt):
  * export BARE_AI_SYSTEM_PROMPT_FILE="/run/user/1000/bare_prompt.md"
@@ -44,6 +49,7 @@ import { spawn } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Agent } from 'undici';
 
 // TLS verification bypass intentionally removed: the Vault certificate carries a
@@ -102,11 +108,20 @@ const vaultFetchOptions = vaultDispatcher
 const { VAULT_ADDR, VAULT_ROLE_ID, VAULT_SECRET_ID, VAULT_SECRET_PATH } =
   process.env;
 
-// Halt if mandatory security variables are missing
-if (!VAULT_ROLE_ID || !VAULT_SECRET_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
+// Halt if the mandatory security variables are missing.
+//
+// VAULT_SECRET_ID is deliberately NOT required. A CIDR-bound AppRole
+// (bind_secret_id=false) authenticates with its role_id alone, and a node that has
+// completed that transition retires the secret_id line from its vault.env - so
+// requiring it here made the launcher refuse to start on exactly the nodes that had
+// migrated. The login body below presents secret_id only when it is actually set,
+// which is the same contract the agent repo adopted in c42313b
+// (fix(poller): support role_id-only AppRole login, 2026-11-05).
+if (!VAULT_ROLE_ID || !VAULT_ADDR || !VAULT_SECRET_PATH) {
   console.error('[sovereign] ERROR: Missing Vault environment variables.');
   console.error(
-    '[sovereign] Ensure ADDR, ROLE_ID, SECRET_ID, and PATH are exported.',
+    '[sovereign] Ensure VAULT_ADDR, VAULT_ROLE_ID and VAULT_SECRET_PATH are exported. ' +
+      'VAULT_SECRET_ID is optional, and needed only for a non-CIDR-bound AppRole.',
   );
   process.exit(1);
 }
@@ -289,7 +304,15 @@ async function resolveTarget(modelId) {
   if (modelId) {
     const rows = await loadCatalog();
     if (rows) {
-      const row = rows.find((r) => r.model_id === modelId);
+      // WHY shortcut equality as well as model_id: the generated launcher
+      // resolves a catalogue number to its model_id before calling this file,
+      // but a DIRECT caller (node sovereign.js --model 013) and the M2M bus do
+      // not. Matching only model_id dropped those callers through to the legacy
+      // VAULT_SECRET_PATH route, so a sovereign local model could be sent to a
+      // cloud vendor by the name-prefix heuristic below.
+      const row = rows.find(
+        (r) => r.model_id === modelId || r.shortcut === modelId,
+      );
       if (row && !row.is_cloud) {
         return {
           vaultPath: VAULT_SECRET_PATH,
@@ -469,10 +492,14 @@ async function getVaultContext(vaultPath) {
       const loginRes = await fetch(VAULT_ADDR + '/v1/auth/approle/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role_id: VAULT_ROLE_ID,
-          secret_id: VAULT_SECRET_ID,
-        }),
+        // Present secret_id only when it is set: JSON.stringify would drop an
+        // undefined value anyway, but doing it explicitly keeps the role_id-only
+        // path visible and keeps an EMPTY string from being sent as a credential.
+        body: JSON.stringify(
+          VAULT_SECRET_ID
+            ? { role_id: VAULT_ROLE_ID, secret_id: VAULT_SECRET_ID }
+            : { role_id: VAULT_ROLE_ID },
+        ),
         ...vaultFetchOptions,
       });
       const body = await loginRes.json().catch(() => null);
@@ -517,9 +544,45 @@ async function getVaultContext(vaultPath) {
     headers: { 'X-Vault-Token': token },
     ...vaultFetchOptions,
   });
-  const secretData = await secretRes.json();
-  if (!secretData?.data?.data)
-    throw new Error(`Path ${vaultPath} returned no data.`);
+  const secretData = await secretRes.json().catch(() => null);
+
+  // DISTINGUISH DENIAL FROM ABSENCE (row 495). A denied read (403) and a missing path
+  // (404) both used to fall through to "returned no data", which sends the operator to the
+  // wrong subsystem: 403 means the credential is fine and the POLICY does not grant this
+  // path, while 404 means the path itself is wrong. Only a 200 whose payload carries no
+  // data is genuinely "no data", and that is the only case that may say so.
+  if (!secretRes.ok) {
+    const status = secretRes.status;
+    const body = JSON.stringify(secretData || {});
+    let hint;
+    if (status === 403) {
+      hint =
+        'Access Denied - the credential is valid but holds no read capability on this ' +
+        'path (Vault policy). The path may well exist; check the AppRole policy for ' +
+        'this node, not the path.';
+    } else if (status === 404) {
+      hint =
+        'Not Found - no secret exists at this path. Check the path itself, not the policy.';
+    } else {
+      hint = 'unexpected status from Vault';
+    }
+    const err = new Error(
+      `Path ${vaultPath} -> HTTP ${status} ${hint} (body: ${body})`,
+    );
+    err.vaultStatus = status;
+    throw err;
+  }
+  const payload = secretData?.data?.data;
+  // "no data" is reserved for a 200 whose payload cannot supply a credential: either there
+  // is no data object at all, or it carries no api_key. Before this, an empty 200 fell
+  // through and the caller launched with the literal key "none", which surfaced later as a
+  // confusing 401 instead of a clear "the secret is empty".
+  if (!payload || Object.keys(payload).length === 0 || !payload.api_key) {
+    throw new Error(
+      `Path ${vaultPath} -> HTTP 200 but the payload carries no data ` +
+        `(no api_key field). This is the only case that is genuinely "no data".`,
+    );
+  }
 
   return {
     config: secretData.data.data,
@@ -692,4 +755,13 @@ async function main() {
   }
 }
 
-main();
+// Entry-point guard + exports (row 495): the Vault error paths can only be
+// verified behaviourally if the resolver can be called directly. Running the
+// file still launches the CLI exactly as before.
+const invokedDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  main();
+}
+
+export { getVaultContext, getVaultContextOrFallback };

@@ -1,11 +1,13 @@
 /**
  * @license
- * Copyright 2026 Cloud Integration Corporation LLC
- * Copyright 2026 Google LLC (Original Developer)
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
- *
- * @license
  */
+
+// Bare-AI fork notice: this file is derived from gemini-cli, distributed
+// under Apache-2.0 (see LICENSE and NOTICE). Modifications and additions in
+// this fork are Copyright 2026 Cloud Integration Corporation LLC and are
+// released under the same Apache-2.0 terms declared above.
 
 /**
 ############################################################
@@ -43,7 +45,7 @@ import type { Config } from '../config/config.js';
 import { getCoreSystemPrompt } from './prompts.js';
 import { checkNextSpeaker } from '../utils/nextSpeakerChecker.js';
 import { reportError } from '../utils/errorReporting.js';
-import { BareAiClient } from './bareAiClient.js';
+import { BareAiClient, shouldEmitFinalText } from './bareAiClient.js';
 import { GeminiChat } from './geminiChat.js';
 import type { Message } from './bareAiClient.js';
 import {
@@ -75,11 +77,9 @@ import {
   type LlmRole,
 } from '../telemetry/types.js';
 import { uiTelemetryService } from '../telemetry/uiTelemetry.js';
-import {
-  EVENT_TOOL_CALL,
-  EVENT_API_RESPONSE,
-} from '../telemetry/types.js';
+import { EVENT_TOOL_CALL, EVENT_API_RESPONSE } from '../telemetry/types.js';
 import type { UiEvent } from '../telemetry/uiTelemetry.js';
+import type { ExecuteOptions } from '../tools/tools.js';
 import { ToolCallDecision } from '../telemetry/tool-call-decision.js';
 import type { IdeContext, File } from '../ide/types.js';
 import { handleFallback } from '../fallback/handler.js';
@@ -97,6 +97,36 @@ import { partToString } from '../utils/partUtils.js';
 import { coreEvents, CoreEvent } from '../utils/events.js';
 
 const MAX_TURNS = 100;
+
+// Fleet-endpoint (BARE_AI_ENDPOINT / BareAiClient) tool-round budget for one
+// prompt: each round is one model call plus the tool calls it asked for.
+export const DEFAULT_MAX_TOOL_ITERATIONS = 32;
+export const MAX_TOOL_ITERATIONS_CEILING = 256;
+
+/**
+ * Resolve the tool-round budget.
+ *
+ * Precedence: the model.maxToolIterations setting, then
+ * BARE_AI_MAX_TOOL_ITERATIONS, then the default. Every source is clamped to
+ * 1..MAX_TOOL_ITERATIONS_CEILING, so neither a settings file nor an
+ * environment variable can disable the bound.
+ */
+export function resolveMaxToolIterations(configured?: number): number {
+  const candidates = [
+    configured,
+    Number.parseInt(process.env['BARE_AI_MAX_TOOL_ITERATIONS'] ?? '', 10),
+  ];
+  for (const candidate of candidates) {
+    if (
+      typeof candidate === 'number' &&
+      Number.isFinite(candidate) &&
+      candidate > 0
+    ) {
+      return Math.min(Math.floor(candidate), MAX_TOOL_ITERATIONS_CEILING);
+    }
+  }
+  return DEFAULT_MAX_TOOL_ITERATIONS;
+}
 
 type BeforeAgentHookReturn =
   | {
@@ -120,8 +150,9 @@ export class GeminiClient {
   private readonly toolOutputMaskingService: ToolOutputMaskingService;
   private lastPromptId: string;
   private currentSequenceModel: string | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private context: any;
+  // The message bus is the only part of the surrounding Config this client uses.
+  // Typing that slice is what keeps the messageBus read below free of `any`.
+  private context: Pick<Config, 'messageBus'>;
   private lastSentIdeContext: IdeContext | undefined;
   private forceFullIdeContext = true;
   private messageHistory: Message[] = [];
@@ -133,7 +164,7 @@ export class GeminiClient {
   private hasFailedCompressionAttempt = false;
 
   constructor(private readonly config: Config) {
-    this.context = config as unknown as typeof this.context;
+    this.context = config;
     this.loopDetector = new LoopDetectionService(config);
     this.compressionService = new ChatCompressionService();
     this.toolOutputMaskingService = new ToolOutputMaskingService();
@@ -275,7 +306,6 @@ export class GeminiClient {
   }
 
   async addHistory(content: Content) {
-     
     const message: Message = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       role: (content.role === 'model' ? 'assistant' : content.role) as
@@ -346,6 +376,11 @@ export class GeminiClient {
   async resetChat(): Promise<void> {
     this.chat = await this.startChat();
     this.aiClient = new BareAiClient();
+    // Clear this client's own history too. It is the array BareAiClient replays
+    // to the provider, so leaving it populated meant a reset session still sent
+    // the previous conversation. startChat above rebuilds the SDK chat; nothing
+    // else clears this array.
+    this.messageHistory = [];
     this.updateTelemetryTokenCount();
     // Reset JIT context loaded paths so subdirectory context can be
     // re-discovered in the new session.
@@ -361,6 +396,14 @@ export class GeminiClient {
     resumedSessionData?: ResumedSessionData,
   ): Promise<void> {
     this.chat = await this.startChat(history, resumedSessionData);
+    // Ticket 693: seed the provider-facing history from the resumed turns.
+    // startChat only builds the SDK chat object; on the fleet path
+    // BareAiClient replays THIS array, so leaving it empty meant a resumed
+    // turn was sent with no prior conversation even when the transcript was
+    // read back correctly.
+    for (const content of history) {
+      await this.addHistory(content);
+    }
     this.updateTelemetryTokenCount();
   }
 
@@ -638,11 +681,27 @@ export class GeminiClient {
       this.config.getMaxSessionTurns() > 0 &&
       this.sessionTurnCount > this.config.getMaxSessionTurns()
     ) {
-      yield { type: GeminiEventType.MaxSessionTurns };
+      yield {
+        type: GeminiEventType.MaxSessionTurns,
+        value: {
+          source: 'session_limit',
+          limit: this.config.getMaxSessionTurns(),
+        },
+      };
       return turn;
     }
 
     if (!boundedTurns) {
+      // Hardcoded circuit breaker on the recursive continuation budget for a
+      // single prompt (see MAX_TURNS). This used to `return turn` with no
+      // event at all, which is indistinguishable from "the model simply had
+      // nothing more to say": the caller sees an empty turn and the loop
+      // stops with no explanation. Emit the event so every consumer can say
+      // the limit was reached.
+      yield {
+        type: GeminiEventType.MaxSessionTurns,
+        value: { source: 'turn_cap', limit: MAX_TURNS },
+      };
       return turn;
     }
 
@@ -708,7 +767,10 @@ export class GeminiClient {
       return turn;
     } else if (loopResult.count === 1) {
       if (boundedTurns <= 1) {
-        yield { type: GeminiEventType.MaxSessionTurns };
+        yield {
+          type: GeminiEventType.MaxSessionTurns,
+          value: { source: 'turn_cap', limit: MAX_TURNS },
+        };
         return turn;
       }
       return yield* this._recoverFromLoop(
@@ -775,9 +837,7 @@ export class GeminiClient {
       return isRecord(part) && 'text' in part && isString(part['text']);
     }
 
-    function isFuncDecl(
-      fd: unknown,
-    ): fd is {
+    function isFuncDecl(fd: unknown): fd is {
       name: string;
       description?: string;
       parametersJsonSchema?: unknown;
@@ -866,7 +926,6 @@ export class GeminiClient {
         let openAiTools = getCurrentTools();
         const loopHistory = [...this.messageHistory];
 
-
         const apiStartTime = Date.now();
         let currentResult = await this.aiClient.generateContent(
           promptText,
@@ -877,6 +936,13 @@ export class GeminiClient {
         if (initialPromptTokens !== undefined) {
           uiTelemetryService.setLastPromptTokenCount(initialPromptTokens);
         }
+        // The UiEvent members are uninhabitable: each is an intersection of a class
+        // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+        // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+        // the intersection collapses to never and no literal can satisfy it. Same
+        // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+        // with the constant changes the emitted event name - a separate decision.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         uiTelemetryService.addEvent({
           'event.name': EVENT_API_RESPONSE,
           model: modelToUse,
@@ -893,135 +959,236 @@ export class GeminiClient {
         // Track user prompt locally AFTER the call
         loopHistory.push({ role: 'user', content: promptText });
 
-        const MAX_ITERATIONS = 10;
+        const maxToolIterations = resolveMaxToolIterations(
+          this.config.getMaxToolIterations(),
+        );
         let iteration = 0;
+        let continuationRounds = 0;
+        let capExhausted = false;
+        let continueTurn = true;
 
-        while (
-          currentResult.toolCalls &&
-          currentResult.toolCalls.length > 0 &&
-          iteration < MAX_ITERATIONS
-        ) {
-          iteration++;
+        // The budget is a checkpoint, not a stop. Exhaustion with tool calls
+        // still pending is reported; a text-only finish asks the next-speaker
+        // check whether the agent should carry on, exactly as the SDK path does.
+        while (continueTurn) {
+          continueTurn = false;
 
-          loopHistory.push({
-            role: 'assistant',
-            content: currentResult.text || null,
-            tool_calls: currentResult.toolCalls,
-            ...(currentResult.reasoning_content && { reasoning_content: currentResult.reasoning_content }),
-          });  
-
-          for (const toolCall of currentResult.toolCalls) {
-            const toolName = toolCall.function.name;
-            let toolArgs: Record<string, unknown> = {};
-
-            try {
-              const parsed: unknown = JSON.parse(toolCall.function.arguments);
-              if (isRecord(parsed)) {
-                toolArgs = parsed;
-              }
-            } catch {
-              toolArgs = {};
-            }
-
-            // Handle Granite's array quirks
-            if (Array.isArray(toolArgs)) {
-              toolArgs = { command: toolArgs.join(' ') };
-            } else if (Array.isArray(toolArgs['command'])) {
-              toolArgs['command'] = toolArgs['command'].join(' ');
-            }
-
-            yield {
-              type: GeminiEventType.Content,
-              value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}\n`,
-              traceId: prompt_id,
-            };
-
-            const toolStartTime = Date.now();
-            let toolResult = '';
-            try {         
-              const toolRegistry = this.config.getToolRegistry();
-              const tool = toolRegistry.getTool(toolName);
-              if (tool) {
-                const invocation = tool.build(toolArgs);
-                const result = await invocation.execute({ abortSignal: new AbortController().signal } as any);
-                toolResult = isString(result) ? result : JSON.stringify(result);
-              } else {
-                toolResult = `Tool ${toolName} not found`;
-              }
-            } catch (toolErr) {
-              toolResult = `Tool execution error: ${String(toolErr)}`;
-            }
+          while (
+            currentResult.toolCalls &&
+            currentResult.toolCalls.length > 0 &&
+            iteration < maxToolIterations
+          ) {
+            iteration++;
 
             loopHistory.push({
-              role: 'tool',
-              content: toolResult,
-              tool_call_id: toolCall.id,
-              name: toolName,
+              role: 'assistant',
+              content: currentResult.text || null,
+              tool_calls: currentResult.toolCalls,
+              ...(currentResult.reasoning_content && {
+                reasoning_content: currentResult.reasoning_content,
+              }),
             });
 
-            let displayResult = toolResult;
-            try {
-              const parsedOutput: unknown = JSON.parse(toolResult);
-              if (isRecord(parsedOutput)) {
-                if (isString(parsedOutput['returnDisplay'])) {
-                  displayResult = parsedOutput['returnDisplay'];
-                } else if (isString(parsedOutput['llmContent'])) {
-                  displayResult = parsedOutput['llmContent'];
+            for (const toolCall of currentResult.toolCalls) {
+              const toolName = toolCall.function.name;
+              let toolArgs: Record<string, unknown> = {};
+              // A parse failure must never degrade to an empty object: {} is
+              // indistinguishable from a model that sent no arguments, so the turn
+              // loop then reports a schema violation instead of the truncation that
+              // actually happened. Record it and surface it to the model.
+              let argsParseError: string | null = null;
+
+              try {
+                const parsed: unknown = JSON.parse(toolCall.function.arguments);
+                if (isRecord(parsed)) {
+                  toolArgs = parsed;
+                } else {
+                  argsParseError = 'tool call arguments were not a JSON object';
                 }
+              } catch {
+                argsParseError =
+                  'tool call arguments were not valid JSON (the response was most ' +
+                  'likely truncated mid-call)';
               }
-            } catch {
-              // Not JSON, use as-is
+
+              // Handle Granite's array quirks
+              if (Array.isArray(toolArgs)) {
+                toolArgs = { command: toolArgs.join(' ') };
+              } else if (Array.isArray(toolArgs['command'])) {
+                toolArgs['command'] = toolArgs['command'].join(' ');
+              }
+
+              yield {
+                type: GeminiEventType.Content,
+                value: `\n[Tool: ${toolName}] args: ${JSON.stringify(toolArgs)}${argsParseError ? ' (arguments failed to parse)' : ''}\n`,
+                traceId: prompt_id,
+              };
+
+              const toolStartTime = Date.now();
+              let toolResult = '';
+              try {
+                if (argsParseError) {
+                  // Reaches the catch below, so the reason travels back to the model
+                  // as a tool result and it can re-issue the call, instead of the
+                  // session sitting on a call that can never succeed.
+                  throw new Error(argsParseError);
+                }
+                const toolRegistry = this.config.getToolRegistry();
+                const tool = toolRegistry.getTool(toolName);
+                if (tool) {
+                  const invocation = tool.build(toolArgs);
+                  const executeOptions: ExecuteOptions = {
+                    abortSignal: new AbortController().signal,
+                  };
+                  const result = await invocation.execute(executeOptions);
+                  toolResult = isString(result)
+                    ? result
+                    : JSON.stringify(result);
+                } else {
+                  toolResult = `Tool ${toolName} not found`;
+                }
+              } catch (toolErr) {
+                toolResult = `Tool execution error: ${String(toolErr)}`;
+              }
+
+              loopHistory.push({
+                role: 'tool',
+                content: toolResult,
+                tool_call_id: toolCall.id,
+                name: toolName,
+              });
+
+              let displayResult = toolResult;
+              try {
+                const parsedOutput: unknown = JSON.parse(toolResult);
+                if (isRecord(parsedOutput)) {
+                  if (isString(parsedOutput['returnDisplay'])) {
+                    displayResult = parsedOutput['returnDisplay'];
+                  } else if (isString(parsedOutput['llmContent'])) {
+                    displayResult = parsedOutput['llmContent'];
+                  }
+                }
+              } catch {
+                // Not JSON, use as-is
+              }
+
+              yield {
+                type: GeminiEventType.Content,
+                value: displayResult + '\n',
+                traceId: prompt_id,
+              };
+              // The UiEvent members are uninhabitable: each is an intersection of a class
+              // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+              // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+              // the intersection collapses to never and no literal can satisfy it. Same
+              // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+              // with the constant changes the emitted event name - a separate decision.
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+              uiTelemetryService.addEvent({
+                'event.name': EVENT_TOOL_CALL,
+                function_name: toolName,
+                duration_ms: Date.now() - toolStartTime,
+                success: !toolResult.startsWith('Tool execution error'),
+                decision: ToolCallDecision.AUTO_ACCEPT,
+                metadata: {},
+              } as UiEvent);
             }
 
-            yield {
-              type: GeminiEventType.Content,
-              value: displayResult + '\n',
-              traceId: prompt_id,
-            };
-            uiTelemetryService.addEvent({
-              'event.name': EVENT_TOOL_CALL,
-              function_name: toolName,
-              duration_ms: Date.now() - toolStartTime,
-              success: !toolResult.startsWith('Tool execution error'),
-              decision: ToolCallDecision.AUTO_ACCEPT,
-              metadata: {},
-            } as UiEvent);
-          }  
+            openAiTools = getCurrentTools();
+            const lastHistoryEntry = loopHistory[loopHistory.length - 1];
 
-          openAiTools = getCurrentTools();
-          const lastHistoryEntry = loopHistory[loopHistory.length - 1];
-
-          if (lastHistoryEntry) {
-            const toolApiStartTime = Date.now();
-            currentResult = await this.aiClient.sendToolResult(
-              loopHistory.slice(0, -1),
-              lastHistoryEntry.tool_call_id ?? '',
-              lastHistoryEntry.name ?? '',
-              String(lastHistoryEntry.content ?? ''),
-              openAiTools,
-            );
-            const toolPromptTokens = currentResult.usage?.prompt_tokens;
-            if (toolPromptTokens !== undefined) {
-              uiTelemetryService.setLastPromptTokenCount(toolPromptTokens);
+            if (lastHistoryEntry) {
+              const toolApiStartTime = Date.now();
+              currentResult = await this.aiClient.sendToolResult(
+                loopHistory.slice(0, -1),
+                lastHistoryEntry.tool_call_id ?? '',
+                lastHistoryEntry.name ?? '',
+                String(lastHistoryEntry.content ?? ''),
+                openAiTools,
+              );
+              const toolPromptTokens = currentResult.usage?.prompt_tokens;
+              if (toolPromptTokens !== undefined) {
+                uiTelemetryService.setLastPromptTokenCount(toolPromptTokens);
+              }
+              // The UiEvent members are uninhabitable: each is an intersection of a class
+              // whose 'event.name' field is typed 'api_response' / 'tool_call' with a
+              // constant that reads 'gemini_cli.api_response' / 'gemini_cli.tool_call', so
+              // the intersection collapses to never and no literal can satisfy it. Same
+              // idiom and same reason as telemetry/loggers.ts. Aligning the class field
+              // with the constant changes the emitted event name - a separate decision.
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+              uiTelemetryService.addEvent({
+                'event.name': EVENT_API_RESPONSE,
+                model: modelToUse,
+                duration_ms: Date.now() - toolApiStartTime,
+                usage: {
+                  input_token_count: currentResult.usage?.prompt_tokens ?? 0,
+                  output_token_count:
+                    currentResult.usage?.completion_tokens ?? 0,
+                  total_token_count: currentResult.usage?.total_tokens ?? 0,
+                  cached_content_token_count: 0,
+                  thoughts_token_count: 0,
+                  tool_token_count: 0,
+                },
+              } as UiEvent);
             }
-            uiTelemetryService.addEvent({
-              'event.name': EVENT_API_RESPONSE,
-              model: modelToUse,
-              duration_ms: Date.now() - toolApiStartTime,
-              usage: {
-                input_token_count: currentResult.usage?.prompt_tokens ?? 0,
-                output_token_count: currentResult.usage?.completion_tokens ?? 0,
-                total_token_count: currentResult.usage?.total_tokens ?? 0,
-                cached_content_token_count: 0,
-                thoughts_token_count: 0,
-                tool_token_count: 0,
-              },
-            } as UiEvent);
           }
-        }  
- 
+
+          // The inner loop ended: either the model stopped asking for tools,
+          // or the round budget ran out with tool calls still pending.
+          if (
+            currentResult.toolCalls &&
+            currentResult.toolCalls.length > 0 &&
+            iteration >= maxToolIterations
+          ) {
+            // Truncation must be distinguishable from a finished answer.
+            capExhausted = true;
+          } else if (
+            continuationRounds < maxToolIterations &&
+            signal &&
+            !signal.aborted
+          ) {
+            // Text-only finish: the SDK path continues such a turn, so mirror
+            // it here. The check is advisory and must never break a turn.
+            let keepGoing = false;
+            try {
+              const nextSpeakerCheck = await checkNextSpeaker(
+                this.getChat(),
+                this.config.getBaseLlmClient(),
+                signal,
+                prompt_id,
+              );
+              keepGoing = nextSpeakerCheck?.next_speaker === 'model';
+            } catch {
+              keepGoing = false;
+            }
+            if (keepGoing) {
+              continuationRounds++;
+              loopHistory.push({ role: 'user', content: 'Please continue.' });
+              currentResult = await this.aiClient.generateContent(
+                'Please continue.',
+                loopHistory,
+                openAiTools,
+              );
+              continueTurn = true;
+            }
+          }
+        }
+
+        if (capExhausted) {
+          yield {
+            type: GeminiEventType.MaxSessionTurns,
+            value: { source: 'turn_cap', limit: maxToolIterations },
+          };
+        }
+
         const finalText = currentResult.text || '';
-        if (finalText) {
+        // The BareAiClient streaming path already wrote every token to stdout
+        // as it arrived. Re-emitting the aggregated text here would print the
+        // whole answer twice (live stream + this block) - the duplicated
+        // round / consensus block defect. Emit only when the client did NOT
+        // stream it (static path).
+        if (shouldEmitFinalText(currentResult)) {
           yield {
             type: GeminiEventType.Content,
             value: finalText,
@@ -1036,6 +1203,34 @@ export class GeminiClient {
           role: 'model',
           parts: [{ text: finalText }],
         });
+
+        // Ticket 693: persist the turn. The transcript writer is only ever
+        // called from GeminiChat.sendMessageStream, which this intercept
+        // bypasses, so session-*.jsonl was created (header only) and never
+        // filled - which is why --resume had nothing to load and silently
+        // started a fresh session. These are the same two records the SDK path
+        // writes, so a resumed session sees the same history either way.
+        try {
+          const recorder = this.getChat().getChatRecordingService();
+          recorder.recordMessage({
+            model: modelToUse,
+            type: 'user',
+            content: request,
+          });
+          if (finalText) {
+            recorder.recordMessage({
+              model: modelToUse,
+              type: 'gemini',
+              content: finalText,
+            });
+          }
+        } catch (recordingError) {
+          // Recording must never fail a turn: the answer is already streamed.
+          debugLogger.warn(
+            'Could not persist this turn to the session transcript: ' +
+              String(recordingError),
+          );
+        }
 
         yield {
           type: GeminiEventType.Finished,
@@ -1068,7 +1263,10 @@ export class GeminiClient {
         break;
       } else if (loopResult.count === 1) {
         if (boundedTurns <= 1) {
-          yield { type: GeminiEventType.MaxSessionTurns };
+          yield {
+            type: GeminiEventType.MaxSessionTurns,
+            value: { source: 'turn_cap', limit: MAX_TURNS },
+          };
           loopDetectedAbort = true;
           break;
         }
@@ -1388,7 +1586,7 @@ export class GeminiClient {
             {
               content: {
                 role: 'model',
-                parts: [{ text: generatedResult.text }],  
+                parts: [{ text: generatedResult.text }],
               },
               // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
               finishReason: 'STOP' as import('@google/genai').FinishReason, // Defaulting finish reason

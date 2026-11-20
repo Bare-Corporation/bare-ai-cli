@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -47,14 +48,16 @@ vi.mock('../agent/task.js', () => {
       .mockImplementation((id, contextId) =>
         Promise.resolve(new MockTask(id, contextId)),
       );
-    getMetadata = vi.fn().mockImplementation(async () => ({
-      id: this.id,
-      contextId: this.contextId,
-      taskState: this.taskState,
-      model: 'gemini-pro',
-      mcpServers: [],
-      availableTools: [],
-    }));
+    getMetadata = vi.fn().mockImplementation(async function (this: MockTask) {
+      return {
+        id: this.id,
+        contextId: this.contextId,
+        taskState: this.taskState,
+        model: 'gemini-pro',
+        mcpServers: [],
+        availableTools: [],
+      };
+    });
   }
   return { Task: MockTask };
 });

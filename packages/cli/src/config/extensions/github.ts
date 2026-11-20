@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,7 +18,7 @@ import * as https from 'node:https';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as tar from 'tar';
-import extract from 'extract-zip';
+import { safeExtractZip } from '../../utils/safeExtractZip.js';
 import { fetchJson, getGitHubToken } from './github_fetch.js';
 import type { ExtensionConfig } from '../extension.js';
 import type { ExtensionManager } from '../extension-manager.js';
@@ -555,7 +556,7 @@ export async function downloadFile(
         }
         const file = fs.createWriteStream(dest);
         res.pipe(file);
-        file.on('finish', () => file.close(resolve as () => void));
+        file.on('finish', () => file.close(() => resolve()));
       })
       .on('error', reject);
   });
@@ -568,7 +569,7 @@ export async function extractFile(file: string, dest: string): Promise<void> {
       cwd: dest,
     });
   } else if (file.endsWith('.zip')) {
-    await extract(file, { dir: dest });
+    await safeExtractZip(file, dest);
   } else {
     throw new Error(`Unsupported file extension for extraction: ${file}`);
   }

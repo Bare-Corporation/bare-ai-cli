@@ -13,10 +13,12 @@ import type { ToolCallRequestInfo } from '../scheduler/types.js';
 import type { MessageBus } from '../confirmation-bus/message-bus.js';
 
 vi.mock('../scheduler/scheduler.js', () => ({
-  Scheduler: vi.fn().mockImplementation(() => ({
-    schedule: vi.fn().mockResolvedValue([{ status: 'success' }]),
-    dispose: vi.fn(),
-  })),
+  Scheduler: vi.fn().mockImplementation(function () {
+    return {
+      schedule: vi.fn().mockResolvedValue([{ status: 'success' }]),
+      dispose: vi.fn(),
+    };
+  }),
 }));
 
 describe('agent-scheduler', () => {
@@ -148,13 +150,12 @@ describe('agent-scheduler', () => {
 
   it('should dispose the scheduler even when schedule throws', async () => {
     const scheduleError = new Error('schedule failed');
-    vi.mocked(Scheduler).mockImplementationOnce(
-      () =>
-        ({
-          schedule: vi.fn().mockRejectedValue(scheduleError),
-          dispose: vi.fn(),
-        }) as unknown as Scheduler,
-    );
+    vi.mocked(Scheduler).mockImplementationOnce(function () {
+      return {
+        schedule: vi.fn().mockRejectedValue(scheduleError),
+        dispose: vi.fn(),
+      } as unknown as Scheduler;
+    });
 
     const mockConfig = {
       getPromptRegistry: vi.fn(),

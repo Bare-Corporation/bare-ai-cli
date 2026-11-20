@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -358,9 +359,18 @@ function parseObjectValue(input: string): Record<string, unknown> | null {
   return tryParseJsonObject(trimmed);
 }
 
+/**
+ * Parse the text an inline editor produced.
+ *
+ * Returns null when the entry must be REJECTED. For a number that means an
+ * empty or unparseable entry, a non-integer, or a value outside the setting's
+ * declared min/max. The caller keeps the previous value when null comes back,
+ * so an out-of-range entry is refused outright rather than clamped or stored.
+ */
 export function parseEditedValue(
   type: SettingsType,
   newValue: string,
+  bounds?: { min?: number; max?: number },
 ): SettingsValue | null {
   if (type === 'number') {
     if (newValue.trim() === '') {
@@ -368,7 +378,14 @@ export function parseEditedValue(
     }
 
     const numParsed = Number(newValue.trim());
-    if (Number.isNaN(numParsed)) {
+    if (Number.isNaN(numParsed) || !Number.isInteger(numParsed)) {
+      return null;
+    }
+
+    if (bounds?.min !== undefined && numParsed < bounds.min) {
+      return null;
+    }
+    if (bounds?.max !== undefined && numParsed > bounds.max) {
       return null;
     }
 

@@ -45,7 +45,9 @@ const mockFileKeychain: MockKeychain = {
 vi.mock('@github/keytar', () => ({ default: mockKeytar }));
 
 vi.mock('./fileKeychain.js', () => ({
-  FileKeychain: vi.fn(() => mockFileKeychain),
+  FileKeychain: vi.fn(function () {
+    return mockFileKeychain;
+  }),
 }));
 
 vi.mock('../utils/events.js', () => ({
@@ -99,14 +101,14 @@ describe('KeychainService', () => {
       delete passwords[acc];
       return Promise.resolve(exists);
     });
-    mockKeytar.findCredentials?.mockImplementation(() =>
-      Promise.resolve(
+    mockKeytar.findCredentials?.mockImplementation(function () {
+      return Promise.resolve(
         Object.entries(passwords).map(([account, password]) => ({
           account,
           password,
         })),
-      ),
-    );
+      );
+    });
 
     // Stateful mock implementation for fallback file keychain
     mockFileKeychain.setPassword?.mockImplementation((_svc, acc, val) => {
@@ -121,14 +123,14 @@ describe('KeychainService', () => {
       delete passwords[acc];
       return Promise.resolve(exists);
     });
-    mockFileKeychain.findCredentials?.mockImplementation(() =>
-      Promise.resolve(
+    mockFileKeychain.findCredentials?.mockImplementation(function () {
+      return Promise.resolve(
         Object.entries(passwords).map(([account, password]) => ({
           account,
           password,
         })),
-      ),
-    );
+      );
+    });
   });
 
   afterEach(() => {

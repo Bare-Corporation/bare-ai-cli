@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -67,14 +68,13 @@ describe('setupUser', () => {
     });
     mockGetOperation = vi.fn();
 
-    vi.mocked(CodeAssistServer).mockImplementation(
-      () =>
-        ({
-          loadCodeAssist: mockLoad,
-          onboardUser: mockOnboardUser,
-          getOperation: mockGetOperation,
-        }) as unknown as CodeAssistServer,
-    );
+    vi.mocked(CodeAssistServer).mockImplementation(function () {
+      return {
+        loadCodeAssist: mockLoad,
+        onboardUser: mockOnboardUser,
+        getOperation: mockGetOperation,
+      } as unknown as CodeAssistServer;
+    });
 
     mockValidationHandler = vi.fn();
     mockConfig = {

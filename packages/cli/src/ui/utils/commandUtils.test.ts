@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -486,10 +487,10 @@ describe('commandUtils', () => {
       const testText = 'timeout-fallback';
       process.env['SSH_CONNECTION'] = '1';
 
-      mockFs.createWriteStream.mockImplementation(() =>
-        // Stream that never emits open or error
-        makeWritable({ isTTY: true }),
-      );
+      mockFs.createWriteStream.mockImplementation(function () {
+        return; // Stream that never emits open or error
+        makeWritable({ isTTY: true });
+      });
 
       mockClipboardyWrite.mockResolvedValue(undefined);
 
