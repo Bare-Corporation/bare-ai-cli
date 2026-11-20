@@ -48,7 +48,9 @@ const mockIdeClient = vi.hoisted(() => ({
 
 // Mock stdout
 const mocks = vi.hoisted(() => ({
-  mockStdout: { write: vi.fn() },
+  // isTTY: true because these tests assert the OSC title writes; a non-TTY
+  // stdout suppresses them by design (see the terminal status indicator tests).
+  mockStdout: { write: vi.fn(), isTTY: true },
 }));
 const terminalNotificationsMocks = vi.hoisted(() => ({
   notifyViaTerminal: vi.fn().mockResolvedValue(true),
@@ -1457,7 +1459,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${'✦  Working… (workspace)'.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${'🟠  Working… (workspace)'.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -1492,7 +1494,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${'Bare AI CLI (workspace)'.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${'🟠 Bare AI CLI (workspace)'.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -1553,7 +1555,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${`✦  ${thoughtSubject} (workspace)`.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${`🟠  ${thoughtSubject} (workspace)`.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -1584,7 +1586,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${'◇  Ready (workspace)'.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${'🟢  Ready (workspace)'.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -1620,7 +1622,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${'✋  Action Required (workspace)'.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${'🟠  Action Required (workspace)'.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -1679,7 +1681,7 @@ describe('AppContainer State Management', () => {
           call[0].includes('\x1b]0;'),
         );
         expect(titleWrites[titleWrites.length - 1][0]).toContain(
-          '✦  Executing shell command',
+          '🟠  Executing shell command',
         );
 
         // Fast-forward time by 40 seconds
@@ -1692,7 +1694,7 @@ describe('AppContainer State Management', () => {
           (call) => call[0].includes('\x1b]0;'),
         );
         const lastTitle = titleWritesDelayed[titleWritesDelayed.length - 1][0];
-        expect(lastTitle).toContain('✋  Action Required');
+        expect(lastTitle).toContain('🟠  Action Required');
 
         unmount();
       });
@@ -1746,7 +1748,7 @@ describe('AppContainer State Management', () => {
           (call) => call[0].includes('\x1b]0;'),
         );
         expect(titleWritesMid[titleWritesMid.length - 1][0]).not.toContain(
-          '✋  Action Required',
+          '🟠  Action Required',
         );
 
         // Fast-forward to 2 minutes (120000ms)
@@ -1758,7 +1760,7 @@ describe('AppContainer State Management', () => {
           (call) => call[0].includes('\x1b]0;'),
         );
         expect(titleWritesEnd[titleWritesEnd.length - 1][0]).toContain(
-          '⏲  Working…',
+          '🟠  Working…',
         );
 
         unmount();
@@ -1805,8 +1807,9 @@ describe('AppContainer State Management', () => {
           call[0].includes('\x1b]0;'),
         );
         const lastTitle = titleWrites[titleWrites.length - 1][0];
-        // Should show Working… (⏲) instead of Action Required (✋)
-        expect(lastTitle).toContain('⏲  Working…');
+        // Should show Working… instead of Action Required. With a status
+        // supplied both use the 🟠 circle, so the words are what differ.
+        expect(lastTitle).toContain('🟠  Working…');
 
         unmount();
       });
@@ -1880,8 +1883,8 @@ describe('AppContainer State Management', () => {
         );
         const lastTitle =
           titleWritesAfterOutput[titleWritesAfterOutput.length - 1][0];
-        expect(lastTitle).not.toContain('✋  Action Required');
-        expect(lastTitle).toContain('✦  Executing shell command');
+        expect(lastTitle).not.toContain('🟠  Action Required');
+        expect(lastTitle).toContain('🟠  Executing shell command');
 
         // Fast-forward another 40 seconds (Total 60s since last output)
         await act(async () => {
@@ -1893,7 +1896,7 @@ describe('AppContainer State Management', () => {
           call[0].includes('\x1b]0;'),
         );
         const lastTitleFinal = titleWrites[titleWrites.length - 1][0];
-        expect(lastTitleFinal).toContain('✋  Action Required');
+        expect(lastTitleFinal).toContain('🟠  Action Required');
 
         unmount();
       });
@@ -1930,7 +1933,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       const calledWith = titleWrites[0][0];
-      const expectedTitle = `✦  ${shortTitle} (workspace)`.padEnd(80, ' ');
+      const expectedTitle = `🟠  ${shortTitle} (workspace)`.padEnd(80, ' ');
       const expectedEscapeSequence = `\x1b]0;${expectedTitle}\x07`;
       expect(calledWith).toBe(expectedEscapeSequence);
       unmount();
@@ -1966,7 +1969,7 @@ describe('AppContainer State Management', () => {
       );
 
       expect(titleWrites).toHaveLength(1);
-      const expectedEscapeSequence = `\x1b]0;${`✦  ${title} (workspace)`.padEnd(80, ' ')}\x07`;
+      const expectedEscapeSequence = `\x1b]0;${`🟠  ${title} (workspace)`.padEnd(80, ' ')}\x07`;
       expect(titleWrites[0][0]).toBe(expectedEscapeSequence);
       unmount();
     });
@@ -2003,7 +2006,7 @@ describe('AppContainer State Management', () => {
 
       expect(titleWrites).toHaveLength(1);
       expect(titleWrites[0][0]).toBe(
-        `\x1b]0;${'✦  Working… (Custom Gemini Title)'.padEnd(80, ' ')}\x07`,
+        `\x1b]0;${'🟠  Working… (Custom Gemini Title)'.padEnd(80, ' ')}\x07`,
       );
       unmount();
     });
@@ -3623,6 +3626,53 @@ describe('AppContainer State Management', () => {
 
       expect(capturedUIState).toBeTruthy();
       expect(capturedUIState.allowPlanMode).toBe(false);
+      unmount();
+    });
+  });
+
+
+  describe('terminal status indicator', () => {
+    it('skips the OSC title write when stdout is not a TTY', async () => {
+      const mockSettingsWithTitleEnabled = createMockSettings({
+        ui: { showStatusInTitle: true, hideWindowTitle: false },
+      });
+      mockedUseGeminiStream.mockReturnValue(DEFAULT_GEMINI_STREAM_MOCK);
+
+      // A piped or captured stdout: the title must not be written at all, because
+      // ESC ] 0 ; ... BEL in a log corrupts it.
+      mocks.mockStdout.isTTY = false;
+      try {
+        const { unmount } = await act(async () =>
+          renderAppContainer({ settings: mockSettingsWithTitleEnabled }),
+        );
+
+        const titleWrites = mocks.mockStdout.write.mock.calls.filter((call) =>
+          call[0].includes(']0;'),
+        );
+        expect(titleWrites).toHaveLength(0);
+        unmount();
+      } finally {
+        mocks.mockStdout.isTTY = true;
+      }
+    });
+
+    it('writes the idle circle to a TTY once the loop settles', async () => {
+      const mockSettingsWithTitleEnabled = createMockSettings({
+        ui: { showStatusInTitle: true, hideWindowTitle: false },
+      });
+      mockedUseGeminiStream.mockReturnValue(DEFAULT_GEMINI_STREAM_MOCK);
+
+      const { unmount } = await act(async () =>
+        renderAppContainer({ settings: mockSettingsWithTitleEnabled }),
+      );
+
+      const titleWrites = mocks.mockStdout.write.mock.calls.filter((call) =>
+        call[0].includes(']0;'),
+      );
+      expect(titleWrites).toHaveLength(1);
+      // The bracketed context comes from CLI_TITLE, which an earlier test in this
+      // file stubs, so assert the part this feature owns: one write, idle circle.
+      expect(titleWrites[0][0]).toContain('🟢  Ready');
       unmount();
     });
   });

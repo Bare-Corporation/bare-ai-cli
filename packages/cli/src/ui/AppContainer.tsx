@@ -6,6 +6,7 @@
 
 import {
   useMemo,
+  useReducer,
   useState,
   useCallback,
   useEffect,
@@ -106,6 +107,11 @@ import { calculateMainAreaWidth } from './utils/ui-sizing.js';
 import ansiEscapes from 'ansi-escapes';
 import { basename } from 'node:path';
 import { computeTerminalTitle } from '../utils/windowTitle.js';
+import {
+  isWindowTitleSupported,
+  reduceAgentStatus,
+  type AgentStatus,
+} from '../utils/terminalStatus.js';
 import { useTextBuffer } from './components/shared/text-buffer.js';
 import { useLogger } from './hooks/useLogger.js';
 import { useGeminiStream } from './hooks/useGeminiStream.js';
@@ -1916,6 +1922,26 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     },
   );
 
+  // 🟢 idle / 🟠 working / 🔴 error, shown in the terminal title.
+  //
+  // Derived while rendering rather than in an effect: reduceAgentStatus is
+  // idempotent for a repeated event, so the very first render already carries
+  // the correct circle and the title is written exactly once. Computing it in
+  // an effect would paint the idle circle first and correct it on the next
+  // pass - a visible flicker and a doubled OSC write.
+  //
+  // The ref is the latch: 'turn-completed' never clears an error, so 🔴 stays
+  // until the next prompt starts.
+  const [, forceStatusRender] = useReducer((count: number) => count + 1, 0);
+  const agentStatusRef = useRef<AgentStatus>('idle');
+  agentStatusRef.current = reduceAgentStatus(
+    agentStatusRef.current,
+    streamingState === StreamingState.Idle
+      ? 'turn-completed'
+      : 'prompt-submitted',
+  );
+  const agentStatus = agentStatusRef.current;
+
   useEffect(() => {
     // Respect hideWindowTitle settings
     if (settings.merged.ui.hideWindowTitle) return;
@@ -1923,6 +1949,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     const paddedTitle = computeTerminalTitle({
       streamingState,
       thoughtSubject: thought?.subject,
+      status: agentStatus,
       isConfirming:
         !!commandConfirmationRequest || shouldShowActionRequiredTitle,
       isSilentWorking: shouldShowSilentWorkingTitle,
@@ -1930,6 +1957,10 @@ Logging in with Google... Restarting Bare AI CLI to continue.
       showThoughts: !!settings.merged.ui.showStatusInTitle,
       useDynamicTitle: settings.merged.ui.dynamicWindowTitle,
     });
+
+    // A piped or captured stdout must never receive OSC bytes: skip the write
+    // rather than inject escape sequences into a log or a --prompt capture.
+    if (!isWindowTitleSupported(stdout)) return;
 
     // Only update the title if it's different from the last value we set
     if (lastTitleRef.current !== paddedTitle) {
@@ -1946,6 +1977,7 @@ Logging in with Google... Restarting Bare AI CLI to continue.
     settings.merged.ui.showStatusInTitle,
     settings.merged.ui.dynamicWindowTitle,
     settings.merged.ui.hideWindowTitle,
+    agentStatus,
     config,
     stdout,
   ]);
@@ -1967,6 +1999,18 @@ Logging in with Google... Restarting Bare AI CLI to continue.
           throw new Error(
             `Unexpected severity for user feedback: ${payload.severity}`,
           );
+      }
+
+      // An errored turn is the one state worth keeping on screen after the
+      // loop stops: API failures and context-window overflows both arrive as
+      // error feedback, and the user needs to see that the run failed even
+      // though the prompt is idle again.
+      if (payload.severity === 'error') {
+        const latched = reduceAgentStatus(agentStatusRef.current, 'turn-failed');
+        if (latched !== agentStatusRef.current) {
+          agentStatusRef.current = latched;
+          forceStatusRender();
+        }
       }
 
       historyManager.addItem(

@@ -6,6 +6,7 @@
  */
 
 import { StreamingState } from '../ui/types.js';
+import { statusGlyph, type AgentStatus } from './terminalStatus.js';
 
 export interface TerminalTitleOptions {
   streamingState: StreamingState;
@@ -15,6 +16,12 @@ export interface TerminalTitleOptions {
   folderName: string;
   showThoughts: boolean;
   useDynamicTitle: boolean;
+  /**
+   * The agent loop's live status. When supplied, its circle replaces the
+   * decorative per-branch glyph so the title carries one meaningful icon.
+   * Omitted by callers that predate the indicator, whose output is unchanged.
+   */
+  status?: AgentStatus;
 }
 
 function truncate(text: string, maxLen: number): string {
@@ -38,6 +45,7 @@ export function computeTerminalTitle({
   folderName,
   showThoughts,
   useDynamicTitle,
+  status,
 }: TerminalTitleOptions): string {
   const MAX_LEN = 80;
 
@@ -45,7 +53,12 @@ export function computeTerminalTitle({
   let displayContext = process.env['CLI_TITLE'] || folderName;
 
   if (!useDynamicTitle) {
-    const base = 'Bare AI CLI ';
+    // The static title still carries the status circle: with the dynamic subject
+    // line switched off it is the only indicator left, and that is the whole
+    // point of the feature. base.length feeds the truncation maths below, so the
+    // extra two code units are accounted for automatically.
+    const staticIcon = status ? `${statusGlyph(status)} ` : '';
+    const base = `${staticIcon}Bare AI CLI `;
     // Max context length is 80 - base.length - 2 (for brackets)
     const maxContextLen = MAX_LEN - base.length - 2;
     displayContext = truncate(displayContext, maxContextLen);
@@ -55,24 +68,37 @@ export function computeTerminalTitle({
   // Pre-calculate suffix but keep it flexible
   const getSuffix = (context: string) => ` (${context})`;
 
+  // One icon per title: when a status is supplied its circle replaces the
+  // decorative glyph this branch would otherwise use.
+  const statusIcon = status ? statusGlyph(status) : undefined;
+
   let title;
-  if (
+  if (status === 'error') {
+    // An errored turn outranks every other state, including idle: the loop has
+    // stopped, but the user still needs to see that the last run failed. The
+    // latch that keeps it here lives in terminalStatus.reduceAgentStatus.
+    const base = `${statusIcon}  Error`;
+    // Max context length is 80 - base.length - 3 (for ' (' and ')')
+    const maxContextLen = MAX_LEN - base.length - 3;
+    const context = truncate(displayContext, maxContextLen);
+    title = `${base}${getSuffix(context)}`;
+  } else if (
     isConfirming ||
     streamingState === StreamingState.WaitingForConfirmation
   ) {
-    const base = '✋  Action Required';
+    const base = `${statusIcon ?? '✋'}  Action Required`;
     // Max context length is 80 - base.length - 3 (for ' (' and ')')
     const maxContextLen = MAX_LEN - base.length - 3;
     const context = truncate(displayContext, maxContextLen);
     title = `${base}${getSuffix(context)}`;
   } else if (isSilentWorking) {
-    const base = '⏲  Working…';
+    const base = `${statusIcon ?? '⏲'}  Working…`;
     // Max context length is 80 - base.length - 3 (for ' (' and ')')
     const maxContextLen = MAX_LEN - base.length - 3;
     const context = truncate(displayContext, maxContextLen);
     title = `${base}${getSuffix(context)}`;
   } else if (streamingState === StreamingState.Idle) {
-    const base = '◇  Ready';
+    const base = `${statusIcon ?? '◇'}  Ready`;
     // Max context length is 80 - base.length - 3 (for ' (' and ')')
     const maxContextLen = MAX_LEN - base.length - 3;
     const context = truncate(displayContext, maxContextLen);
@@ -85,14 +111,18 @@ export function computeTerminalTitle({
     // If we have a thought subject and it's too long to fit with the suffix,
     // we drop the suffix to maximize space for the thought.
     // Otherwise, we keep the suffix.
+    // The icon prefix width is measured, not assumed: a status circle is two
+    // code units where the decorative glyph was one, and the fit test below has
+    // to use the real width or a long subject overflows the 80-column title.
+    const iconPrefix = `${statusIcon ?? '✦'}  `;
     const suffix = getSuffix(displayContext);
     const suffixLen = suffix.length;
     const canFitThoughtWithSuffix = cleanSubject
-      ? cleanSubject.length + suffixLen + 3 <= MAX_LEN
+      ? cleanSubject.length + suffixLen + iconPrefix.length <= MAX_LEN
       : true;
 
     let activeSuffix = '';
-    let maxStatusLen = MAX_LEN - 3; // Subtract icon prefix "✦  " (3 chars)
+    let maxStatusLen = MAX_LEN - iconPrefix.length;
 
     if (!cleanSubject || canFitThoughtWithSuffix) {
       activeSuffix = suffix;
@@ -103,7 +133,7 @@ export function computeTerminalTitle({
       ? truncate(cleanSubject, maxStatusLen)
       : 'Working…';
 
-    title = `✦  ${displayStatus}${activeSuffix}`;
+    title = `${iconPrefix}${displayStatus}${activeSuffix}`;
   }
 
   // Remove control characters that could cause issues in terminal titles

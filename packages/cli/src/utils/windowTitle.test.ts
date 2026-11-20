@@ -239,3 +239,121 @@ describe('computeTerminalTitle', () => {
     expect(title).toContain('…)');
   });
 });
+
+describe('computeTerminalTitle with an agent status', () => {
+  const baseArgs: TerminalTitleOptions = {
+    streamingState: StreamingState.Idle,
+    isConfirming: false,
+    isSilentWorking: false,
+    folderName: 'my-project',
+    showThoughts: false,
+    useDynamicTitle: true,
+  };
+
+  it('shows the idle circle when the loop is ready', () => {
+    expect(computeTerminalTitle({ ...baseArgs, status: 'idle' })).toBe(
+      '🟢  Ready (my-project)'.padEnd(80, ' '),
+    );
+  });
+
+  it('shows the working circle while responding', () => {
+    expect(
+      computeTerminalTitle({
+        ...baseArgs,
+        streamingState: StreamingState.Responding,
+        status: 'working',
+      }),
+    ).toBe('🟠  Working… (my-project)'.padEnd(80, ' '));
+  });
+
+  it('shows the working circle while awaiting confirmation', () => {
+    expect(
+      computeTerminalTitle({
+        ...baseArgs,
+        isConfirming: true,
+        status: 'working',
+      }),
+    ).toBe('🟠  Action Required (my-project)'.padEnd(80, ' '));
+  });
+
+  it('keeps the thought subject visible next to the working circle', () => {
+    expect(
+      computeTerminalTitle({
+        ...baseArgs,
+        streamingState: StreamingState.Responding,
+        showThoughts: true,
+        thoughtSubject: 'Reading the config',
+        status: 'working',
+      }),
+    ).toBe('🟠  Reading the config (my-project)'.padEnd(80, ' '));
+  });
+
+  it('shows the error circle for a failed turn', () => {
+    expect(computeTerminalTitle({ ...baseArgs, status: 'error' })).toBe(
+      '🔴  Error (my-project)'.padEnd(80, ' '),
+    );
+  });
+
+  it('lets the error circle outrank every other state', () => {
+    // A failure while the loop is still nominally responding, or while a
+    // confirmation is pending, must not be masked by those labels.
+    expect(
+      computeTerminalTitle({
+        ...baseArgs,
+        streamingState: StreamingState.Responding,
+        isConfirming: true,
+        status: 'error',
+      }),
+    ).toBe('🔴  Error (my-project)'.padEnd(80, ' '));
+  });
+
+  it('carries the circle on the static title too', () => {
+    expect(
+      computeTerminalTitle({
+        ...baseArgs,
+        useDynamicTitle: false,
+        status: 'idle',
+      }),
+    ).toBe('🟢 Bare AI CLI (my-project)'.padEnd(80, ' '));
+  });
+
+  it('leaves the title unchanged when no status is supplied', () => {
+    // Backwards compatibility: callers that predate the indicator must produce
+    // exactly the bytes they produced before, decorative glyph included.
+    expect(computeTerminalTitle(baseArgs)).toBe(
+      '◇  Ready (my-project)'.padEnd(80, ' '),
+    );
+    expect(
+      computeTerminalTitle({
+        ...baseArgs,
+        streamingState: StreamingState.Responding,
+      }),
+    ).toBe('✦  Working… (my-project)'.padEnd(80, ' '));
+  });
+
+  it('keeps every status title at exactly 80 columns', () => {
+    const titles: string[] = [];
+    for (const status of ['idle', 'working', 'error'] as const) {
+      for (const useDynamicTitle of [true, false]) {
+        for (const thoughtSubject of [
+          undefined,
+          'a very long thought subject that must be truncated to fit the title',
+        ]) {
+          titles.push(
+            computeTerminalTitle({
+              ...baseArgs,
+              streamingState: StreamingState.Responding,
+              showThoughts: true,
+              thoughtSubject,
+              useDynamicTitle,
+              status,
+            }),
+          );
+        }
+      }
+    }
+    // 3 states x dynamic/static x with/without a long subject.
+    expect(titles).toHaveLength(12);
+    expect(titles.filter((title) => title.length !== 80)).toEqual([]);
+  });
+});

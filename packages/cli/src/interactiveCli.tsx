@@ -38,6 +38,7 @@ import { SettingsContext } from './ui/contexts/SettingsContext.js';
 import { MouseProvider } from './ui/contexts/MouseContext.js';
 import { StreamingState } from './ui/types.js';
 import { computeTerminalTitle } from './utils/windowTitle.js';
+import { isWindowTitleSupported } from './utils/terminalStatus.js';
 
 import { SessionStatsProvider } from './ui/contexts/SessionContext.js';
 import { VimModeProvider } from './ui/contexts/VimModeContext.js';
@@ -232,6 +233,10 @@ export async function startInteractiveUI(
 
 function setWindowTitle(title: string, settings: LoadedSettings) {
   if (!settings.merged.ui.hideWindowTitle) {
+    // A piped or captured stdout must never receive OSC bytes: injecting an escape
+    // sequence into a log or a --prompt capture corrupts it.
+    if (!isWindowTitleSupported(process.stdout)) return;
+
     // Initial state before React loop starts
     const windowTitle = computeTerminalTitle({
       streamingState: StreamingState.Idle,
@@ -240,6 +245,8 @@ function setWindowTitle(title: string, settings: LoadedSettings) {
       folderName: title,
       showThoughts: !!settings.merged.ui.showStatusInTitle,
       useDynamicTitle: settings.merged.ui.dynamicWindowTitle,
+      // Before the React loop starts there is nothing running: 🟢.
+      status: 'idle',
     });
     writeToStdout(`\x1b]0;${windowTitle}\x07`);
 
