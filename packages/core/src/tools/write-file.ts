@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -278,7 +279,10 @@ class WriteFileToolInvocation extends BaseToolInvocation<
     const validationError = this.config.validatePathAccess(this.resolvedPath);
     if (validationError) {
       return {
-        llmContent: validationError,
+        llmContent:
+          validationError +
+          ' To work in another directory, add it to context.includeDirectories ' +
+          'in settings.json, or launch with --include-directories.',
         returnDisplay: 'Error: Path not in workspace.',
         error: {
           message: validationError,

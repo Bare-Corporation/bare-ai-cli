@@ -21,17 +21,15 @@ let deferredInit: { resolve: (val?: unknown) => void };
 
 // Mock Logger
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     Logger: vi.fn().mockImplementation((id: string) => ({
-      initialize: vi.fn().mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            deferredInit = { resolve };
-          }),
-      ),
+      initialize: vi.fn().mockImplementation(function () {
+        return new Promise((resolve) => {
+          deferredInit = { resolve };
+        });
+      }),
       sessionId: id,
     })),
   };

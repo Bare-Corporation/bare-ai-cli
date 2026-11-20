@@ -1,4 +1,4 @@
-# Gemini CLI releases
+# Bare AI CLI releases
 
 <!-- prettier-ignore -->
 > [!IMPORTANT]
@@ -478,8 +478,8 @@ executable that enables `npx` usage directly from the GitHub repository.
     - **What happens:** The built JavaScript from both `packages/core/dist` and
       `packages/cli/dist`, along with all third-party JavaScript dependencies,
       are bundled by `esbuild` into a single, executable JavaScript file (for
-      example, `bare-ai.js`). The `node-pty` library is excluded from this bundle
-      as it contains native binaries.
+      example, `bare-ai.js`). The `node-pty` library is excluded from this
+      bundle as it contains native binaries.
     - **Why:** This creates a single, optimized file that contains all the
       necessary application code. It simplifies execution for users who want to
       run the CLI without a full `npm install`, as all dependencies (including
@@ -510,8 +510,8 @@ executable that enables `npx` usage directly from the GitHub repository.
 - **NPM:** Publishes standard, un-bundled Node.js packages. The primary artifact
   is the code in `packages/cli/dist`, which depends on
   `@google/gemini-cli-core`.
-- **GitHub release:** Publishes a single, bundled `bare-ai.js` file that contains
-  all dependencies, for easy execution via `npx`.
+- **GitHub release:** Publishes a single, bundled `bare-ai.js` file that
+  contains all dependencies, for easy execution via `npx`.
 
 This dual-artifact process ensures that both traditional `npm` users and those
 who prefer the convenience of `npx` have an optimized experience.

@@ -1,17 +1,17 @@
 # Manage context and memory
 
-Control what Gemini CLI knows about you and your projects. In this guide, you'll
-learn how to define project-wide rules with `BARE_AI.md`, teach the agent
+Control what Bare AI CLI knows about you and your projects. In this guide,
+you'll learn how to define project-wide rules with `BARE_AI.md`, teach the agent
 persistent facts, and inspect the active context.
 
 ## Prerequisites
 
-- Gemini CLI installed and authenticated.
+- Bare AI CLI installed and authenticated.
 - A project directory where you want to enforce specific rules.
 
 ## Why manage context?
 
-Out of the box, Gemini CLI is smart but generic. It doesn't know your preferred
+Out of the box, Bare AI CLI is smart but generic. It doesn't know your preferred
 testing framework, your indentation style, or that you hate using `any` in
 TypeScript. Context management solves this by giving the agent persistent
 memory.
@@ -46,7 +46,7 @@ loaded into every conversation.
     - **Tone:** Be concise. Don't explain basic React concepts.
     ```
 
-3.  Start a new session. Gemini CLI will now know these rules automatically.
+3.  Start a new session. Bare AI CLI will now know these rules automatically.
 
 ### Scenario: Using the hierarchy
 
@@ -114,8 +114,8 @@ immediately. Force a reload with:
 - **Use negative constraints:** Explicitly telling the agent what _not_ to do
   (e.g., "Do not use class components") is often more effective than vague
   positive instructions.
-- **Review often:** Periodically check your `BARE_AI.md` files to remove outdated
-  rules.
+- **Review often:** Periodically check your `BARE_AI.md` files to remove
+  outdated rules.
 
 ## Next steps
 

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -29,8 +30,12 @@ const {
   return {
     mockListExtensionsCommandInstance: listInstance,
     mockExtensionsCommandInstance: extInstance,
-    mockExtensionsCommand: vi.fn(() => extInstance),
-    mockListExtensionsCommand: vi.fn(() => listInstance),
+    mockExtensionsCommand: vi.fn(function () {
+      return extInstance;
+    }),
+    mockListExtensionsCommand: vi.fn(function () {
+      return listInstance;
+    }),
   };
 });
 
@@ -40,19 +45,23 @@ vi.mock('./extensions.js', () => ({
 }));
 
 vi.mock('./init.js', () => ({
-  InitCommand: vi.fn(() => ({
-    name: 'init',
-    description: 'Initializes the server.',
-    execute: vi.fn(),
-  })),
+  InitCommand: vi.fn(function () {
+    return {
+      name: 'init',
+      description: 'Initializes the server.',
+      execute: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('./restore.js', () => ({
-  RestoreCommand: vi.fn(() => ({
-    name: 'restore',
-    description: 'Restores the server.',
-    execute: vi.fn(),
-  })),
+  RestoreCommand: vi.fn(function () {
+    return {
+      name: 'restore',
+      description: 'Restores the server.',
+      execute: vi.fn(),
+    };
+  }),
 }));
 
 import { commandRegistry } from './command-registry.js';

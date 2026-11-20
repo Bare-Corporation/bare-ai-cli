@@ -27,7 +27,9 @@ describe('AskUserDialog', () => {
   let mockTime: number;
   beforeEach(() => {
     mockTime = 0;
-    vi.spyOn(Date, 'now').mockImplementation(() => (mockTime += 50));
+    vi.spyOn(Date, 'now').mockImplementation(function () {
+      return (mockTime += 50);
+    });
   });
 
   afterEach(() => {

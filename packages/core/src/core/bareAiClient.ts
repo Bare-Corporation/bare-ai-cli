@@ -69,6 +69,13 @@ export interface GenerateResult {
   toolCalls?: ToolCall[];
   reasoning_content?: string | null; // added for deepseek V4 for tooluse
   usage?: UsageMetrics;
+  /**
+   * True when the streaming path already echoed each token to stdout as it
+   * arrived. A consumer that renders the returned text itself (client.ts ->
+   * non-interactive UI) must NOT re-emit it, or the whole answer is printed
+   * twice: the raw streamed copy plus the aggregated block.
+   */
+  streamed?: boolean;
 }
 
 interface UsageMetrics {
@@ -176,6 +183,44 @@ function isNativeAnthropicEndpoint(endpoint: string): boolean {
   const url = endpoint.toLowerCase();
   return url.includes('/v1/messages');
 }
+/**
+ * Resolve BARE_AI_ENDPOINT into the URL the client actually POSTs to.
+ *
+ * WHY: the endpoint was used verbatim, so a base URL such as
+ * https://api.bare-ai.net/v1 was requested directly. The gateway answered
+ * with its HTML landing page and the JSON parse failed with an unhelpful
+ * "Unexpected token" error. Normalise here rather than trusting the caller,
+ * and refuse anything that cannot become a real route with a message that
+ * names the accepted forms.
+ *
+ * Accepted (a trailing slash is ignored):
+ *   .../chat/completions   used as-is - the OpenAI-compatible dialect
+ *   .../v1/messages        used as-is - the Anthropic native dialect
+ *   .../v1                 -> .../v1/chat/completions
+ * Anything else is a configuration error, reported with the value given.
+ */
+function normaliseEndpoint(raw: string): string {
+  const trimmed = raw.trim().replace(/[/]+$/, '');
+  if (trimmed === '') {
+    throw new Error(
+      'BARE_AI_ENDPOINT is empty. Set it to a chat completions URL, for example ' +
+        'https://api.example.com/v1/chat/completions.',
+    );
+  }
+  const lower = trimmed.toLowerCase();
+  if (lower.endsWith('/chat/completions') || lower.endsWith('/v1/messages')) {
+    return trimmed;
+  }
+  if (lower.endsWith('/v1')) {
+    return trimmed + '/chat/completions';
+  }
+  throw new Error(
+    'BARE_AI_ENDPOINT is not a chat completions endpoint: ' +
+      raw +
+      '. Accepted forms are .../v1 (a base URL; /chat/completions is appended), ' +
+      '.../v1/chat/completions, or .../v1/messages for the Anthropic native API.',
+  );
+}
 
 // =============================================================================
 // TYPE GUARDS
@@ -195,6 +240,26 @@ function isRecordObj(val: unknown): val is Record<string, unknown> {
 
 function isNativeMessageResponse(obj: unknown): obj is NativeMessageResponse {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+/**
+ * Split a constitution file into its cache-stable band and its volatile band at
+ * the first marker line. No marker means the whole file is stable, which keeps
+ * every existing constitution file working unchanged.
+ */
+function splitVolatileBand(content: string): {
+  stable: string;
+  volatile: string;
+} {
+  const marker = BareAiClient.VOLATILE_MARKER;
+  const at = content.indexOf(marker);
+  if (at < 0) return { stable: content, volatile: '' };
+  const lineEnd = content.indexOf('\n', at);
+  const volatileStart = lineEnd < 0 ? content.length : lineEnd + 1;
+  return {
+    stable: content.slice(0, at).replace(/\n?$/, ''),
+    volatile: content.slice(volatileStart),
+  };
 }
 
 function isNativeStreamEvent(obj: unknown): obj is NativeStreamEvent {
@@ -239,12 +304,96 @@ const logSuccess = (...args: unknown[]): void =>
 const logWarn = (...args: unknown[]): void => writeTrace('[WARN] ⚠️', ...args);
 
 // =============================================================================
+// SSE STREAM RE-ASSEMBLY
+// =============================================================================
+
+/**
+ * Buffers raw Server-Sent-Events text across network reads so a line that
+ * straddles a chunk boundary is only parsed once it is complete.
+ *
+ * Parsing each `reader.read()` chunk in isolation drops the payload that
+ * straddles the boundary: JSON.parse throws on the truncated half, and the
+ * other half does not start with `data:`, so the token is lost and words
+ * arrive truncated (e.g. "conflates" -> "confl", "Commission" -> " ",
+ * "adequacy" -> "adequ").
+ */
+export class SseLineBuffer {
+  private buffer = '';
+
+  /** Append a raw chunk; return every now-COMPLETE line it completed. */
+  push(chunk: string): string[] {
+    this.buffer += chunk;
+    const lines = this.buffer.split('\n');
+    this.buffer = lines.pop() ?? '';
+    return lines;
+  }
+
+  /** Return a trailing incomplete line that has no newline (end-of-stream). */
+  flush(): string[] {
+    if (this.buffer.length === 0) return [];
+    const rest = this.buffer;
+    this.buffer = '';
+    return [rest];
+  }
+}
+
+/**
+ * Strip the `data:` prefix from one SSE line. Returns the payload for `data:`
+ * lines and null for everything else (blank lines, `event:` lines, comments).
+ */
+export function parseSseDataLine(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('data:')) return null;
+  return trimmed.slice('data:'.length).trim();
+}
+
+/**
+ * Decide whether a completed model result still needs to be rendered by the
+ * caller. The streaming path already wrote every delta to stdout as it arrived,
+ * so emitting the aggregated text again would print the whole answer twice;
+ * the static path wrote nothing, so its text must be emitted exactly once.
+ */
+export function shouldEmitFinalText(
+  result: Pick<GenerateResult, 'text' | 'streamed'>,
+): boolean {
+  return Boolean(result.text) && result.streamed !== true;
+}
+
+// =============================================================================
 // BARE-AI CLIENT
 // =============================================================================
 
+/**
+ * Default completion cap for requests that do not set one.
+ *
+ * A non-streaming request has no natural upper bound on how long the engine may
+ * hold the socket open. On a slow local engine (~2.5 tok/s on the CPU node) an
+ * uncapped generation runs past Cloudflare's ~100s origin-proxy limit, and the
+ * client is handed an HTML 524 instead of a completion. 512 tokens finishes
+ * inside that envelope; BARE_AI_MAX_TOKENS overrides it.
+ */
+const DEFAULT_MAX_TOKENS = 512;
+
+/**
+ * Completion cap for a TOOL-CALLING turn.
+ *
+ * A tool call is not a short answer: the completion carries the function name plus
+ * a JSON argument object, and it is only useful if it arrives complete. Truncating
+ * it does not shorten the reply, it produces invalid JSON - which the turn loop then
+ * reports as a schema failure (the required command property being absent), pointing
+ * at the wrong problem entirely. Tool turns therefore get their own, much larger
+ * bound: still well inside the proxy envelope, far above any realistic tool payload.
+ */
+const DEFAULT_TOOL_MAX_TOKENS = 4096;
+
 export class BareAiClient {
   private systemPrompt: string | null;
+  static readonly VOLATILE_MARKER = '<!-- BARE_AI_VOLATILE -->';
   private readonly LEAN_TOOL_MODELS = ['tiny', 'small', 'mini', '1b', '3b'];
+  // Everything after this marker line in the constitution file is volatile:
+  // it is NOT part of the cached system block, it travels in the tail of the
+  // last user message instead.
+  private volatileTail = '';
 
   constructor() {
     try {
@@ -272,10 +421,13 @@ export class BareAiClient {
     try {
       if (fs.existsSync(resolvedPath)) {
         const content = fs.readFileSync(resolvedPath, 'utf8');
+        const split = splitVolatileBand(content);
+        this.volatileTail = split.volatile;
         logSuccess(
-          `Constitution loaded: ${resolvedPath} (${content.length} bytes)`,
+          `Constitution loaded: ${resolvedPath} (${content.length} bytes; ` +
+            `stable ${split.stable.length}, volatile ${split.volatile.length})`,
         );
-        return content;
+        return split.stable;
       }
       logWarn(`Constitution not found at ${resolvedPath}`);
       return null;
@@ -387,6 +539,10 @@ export class BareAiClient {
     const base: Record<string, string> = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
+      // The fleet gateway authenticates on X-API-Key. Bearer alone is not
+      // enough there, so send both: Bearer keeps every OpenAI-compatible
+      // vendor happy, X-API-Key satisfies the gateway contract.
+      'X-API-Key': apiKey,
     };
 
     if (provider === 'anthropic') {
@@ -400,6 +556,40 @@ export class BareAiClient {
     }
 
     return base;
+  }
+
+  // ---------------------------------------------------------------------------
+  // COMPLETION TOKEN CAP
+  // BARE_AI_MAX_TOKENS overrides DEFAULT_MAX_TOKENS. A value that is empty or
+  // not a positive integer is ignored rather than sent onward: a NaN would be
+  // either rejected by the provider or read as "no limit", which is the exact
+  // behaviour this cap exists to prevent.
+  // ---------------------------------------------------------------------------
+
+  private resolveToolMaxTokens(): number {
+    const raw = process.env['BARE_AI_MAX_TOKENS_TOOLS'];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed > 0) return parsed;
+      logWarn(
+        `BARE_AI_MAX_TOKENS_TOOLS is not a positive integer (${raw}); ` +
+          `using default ${DEFAULT_TOOL_MAX_TOKENS}`,
+      );
+    }
+    return DEFAULT_TOOL_MAX_TOKENS;
+  }
+
+  private resolveMaxTokens(): number {
+    const raw = process.env['BARE_AI_MAX_TOKENS'];
+    if (raw !== undefined && raw.trim() !== '') {
+      const parsed = Number(raw);
+      if (Number.isInteger(parsed) && parsed > 0) return parsed;
+      logWarn(
+        `BARE_AI_MAX_TOKENS is not a positive integer (${raw}); ` +
+          `using default ${DEFAULT_MAX_TOKENS}`,
+      );
+    }
+    return DEFAULT_MAX_TOKENS;
   }
 
   // ---------------------------------------------------------------------------
@@ -467,6 +657,16 @@ export class BareAiClient {
       body['messages'] = allMessages;
     }
 
+    // Cap the completion when nothing above set a limit. Applied only when the
+    // key is absent, so the native Anthropic branch keeps its own 4096.
+    if (body['max_tokens'] === undefined || body['max_tokens'] === null) {
+      // A tool-call turn must not be capped at the text default: truncation there
+      // corrupts the arguments JSON instead of shortening a reply.
+      body['max_tokens'] = resolvedTools
+        ? this.resolveToolMaxTokens()
+        : this.resolveMaxTokens();
+    }
+
     // stream_options: Ollama only — sends usage metrics on final streaming chunk
     if (useStream && isOllama) {
       body['stream_options'] = { include_usage: true };
@@ -532,9 +732,10 @@ export class BareAiClient {
     messages: Message[],
     tools?: OpenAITool[],
   ): Promise<GenerateResult> {
-    const activeEndpoint =
+    const activeEndpoint = normaliseEndpoint(
       process.env['BARE_AI_ENDPOINT'] ??
-      'http://localhost:11434/v1/chat/completions';
+        'http://localhost:11434/v1/chat/completions',
+    );
     const activeApiKey = process.env['BARE_AI_API_KEY'] ?? 'none';
     const activeModel = process.env['BARE_AI_MODEL'] ?? 'default';
 
@@ -559,7 +760,12 @@ export class BareAiClient {
 
     // Append dynamic session context to the LAST user message so the static
     // system prompt prefix stays byte-identical across calls for caching.
-    const sessionTag = `\n\n[Session: ${new Date().toLocaleDateString()}]`;
+    // Volatile band first, then the session stamp: both sit in the LAST user
+    // message so the cached system prefix stays byte-identical across calls.
+    const volatileBand = this.volatileTail.trim();
+    const sessionTag =
+      (volatileBand ? `\n\n${volatileBand}` : '') +
+      `\n\n[Session: ${new Date().toLocaleDateString()}]`;
     const enrichedMessages = [...sanitisedMessages];
     const lastUserIdx = enrichedMessages.map((m) => m.role).lastIndexOf('user');
     if (lastUserIdx >= 0) {
@@ -618,8 +824,21 @@ export class BareAiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // A gateway or proxy failure (Cloudflare 502/524) arrives as an HTML
+        // page, not JSON. Reading the body is fine; feeding it to .json() is
+        // not. Branch on content-type so the operator sees the real status
+        // instead of a SyntaxError from parsing the proxy's landing page.
+        const contentType = response.headers.get('content-type') ?? '';
+        const isJson = contentType.toLowerCase().includes('application/json');
         const errText = await response.text();
         logError(`API Failed (${response.status}):`, errText);
+        if (!isJson) {
+          throw new Error(
+            `HTTP ${response.status} ${response.statusText || 'Error'} from ` +
+              `${activeEndpoint}: Upstream returned non-JSON body ` +
+              `(Cloudflare/Gateway timeout or proxy error).`,
+          );
+        }
         throw new Error(
           `BareAiClient request failed (${response.status}): ${errText.substring(0, 500)}`,
         );
@@ -708,11 +927,16 @@ export class BareAiClient {
         // (input + cache buckets) and message_delta (output_tokens).
         let startUsage: NativeUsage | null = null;
         let deltaUsage: NativeUsage | null = null;
+        // SSE lines can be split across reads. Parsing each chunk on its own
+        // drops the event that straddles the boundary - and message_start is the
+        // first event, so losing it silently zeroes the prompt counters.
+        let lineBuffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          lineBuffer += decoder.decode(value, { stream: true });
+          const lines = lineBuffer.split('\n');
+          lineBuffer = lines.pop() ?? '';
           for (const line of lines) {
             const trimmed = line.trim();
             if (trimmed.startsWith('event:')) continue;
@@ -728,6 +952,7 @@ export class BareAiClient {
               continue;
             }
             if (!parsed) continue;
+            logDebug('native event:', String(parsed.type ?? 'unknown'));
             if (parsed.type === 'message_start' && parsed.message?.usage) {
               startUsage = parsed.message.usage;
             } else if (
@@ -746,10 +971,23 @@ export class BareAiClient {
             }
           }
         }
-        const inputTokens = startUsage?.input_tokens ?? 0;
-        const outputTokens = deltaUsage?.output_tokens ?? 0;
-        const cachedRead = startUsage?.cache_read_input_tokens ?? 0;
-        const cachedWrite = startUsage?.cache_creation_input_tokens ?? 0;
+        // Merge both buckets: message_start carries input + cache figures,
+        // message_delta carries output. A missing start event must not turn the
+        // prompt counters into a silent zero.
+        const usageMerged: NativeUsage = {
+          ...(startUsage ?? {}),
+          ...(deltaUsage ?? {}),
+        };
+        const inputTokens = usageMerged.input_tokens ?? 0;
+        const outputTokens = usageMerged.output_tokens ?? 0;
+        const cachedRead = usageMerged.cache_read_input_tokens ?? 0;
+        const cachedWrite = usageMerged.cache_creation_input_tokens ?? 0;
+        if (inputTokens === 0) {
+          logWarn(
+            'native stream reported no input_tokens for this run: prompt size is unknown ' +
+              '(see the native event lines above for what the provider sent)',
+          );
+        }
         finalMetrics = {
           prompt_tokens: inputTokens,
           completion_tokens: outputTokens,
@@ -761,22 +999,20 @@ export class BareAiClient {
         logSuccess('Streaming response completed successfully (native)');
         return {
           text: fullText,
+          streamed: true,
           ...(finalMetrics ? { usage: finalMetrics } : {}),
         };
       }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk
-          .split('\n')
-          .filter((line) => line.trim().startsWith('data: '));
-
+      // SSE lines can be split across network reads. Keep the trailing partial
+      // line buffered until the next chunk completes it: parsing each chunk in
+      // isolation drops the token whose JSON payload straddles the boundary, so
+      // words arrive truncated ("conflates" -> "confl").
+      const sseBuffer = new SseLineBuffer();
+      const handleSseLines = (lines: string[]): void => {
         for (const line of lines) {
-          const dataStr = line.replace('data: ', '').trim();
-          if (dataStr === '[DONE]') continue;
+          const dataStr = parseSseDataLine(line);
+          if (dataStr === null || dataStr === '[DONE]') continue;
 
           try {
             const parsed: unknown = JSON.parse(dataStr);
@@ -799,7 +1035,15 @@ export class BareAiClient {
             logDebug('Failed to parse streaming chunk:', dataStr);
           }
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        handleSseLines(sseBuffer.push(decoder.decode(value, { stream: true })));
       }
+      // Flush a final frame that arrived without a trailing newline.
+      handleSseLines(sseBuffer.flush());
 
       // Write telemetry if metrics were received (Ollama and some generic providers)
       // Anthropic does not send streaming usage — just write a newline for clean output
@@ -812,6 +1056,7 @@ export class BareAiClient {
       logSuccess('Streaming response completed successfully');
       return {
         text: fullText,
+        streamed: true,
         ...(finalMetrics ? { usage: finalMetrics } : {}),
       };
     } catch (error: unknown) {

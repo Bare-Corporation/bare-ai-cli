@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -79,7 +80,9 @@ describe('SettingsContext', () => {
           listeners = listeners.filter((l) => l !== listener);
         };
       }),
-      getSnapshot: vi.fn(() => mockSnapshot),
+      getSnapshot: vi.fn(function () {
+        return mockSnapshot;
+      }),
       setValue: vi.fn(),
     } as unknown as LoadedSettings;
   });

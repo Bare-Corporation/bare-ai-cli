@@ -1,11 +1,11 @@
 # Local development guide
 
 This guide provides instructions for setting up and using local development
-features for Gemini CLI.
+features for Bare AI CLI.
 
 ## Tracing
 
-Gemini CLI uses OpenTelemetry (OTel) to record traces that help you debug agent
+Bare AI CLI uses OpenTelemetry (OTel) to record traces that help you debug agent
 behavior. Traces instrument key events like model calls, tool scheduler
 operations, and tool calls.
 
@@ -31,12 +31,12 @@ Genkit provides a web-based UI for viewing traces and other telemetry data.
     The script will output the URL for the Genkit Developer UI. For example:
     `Genkit Developer UI: http://localhost:4000`
 
-2.  **Run Gemini CLI:**
+2.  **Run Bare AI CLI:**
 
-    In a separate terminal, run your Gemini CLI command:
+    In a separate terminal, run your Bare AI CLI command:
 
     ```bash
-    gemini
+    bare
     ```
 
 3.  **View the traces:**
@@ -61,12 +61,12 @@ You can view traces in the Jaeger UI for local development.
     link to the Jaeger UI (usually `http://localhost:16686`).
     - **Collector logs:** `~/.gemini/tmp/<projectHash>/otel/collector.log`
 
-2.  **Run Gemini CLI:**
+2.  **Run Bare AI CLI:**
 
-    In a separate terminal, run your Gemini CLI command:
+    In a separate terminal, run your Bare AI CLI command:
 
     ```bash
-    gemini
+    bare
     ```
 
 3.  **View the traces:**
@@ -110,12 +110,12 @@ Trace for custom processing or routing.
     Cloud Console.
     - **Collector logs:** `~/.gemini/tmp/<projectHash>/otel/collector-gcp.log`
 
-3.  **Run Gemini CLI:**
+3.  **Run Bare AI CLI:**
 
-    In a separate terminal, run your Gemini CLI command:
+    In a separate terminal, run your Bare AI CLI command:
 
     ```bash
-    gemini
+    bare
     ```
 
 4.  **View logs, metrics, and traces:**

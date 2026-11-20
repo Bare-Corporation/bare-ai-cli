@@ -17,7 +17,9 @@ const mockKeychainService = {
 };
 
 vi.mock('../../services/keychainService.js', () => ({
-  KeychainService: vi.fn().mockImplementation(() => mockKeychainService),
+  KeychainService: vi.fn().mockImplementation(function () {
+    return mockKeychainService;
+  }),
 }));
 
 vi.mock('../../utils/paths.js', async (importOriginal) => {

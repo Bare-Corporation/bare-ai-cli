@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -58,12 +59,11 @@ describe('Telemetry SDK', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(GoogleAuth).mockImplementation(
-      () =>
-        ({
-          getApplicationDefault: mockGetApplicationDefault,
-        }) as unknown as GoogleAuth,
-    );
+    vi.mocked(GoogleAuth).mockImplementation(function () {
+      return {
+        getApplicationDefault: mockGetApplicationDefault,
+      } as unknown as GoogleAuth;
+    });
     mockConfig = {
       getTelemetryEnabled: () => true,
       getTelemetryOtlpEndpoint: () => 'http://localhost:4317',

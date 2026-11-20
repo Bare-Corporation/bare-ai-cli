@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -2387,7 +2388,9 @@ describe('connectToMcpServer with OAuth', () => {
       onclose: vi.fn(),
       notification: vi.fn(),
     } as unknown as ClientLib.Client;
-    vi.mocked(ClientLib.Client).mockImplementation(() => mockedClient);
+    vi.mocked(ClientLib.Client).mockImplementation(function () {
+      return mockedClient;
+    });
 
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),
@@ -2605,7 +2608,9 @@ describe('connectToMcpServer - HTTP→SSE fallback', () => {
       onclose: vi.fn(),
       notification: vi.fn(),
     } as unknown as ClientLib.Client;
-    vi.mocked(ClientLib.Client).mockImplementation(() => mockedClient);
+    vi.mocked(ClientLib.Client).mockImplementation(function () {
+      return mockedClient;
+    });
 
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),
@@ -2737,7 +2742,9 @@ describe('connectToMcpServer - OAuth with transport fallback', () => {
       onclose: vi.fn(),
       notification: vi.fn(),
     } as unknown as ClientLib.Client;
-    vi.mocked(ClientLib.Client).mockImplementation(() => mockedClient);
+    vi.mocked(ClientLib.Client).mockImplementation(function () {
+      return mockedClient;
+    });
 
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),

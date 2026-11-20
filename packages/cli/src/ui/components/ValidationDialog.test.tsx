@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -25,15 +26,16 @@ vi.mock('./shared/RadioButtonSelect.js', () => ({
 }));
 
 vi.mock('./CliSpinner.js', () => ({
-  CliSpinner: vi.fn(() => null),
+  CliSpinner: vi.fn(function () {
+    return null;
+  }),
 }));
 
 const mockOpenBrowserSecurely = vi.fn();
 const mockShouldLaunchBrowser = vi.fn();
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     openBrowserSecurely: (...args: unknown[]) =>

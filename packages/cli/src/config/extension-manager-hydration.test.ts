@@ -9,16 +9,16 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { ExtensionManager } from './extension-manager.js';
-import {
-  debugLogger,
-  coreEvents,
-  type CommandHookConfig,
-} from '@bare-ai/core';
+import { debugLogger, coreEvents, type CommandHookConfig } from '@bare-ai/core';
 import { createTestMergedSettings } from './settings.js';
 import { createExtension } from '../test-utils/createExtension.js';
 import { EXTENSIONS_DIRECTORY_NAME } from './extensions/variables.js';
 
-const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/mock-home'));
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/tmp/mock-home';
+  }),
+);
 
 vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();
@@ -30,8 +30,7 @@ vi.mock('node:os', async (importOriginal) => {
 
 // Mock @bare-ai/core
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     homedir: mockHomedir,
@@ -298,9 +297,8 @@ System using model: \${MODEL_NAME}
     });
     expect(extension.skills![0].body).toContain('Value is: first');
 
-    const { updateSetting, ExtensionSettingScope } = await import(
-      './extensions/extensionSettings.js'
-    );
+    const { updateSetting, ExtensionSettingScope } =
+      await import('./extensions/extensionSettings.js');
     const extensionConfig =
       await extensionManager.loadExtensionConfig(extensionPath);
 

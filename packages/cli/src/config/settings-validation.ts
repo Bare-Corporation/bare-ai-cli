@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -101,10 +102,10 @@ function buildEnumSchema(
   } else {
     return z.union(
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      values.map((v) => z.literal(v)) as [
-        z.ZodLiteral<unknown>,
-        z.ZodLiteral<unknown>,
-        ...Array<z.ZodLiteral<unknown>>,
+      values.map((v) => z.literal(v)) as unknown as [
+        z.ZodType,
+        z.ZodType,
+        ...z.ZodType[],
       ],
     );
   }
@@ -301,21 +302,15 @@ export function formatValidationError(
   const displayedIssues = error.issues.slice(0, MAX_ERRORS_TO_DISPLAY);
 
   for (const issue of displayedIssues) {
-    const path = issue.path.reduce(
+    const path = issue.path.reduce<string>(
       (acc, curr) =>
         typeof curr === 'number'
           ? `${acc}[${curr}]`
-          : `${acc ? acc + '.' : ''}${curr}`,
+          : `${acc ? acc + '.' : ''}${String(curr)}`,
       '',
     );
     lines.push(`Error in: ${path || '(root)'}`);
     lines.push(`    ${issue.message}`);
-
-    if (issue.code === 'invalid_type') {
-      const expected = issue.expected;
-      const received = issue.received;
-      lines.push(`Expected: ${expected}, but received: ${received}`);
-    }
     lines.push('');
   }
 

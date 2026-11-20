@@ -1707,7 +1707,7 @@ for that specific session.
 - **`--allowed-tools <tool1,tool2,...>`**:
   - A comma-separated list of tool names that will bypass the confirmation
     dialog.
-  - Example: `gemini --allowed-tools "ShellTool(git status)"`
+  - Example: `bare --allowed-tools "ShellTool(git status)"`
 - **`--approval-mode <mode>`**:
   - Sets the approval mode for tool calls. Available modes:
     - `default`: Prompt for approval on each tool call (default behavior)
@@ -1720,7 +1720,7 @@ for that specific session.
       > functional.
   - Cannot be used together with `--yolo`. Use `--approval-mode=yolo` instead of
     `--yolo` for the new unified approach.
-  - Example: `gemini --approval-mode auto_edit`
+  - Example: `bare --approval-mode auto_edit`
 - **`--debug`** (**`-d`**):
   - Enables debug mode for this session, providing more verbose output. Open the
     debug console with F12 to see the additional logging.
@@ -1728,13 +1728,13 @@ for that specific session.
   - Delete a specific chat session by its index number or full session UUID.
   - Use `--list-sessions` first to see available sessions, their indices, and
     UUIDs.
-  - Example: `gemini --delete-session 3` or
-    `gemini --delete-session a1b2c3d4-e5f6-7890-abcd-ef1234567890`
+  - Example: `bare --delete-session 3` or
+    `bare --delete-session a1b2c3d4-e5f6-7890-abcd-ef1234567890`
 - **`--extensions <extension_name ...>`** (**`-e <extension_name ...>`**):
   - Specifies a list of extensions to use for the session. If not provided, all
     available extensions are used.
-  - Use the special term `gemini -e none` to disable all extensions.
-  - Example: `gemini -e my-extension -e my-other-extension`
+  - Use the special term `bare -e none` to disable all extensions.
+  - Example: `bare -e my-extension -e my-other-extension`
 - **`--fake-responses`**:
   - Path to a file with fake model responses for testing.
 - **`--help`** (or **`-h`**):
@@ -1752,7 +1752,7 @@ for that specific session.
   - List all available chat sessions for the current project and exit.
   - Shows session indices, dates, message counts, and preview of first user
     message.
-  - Example: `gemini --list-sessions`
+  - Example: `bare --list-sessions`
 - **`--model <model_name>`** (**`-m <model_name>`**):
   - Specifies the model to use for this session.
   - Example: `npm start -- --model gemini-3-pro-preview`
@@ -1773,15 +1773,15 @@ for that specific session.
   - Starts an interactive session with the provided prompt as the initial input.
   - The prompt is processed within the interactive session, not before it.
   - Cannot be used when piping input from stdin.
-  - Example: `gemini -i "explain this code"`
+  - Example: `bare -i "explain this code"`
 - **`--record-responses`**:
   - Path to a file to record model responses for testing.
 - **`--resume [session_id]`** (**`-r [session_id]`**):
   - Resume a previous chat session. Use "latest" for the most recent session,
     provide a session index number, or provide a full session UUID.
   - If no session_id is provided, defaults to "latest".
-  - Example: `gemini --resume 5` or `gemini --resume latest` or
-    `gemini --resume a1b2c3d4-e5f6-7890-abcd-ef1234567890` or `gemini --resume`
+  - Example: `bare --resume 5` or `bare --resume latest` or
+    `bare --resume a1b2c3d4-e5f6-7890-abcd-ef1234567890` or `bare --resume`
   - See [Session Management](../cli/session-management.md) for more details.
 - **`--sandbox`** (**`-s`**):
   - Enables sandbox mode for this session.

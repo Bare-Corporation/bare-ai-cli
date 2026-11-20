@@ -43,10 +43,12 @@ describe('GoogleCredentialsAuthProvider', () => {
       },
     });
 
-    (GoogleAuth as unknown as Mock).mockImplementation(() => ({
-      getClient: mockGetClient,
-      getIdTokenClient: mockGetIdTokenClient,
-    }));
+    (GoogleAuth as unknown as Mock).mockImplementation(function () {
+      return {
+        getClient: mockGetClient,
+        getIdTokenClient: mockGetIdTokenClient,
+      };
+    });
   });
 
   describe('Initialization', () => {

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -22,11 +23,13 @@ import { LlmRole } from '../telemetry/types.js';
 
 vi.mock('node:fs', () => ({
   appendFileSync: vi.fn(),
-  createWriteStream: vi.fn(() => ({
-    on: vi.fn(),
-    write: vi.fn(),
-    end: vi.fn(),
-  })),
+  createWriteStream: vi.fn(function () {
+    return {
+      on: vi.fn(),
+      write: vi.fn(),
+      end: vi.fn(),
+    };
+  }),
 }));
 
 describe('RecordingContentGenerator', () => {

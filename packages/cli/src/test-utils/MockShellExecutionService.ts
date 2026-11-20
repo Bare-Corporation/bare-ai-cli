@@ -130,11 +130,17 @@ export class MockShellExecutionService {
   }
 
   static writeToPty = vi.fn();
-  static isPtyActive = vi.fn(() => false);
-  static onExit = vi.fn(() => () => {});
+  static isPtyActive = vi.fn(function () {
+    return false;
+  });
+  static onExit = vi.fn(function () {
+    return () => {};
+  });
   static kill = vi.fn();
   static background = vi.fn();
-  static subscribe = vi.fn(() => () => {});
+  static subscribe = vi.fn(function () {
+    return () => {};
+  });
   static resizePty = vi.fn();
   static scrollPty = vi.fn();
 }

@@ -4,13 +4,13 @@ We would love to accept your patches and contributions to this project. This
 document includes:
 
 - **[Before you begin](#before-you-begin):** Essential steps to take before
-  becoming a Gemini CLI contributor.
+  becoming a Bare AI CLI contributor.
 - **[Code contribution process](#code-contribution-process):** How to contribute
-  code to Gemini CLI.
+  code to Bare AI CLI.
 - **[Development setup and workflow](#development-setup-and-workflow):** How to
   set up your development environment and workflow.
 - **[Documentation contribution process](#documentation-contribution-process):**
-  How to contribute documentation to Gemini CLI.
+  How to contribute documentation to Bare AI CLI.
 
 We're looking forward to seeing your contributions!
 
@@ -90,7 +90,7 @@ You can run the review tool in two ways:
     it with the latest Flash model instead:
     `./scripts/review.sh <PR_NUMBER> gemini-3-flash-preview`.
 
-2.  **Manually from within Gemini CLI:** If you already have the PR checked out
+2.  **Manually from within Bare AI CLI:** If you already have the PR checked out
     and built, you can run the tool directly from the CLI prompt:
 
     ```text
@@ -243,8 +243,8 @@ setting `GEMINI_SANDBOX=true` in your `~/.env` and ensuring a sandboxing
 provider (e.g. `macOS Seatbelt`, `docker`, or `podman`) is available. See
 [Sandboxing](#sandboxing) for details.
 
-To build both the `gemini` CLI utility and the sandbox container, run
-`build:all` from the root directory:
+To build both the `bare` CLI utility and the sandbox container, run `build:all`
+from the root directory:
 
 ```bash
 npm run build:all
@@ -254,8 +254,8 @@ To skip building the sandbox container, you can use `npm run build` instead.
 
 ### Running the CLI
 
-To start the Gemini CLI from the source code (after building), run the following
-command from the root directory:
+To start the Bare AI CLI from the source code (after building), run the
+following command from the root directory:
 
 ```bash
 npm start
@@ -264,7 +264,7 @@ npm start
 If you'd like to run the source build outside of the gemini-cli folder, you can
 utilize `npm link path/to/gemini-cli/packages/cli` (see:
 [docs](https://docs.npmjs.com/cli/v9/commands/npm-link)) or
-`alias gemini="node path/to/gemini-cli/packages/cli"` to run with `gemini`
+`alias gemini="node path/to/gemini-cli/packages/cli"` to run with `bare`
 
 ### Running tests
 
@@ -285,7 +285,7 @@ comprehensive check, it is recommended to run `npm run preflight`.
 #### Integration tests
 
 The integration tests are designed to validate the end-to-end functionality of
-the Gemini CLI. They are not run as part of the default `npm run test` command.
+the Bare AI CLI. They are not run as part of the default `npm run test` command.
 
 To run the integration tests, use the following command:
 
@@ -388,7 +388,7 @@ specific debug settings.
 
 To debug the CLI's React-based UI, you can use React DevTools.
 
-1.  **Start the Gemini CLI in development mode:**
+1.  **Start the Bare AI CLI in development mode:**
 
     ```bash
     DEV=true npm start
@@ -417,7 +417,7 @@ To debug the CLI's React-based UI, you can use React DevTools.
 
 #### macOS Seatbelt
 
-On macOS, `gemini` uses Seatbelt (`sandbox-exec`) under a `permissive-open`
+On macOS, `bare` uses Seatbelt (`sandbox-exec`) under a `permissive-open`
 profile (see `packages/cli/src/utils/sandbox-macos-permissive-open.sb`) that
 restricts writes to the project folder but otherwise allows all other operations
 and outbound network traffic ("open") by default. You can switch to a
@@ -446,13 +446,13 @@ sandbox.
 
 Container-based sandboxing mounts the project directory (and system temp
 directory) with read-write access and is started/stopped/removed automatically
-as you start/stop Gemini CLI. Files created within the sandbox should be
+as you start/stop Bare AI CLI. Files created within the sandbox should be
 automatically mapped to your user/group on host machine. You can easily specify
 additional mounts, ports, or environment variables by setting
 `SANDBOX_{MOUNTS,PORTS,ENV}` as needed. You can also fully customize the sandbox
 for your projects by creating the files `.gemini/sandbox.Dockerfile` and/or
 `.gemini/sandbox.bashrc` under your project settings directory (`.gemini`) and
-running `gemini` with `BUILD_SANDBOX=1` to trigger building of your custom
+running `bare` with `BUILD_SANDBOX=1` to trigger building of your custom
 sandbox.
 
 #### Proxied networking
@@ -488,7 +488,7 @@ our documentation to be clear, concise, and helpful to our users. We value:
 - **Accuracy:** Ensure all information is correct and up-to-date.
 - **Completeness:** Cover all aspects of a feature or topic.
 - **Examples:** Provide practical examples to help users understand how to use
-  Gemini CLI.
+  Bare AI CLI.
 
 ### Getting started
 
@@ -565,4 +565,4 @@ If you have questions about contributing documentation:
   your proposed changes.
 - Reach out to the maintainers.
 
-We appreciate your contributions to making Gemini CLI documentation better!
+We appreciate your contributions to making Bare AI CLI documentation better!

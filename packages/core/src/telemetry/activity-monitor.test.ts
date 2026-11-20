@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,21 +22,27 @@ import { debugLogger } from '../utils/debugLogger.js';
 
 // Mock the dependencies
 vi.mock('./metrics.js', () => ({
-  isPerformanceMonitoringActive: vi.fn(() => true),
+  isPerformanceMonitoringActive: vi.fn(function () {
+    return true;
+  }),
 }));
 
 vi.mock('./memory-monitor.js', () => ({
-  getMemoryMonitor: vi.fn(() => ({
-    takeSnapshot: vi.fn(() => ({
-      timestamp: Date.now(),
-      heapUsed: 1000000,
-      heapTotal: 2000000,
-      external: 500000,
-      rss: 3000000,
-      arrayBuffers: 100000,
-      heapSizeLimit: 4000000,
-    })),
-  })),
+  getMemoryMonitor: vi.fn(function () {
+    return {
+      takeSnapshot: vi.fn(function () {
+        return {
+          timestamp: Date.now(),
+          heapUsed: 1000000,
+          heapTotal: 2000000,
+          external: 500000,
+          rss: 3000000,
+          arrayBuffers: 100000,
+          heapSizeLimit: 4000000,
+        };
+      }),
+    };
+  }),
 }));
 
 describe('ActivityMonitor', () => {

@@ -14,7 +14,11 @@ import { createTestMergedSettings } from './settings.js';
 import { createExtension } from '../test-utils/createExtension.js';
 import { EXTENSIONS_DIRECTORY_NAME } from './extensions/variables.js';
 
-const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/mock-home'));
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/tmp/mock-home';
+  }),
+);
 
 vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();

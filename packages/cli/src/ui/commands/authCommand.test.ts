@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -78,9 +79,7 @@ describe('authCommand', () => {
       const logoutCommand = authCommand.subCommands?.[1];
       expect(logoutCommand?.name).toBe('signout');
 
-      const { clearCachedCredentialFile } = await import(
-        '@bare-ai/core'
-      );
+      const { clearCachedCredentialFile } = await import('@bare-ai/core');
 
       await logoutCommand!.action!(mockContext, '');
 
@@ -107,7 +106,9 @@ describe('authCommand', () => {
       } as unknown as GeminiClient;
       if (mockContext.services.agentContext?.config) {
         mockContext.services.agentContext.config.getGeminiClient = vi.fn(
-          () => mockClient,
+          function () {
+            return mockClient;
+          },
         );
       }
 

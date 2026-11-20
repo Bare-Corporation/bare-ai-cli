@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,7 +17,14 @@ import {
 } from 'vitest';
 
 const mockPlatform = vi.hoisted(() => vi.fn());
-const mockHomedir = vi.hoisted(() => vi.fn());
+// Default return value matters: bareAiClient.ts computes
+// path.join(os.homedir(), ...) at module-load time, so an undefined homedir
+// throws during collection and prevents this entire suite from loading.
+const mockHomedir = vi.hoisted(() =>
+  vi.fn(function () {
+    return '/home/user';
+  }),
+);
 
 const mockShellExecutionService = vi.hoisted(() => vi.fn());
 const mockShellBackground = vi.hoisted(() => vi.fn());
@@ -450,6 +458,7 @@ describe('ShellTool', () => {
           executionMethod: 'child_process',
         });
         await promise;
+        // eslint-disable-next-line vitest/no-standalone-expect -- itWindowsOnly is a typed wrapper around it()
         expect(mockShellExecutionService).toHaveBeenCalledWith(
           'dir',
           tempRootDir,
@@ -1016,10 +1025,10 @@ EOF`;
         new AbortController().signal,
       );
 
-      expect(details).not.toBe(false);
-      if (details && details.type === 'exec') {
-        expect(details.rootCommand).toBe('mkdir, echo, redirection (>), ls');
-      }
+      expect(details).toMatchObject({
+        type: 'exec',
+        rootCommand: 'mkdir, echo, redirection (>), ls',
+      });
     });
 
     it('should annotate all redirected sub-commands', async () => {
@@ -1032,12 +1041,10 @@ EOF`;
         new AbortController().signal,
       );
 
-      expect(details).not.toBe(false);
-      if (details && details.type === 'exec') {
-        expect(details.rootCommand).toBe(
-          'cat, redirection (<), grep, redirection (>)',
-        );
-      }
+      expect(details).toMatchObject({
+        type: 'exec',
+        rootCommand: 'cat, redirection (<), grep, redirection (>)',
+      });
     });
 
     it('should annotate sub-commands with pipes correctly', async () => {
@@ -1050,10 +1057,10 @@ EOF`;
         new AbortController().signal,
       );
 
-      expect(details).not.toBe(false);
-      if (details && details.type === 'exec') {
-        expect(details.rootCommand).toBe('ls, grep');
-      }
+      expect(details).toMatchObject({
+        type: 'exec',
+        rootCommand: 'ls, grep',
+      });
     });
   });
 
@@ -1239,6 +1246,66 @@ EOF`;
         abortSignal: new AbortController().signal,
       });
       expect(result.returnDisplay).toContain('Blocked');
+    });
+
+    it('should still block substitution when the opt-in variable is present but empty', async () => {
+      process.env['BARE_AI_ALLOW_SUBSTITUTION'] = '';
+      try {
+        const tool = new ShellTool(mockConfig, createMockMessageBus());
+        const invocation = tool.build({ command: 'echo $(whoami)' });
+        const result = await invocation.execute({
+          abortSignal: new AbortController().signal,
+        });
+        expect(result.returnDisplay).toContain('Blocked');
+      } finally {
+        delete process.env['BARE_AI_ALLOW_SUBSTITUTION'];
+      }
+    });
+
+    it('should allow $() command substitution when BARE_AI_ALLOW_SUBSTITUTION=1', async () => {
+      mockShellExecutionService.mockImplementation((_cmd, _cwd, _callback) => ({
+        pid: 12345,
+        result: Promise.resolve({
+          output: 'probe-ok:2026',
+          rawOutput: Buffer.from('probe-ok:2026'),
+          exitCode: 0,
+          signal: null,
+          error: null,
+          aborted: false,
+          pid: 12345,
+          executionMethod: 'child_process',
+          backgrounded: false,
+        }),
+      }));
+      process.env['BARE_AI_ALLOW_SUBSTITUTION'] = '1';
+      try {
+        const tool = new ShellTool(mockConfig, createMockMessageBus());
+        const invocation = tool.build({ command: 'echo $(date +%Y)' });
+        const result = await invocation.execute({
+          abortSignal: new AbortController().signal,
+        });
+        expect(result.returnDisplay).not.toContain('Blocked');
+        // Prove the command actually ran, rather than merely that it was not
+        // refused: assert the mocked execution output reached the payload.
+        expect(String(result.llmContent)).toContain('probe-ok:2026');
+      } finally {
+        delete process.env['BARE_AI_ALLOW_SUBSTITUTION'];
+      }
+    });
+
+    it('should not hand the model the exact variable name', async () => {
+      delete process.env['BARE_AI_ALLOW_SUBSTITUTION'];
+      const tool = new ShellTool(mockConfig, createMockMessageBus());
+      const invocation = tool.build({ command: 'echo $(whoami)' });
+      const result = await invocation.execute({
+        abortSignal: new AbortController().signal,
+      });
+      const content = String(result.llmContent);
+      // Naming the variable would hand a model a concrete instruction for arming
+      // the bypass in a later session via a sourced profile. It must not.
+      expect(content).not.toContain('BARE_AI_ALLOW_SUBSTITUTION');
+      expect(content).toContain('environment policy');
+      expect(content).not.toContain('Command injection detected');
     });
 
     it('should allow normal commands without substitution', async () => {

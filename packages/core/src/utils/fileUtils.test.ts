@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -66,7 +67,9 @@ describe('fileUtils', () => {
     tempRootDir = actualNodeFs.mkdtempSync(
       path.join(os.tmpdir(), 'fileUtils-test-'),
     );
-    process.cwd = vi.fn(() => tempRootDir); // Mock cwd if necessary for relative path logic within tests
+    process.cwd = vi.fn(function () {
+      return tempRootDir;
+    }); // Mock cwd if necessary for relative path logic within tests
 
     testTextFilePath = path.join(tempRootDir, 'test.txt');
     testImageFilePath = path.join(tempRootDir, 'image.png');

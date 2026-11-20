@@ -1,20 +1,13 @@
 /**
-############################################################
-#    ____ _                 _ _       ___      ____        #
-#   / ___| | ___  _   _  ___| (_)_ __ | |_     / ___|___   #
-#  | |   | |/ _ \| | | |/ __| | | '_ \| __|   | |   / _ \  #
-#  | |___| | (_) | |_| | (__| | | | | | |_    | |__| (_) | #
-#   \____|_|\___/ \__,_|\___|_|_|_| |_|\__|    \____\___/  #
-#                                                          #
-#                                                          #
-#   by Cloud Integration Corporation                       #
-############################################################
- * modelCommand.ts — bare-ai-cli Vault credential injector
- * implements a Sovereign Switchboard for hot-swapping ai models.
  * @license
- * Copyright 2026 Cloud Integration Corporation
- * Copyright 2025 Google LLC (The orignal creator of this file but heavily Customised by CIC)
+ * Copyright 2026 Google LLC
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * modelCommand.ts - bare-ai-cli Vault credential injector: a Sovereign
+ * Switchboard for hot-swapping models. Forked from the upstream CLI and
+ * heavily customised by Cloud Integration Corporation (Copyright 2026).
  */
 import {
   ModelSlashCommandEvent,
@@ -27,6 +20,17 @@ import {
   type SlashCommand,
 } from './types.js';
 import { MessageType } from '../types.js';
+import {
+  applyToolModeFromCapability,
+  getToolOverride,
+  isToolModeLocked,
+} from '../../config/toolPolicy.js';
+import {
+  isExpiredTokenResponse,
+  mintSessionToken,
+  readVaultEnv,
+  vaultFetch,
+} from './vaultRekey.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -38,40 +42,97 @@ const CACHE_DIR = path.join(os.homedir(), '.gemini');
 const CACHE_FILE = path.join(CACHE_DIR, 'models.cache.json');
 const LOCAL_FILE = path.join(CACHE_DIR, 'model.local.json');
 
-interface ModelsResponse {
-  models?: CatalogEntry[];
-  count?: number;
-}
-
 interface VaultConfig {
   api_key?: string;
   model_name?: string;
   base_url?: string;
 }
 
-interface VaultResponse {
-  data?: { data: VaultConfig } | VaultConfig;
-}
-
-interface LocalModelsFile {
-  models?: Array<{
-    shortcut?: string;
-    model_id?: string;
-    provider?: string;
-    base_url?: string;
-    tool_capability?: string;
-  }>;
-}
-
+// A row from the /v1/models catalogue (or from model.local.json). Only the two
+// fields resolveShortcut matches on are required: these rows are external JSON,
+// and a row can legitimately arrive without a base_url (normalizeEndpoint
+// reports that case) or without an is_cloud flag. The guards below keep
+// "absent" absent instead of fabricating a default for it.
 interface CatalogEntry {
   shortcut: string;
   model_id: string;
   display_name?: string;
-  provider: string;
-  is_cloud: boolean;
-  base_url: string;
-  tool_capability: string; // 'thinker' | 'doer'
+  provider?: string;
+  is_cloud?: boolean;
+  base_url?: string;
+  tool_capability?: string; // 'thinker' | 'doer'
   is_free_tier?: boolean;
+}
+
+// ── Untrusted-payload narrowing ─────────────────────────────────────────────
+// The catalogue, both on-disk caches and the Vault response are external JSON,
+// and res.json() / JSON.parse() are typed any. Their payloads are narrowed here
+// rather than asserted, which is what the no-unsafe-type-assertion rule asks
+// for. Mirrors the isRecord / isCatalogEntry / extractCatalogEntries trio in
+// councilCommand.ts.
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function optionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+// Narrow one catalogue row. A row without a string shortcut or model_id can
+// never be matched by resolveShortcut, so it is dropped rather than kept as a
+// half-populated entry that later fails somewhere less obvious.
+function toCatalogEntry(value: unknown): CatalogEntry | undefined {
+  if (!isRecord(value)) return undefined;
+  const shortcut = optionalString(value['shortcut']);
+  const modelId = optionalString(value['model_id']);
+  if (shortcut === undefined || modelId === undefined) return undefined;
+  return {
+    shortcut,
+    model_id: modelId,
+    display_name: optionalString(value['display_name']),
+    provider: optionalString(value['provider']),
+    is_cloud: optionalBoolean(value['is_cloud']),
+    base_url: optionalString(value['base_url']),
+    tool_capability: optionalString(value['tool_capability']),
+    is_free_tier: optionalBoolean(value['is_free_tier']),
+  };
+}
+
+// Accept both shapes the two sources use: /v1/models wraps its rows in
+// { models: [...] } while models.cache.json holds the bare array. Anything else
+// yields no rows, so a corrupt or stale cache degrades to "unknown model"
+// instead of throwing out of the slash command.
+function extractCatalogEntries(value: unknown): CatalogEntry[] {
+  const list = Array.isArray(value)
+    ? value
+    : isRecord(value) && Array.isArray(value['models'])
+      ? value['models']
+      : [];
+  const out: CatalogEntry[] = [];
+  for (const item of list) {
+    const entry = toCatalogEntry(item);
+    if (entry) out.push(entry);
+  }
+  return out;
+}
+
+// Vault KV v2 answers with { data: { data: {...}, metadata: {...} } }; the
+// legacy v1 path serves the fields directly under { data: {...} }. Anything
+// else returns undefined, which is the "not found" case the caller reports.
+function extractVaultConfig(value: unknown): VaultConfig | undefined {
+  if (!isRecord(value)) return undefined;
+  const raw = value['data'];
+  if (!isRecord(raw)) return undefined;
+  const inner = isRecord(raw['data']) ? raw['data'] : raw;
+  return {
+    api_key: optionalString(inner['api_key']),
+    model_name: optionalString(inner['model_name']),
+    base_url: optionalString(inner['base_url']),
+  };
 }
 
 // Baked fallback: minimal local sovereign entries used when the central
@@ -122,11 +183,12 @@ async function loadCatalog(): Promise<CatalogEntry[]> {
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`catalog HTTP ${res.status}`);
-    const json = (await res.json()) as ModelsResponse;
-    const models: CatalogEntry[] = json.models ?? [];
+    // Untrusted JSON: narrowed, never asserted (ticket 208).
+    const models = extractCatalogEntries(await res.json());
     // atomic cache write: temp + rename
     try {
-      if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+      if (!fs.existsSync(CACHE_DIR))
+        fs.mkdirSync(CACHE_DIR, { recursive: true });
       const tmp = CACHE_FILE + '.tmp';
       fs.writeFileSync(tmp, JSON.stringify(models));
       fs.renameSync(tmp, CACHE_FILE);
@@ -135,9 +197,13 @@ async function loadCatalog(): Promise<CatalogEntry[]> {
     }
     return models;
   } catch {
-    // offline / endpoint down: fall back to cached snapshot
+    // offline / endpoint down: fall back to the cached snapshot. The cache is
+    // untrusted as well: JSON.parse is any, and an older CLI could have written
+    // the whole response instead of the bare array, so narrow it rather than
+    // assert it. A payload in neither shape reads as "no catalogue".
     try {
-      return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) as CatalogEntry[];
+      const cached: unknown = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+      return extractCatalogEntries(cached);
     } catch {
       return [];
     }
@@ -147,23 +213,38 @@ async function loadCatalog(): Promise<CatalogEntry[]> {
 // Load user's local Ollama models (optional). Only provider=ollama
 // entries are honored; collisions with the central catalog are dropped
 // (central always wins).
-function loadLocalModels(centralShortcuts: Set<string>, centralIds: Set<string>): CatalogEntry[] {
+function loadLocalModels(
+  centralShortcuts: Set<string>,
+  centralIds: Set<string>,
+): CatalogEntry[] {
   try {
     if (!fs.existsSync(LOCAL_FILE)) return [];
-    const parsed = JSON.parse(fs.readFileSync(LOCAL_FILE, 'utf8')) as LocalModelsFile;
-    const list = parsed.models ?? [];
+    // Untrusted JSON too: each row goes through the same guard the catalogue
+    // uses (so a row without a string shortcut or model_id is dropped instead
+    // of being stringified), then the Ollama-only rules are applied.
+    const parsed: unknown = JSON.parse(fs.readFileSync(LOCAL_FILE, 'utf8'));
+    const list =
+      isRecord(parsed) && Array.isArray(parsed['models'])
+        ? parsed['models']
+        : [];
     const out: CatalogEntry[] = [];
-    for (const m of list) {
-      if ((m?.provider || 'ollama') !== 'ollama') continue; // local file is Ollama-only
-      if (!m?.shortcut || !m?.model_id) continue;
-      if (centralShortcuts.has(m.shortcut) || centralIds.has(m.model_id)) continue; // central wins
+    for (const item of list) {
+      const entry = toCatalogEntry(item);
+      if (!entry) continue;
+      if ((entry.provider || 'ollama') !== 'ollama') continue; // local file is Ollama-only
+      if (
+        centralShortcuts.has(entry.shortcut) ||
+        centralIds.has(entry.model_id)
+      )
+        continue; // central wins
       out.push({
-        shortcut: String(m.shortcut),
-        model_id: String(m.model_id),
+        shortcut: entry.shortcut,
+        model_id: entry.model_id,
         provider: 'ollama',
         is_cloud: false,
-        base_url: String(m.base_url || 'http://127.0.0.1:11434'),
-        tool_capability: (m.tool_capability === 'thinker') ? 'thinker' : 'doer',
+        base_url: entry.base_url || 'http://127.0.0.1:11434',
+        tool_capability:
+          entry.tool_capability === 'thinker' ? 'thinker' : 'doer',
       });
     }
     return out;
@@ -196,7 +277,9 @@ async function resolveShortcut(id: string): Promise<CatalogEntry | null> {
 function normalizeEndpoint(entry: CatalogEntry): string {
   let base = (entry.base_url ?? '').trim();
   if (!base) {
-    throw new Error('Catalog entry "' + entry.model_id + '" is missing base_url');
+    throw new Error(
+      'Catalog entry "' + entry.model_id + '" is missing base_url',
+    );
   }
   if (!base.startsWith('http://') && !base.startsWith('https://')) {
     base = 'http://' + base;
@@ -206,6 +289,15 @@ function normalizeEndpoint(entry: CatalogEntry): string {
   }
   if (base.endsWith('/chat/completions')) {
     return base;
+  }
+  // WHY the /v1 branch: the catalogue carries versioned roots as well as bare
+  // hosts. A local engine publishes "http://100.64.0.20:8002/v1", so appending
+  // "/v1/chat/completions" unconditionally produced
+  // ".../v1/v1/chat/completions" and the in-session /model hot-swap refused to
+  // connect. Mirrors toCompletionsUrl() in sovereign.js, which needed the same
+  // normalisation for the launch-time route.
+  if (base.endsWith('/v1')) {
+    return base + '/chat/completions';
   }
   if (entry.provider === 'ollama' || entry.is_cloud === false) {
     return base + '/v1/chat/completions';
@@ -241,36 +333,99 @@ function vaultKeyForProvider(provider?: string): string | null {
   return null;
 }
 
+// One Vault KV read, returning the status alongside the parsed payload so the
+// caller can react to a specific failure (ticket 691) instead of guessing from
+// a thrown error. The payload stays unknown: it is external JSON.
+async function vaultGet(
+  addr: string,
+  vaultPath: string,
+  token: string,
+): Promise<{ status: number; payload: unknown }> {
+  const res = await vaultFetch(`${addr}/v1/${vaultPath}`, {
+    headers: { 'X-Vault-Token': token },
+  });
+  const payload: unknown = await res.json();
+  return { status: res.status, payload };
+}
+
+// Re-mint the session token, or fail loudly with BOTH facts: why the re-mint
+// could not happen and what Vault originally answered. The original response is
+// part of the message on purpose - an expiry that cannot be repaired must never
+// be reported as an ordinary "not found".
+async function remintOrThrow(
+  addr: string,
+  original: { status: number; payload: unknown },
+): Promise<{ token: string; leaseSeconds: number }> {
+  try {
+    return await mintSessionToken(addr, readVaultEnv());
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      'Vault session token expired and could not be re-minted (' +
+        reason +
+        '). Original Vault response: HTTP ' +
+        String(original.status) +
+        ' ' +
+        JSON.stringify(original.payload),
+    );
+  }
+}
+
 // Fetch runtime config (api_key + model_name) from the USER's own Vault.
 // Cloud/council models use the per-PROVIDER path (one secret per provider,
 // since 2026-09-01). Legacy per-model paths remain only as a last resort.
-async function fetchVaultUpdate(modelName: string, provider?: string) {
+export async function fetchVaultUpdate(modelName: string, provider?: string) {
   const addr = process.env['VAULT_ADDR'];
-  const vaultToken = process.env['VAULT_TOKEN'];
-  if (!addr || !vaultToken) throw new Error('Sovereign environment not initialized.');
+  let vaultToken = process.env['VAULT_TOKEN'];
+  if (!addr || !vaultToken)
+    throw new Error('Sovereign environment not initialized.');
 
   const routeKey = vaultKeyForProvider(provider);
   let path = routeKey
     ? `secret/data/${routeKey}/config`
     : `secret/data/${modelName}/config`;
-  let res = await fetch(`${addr}/v1/${path}`, {
-    headers: { 'X-Vault-Token': vaultToken },
-  });
-  let json = (await res.json()) as VaultResponse;
+  let result = await vaultGet(addr, path, vaultToken);
 
-  if (res.status === 404 || res.status === 403) {
-    path = `secret/${modelName}/config`;
-    res = await fetch(`${addr}/v1/${path}`, {
-      headers: { 'X-Vault-Token': vaultToken },
-    });
-    json = (await res.json()) as VaultResponse;
+  // Ticket 691: an AppRole token lives for its lease (3600s here) and the
+  // launcher never renewed it, so a session older than the lease held a dead
+  // token and every read answered 403 with BOTH "permission denied" AND
+  // "invalid token". Re-mint ONCE through the same AppRole and retry ONCE.
+  // A 403 without "invalid token" is a policy denial and is left alone -
+  // re-minting there would hide a real authorisation failure.
+  if (isExpiredTokenResponse(result.status, result.payload)) {
+    const minted = await remintOrThrow(addr, result);
+    process.stderr.write(
+      '[vault] session token had expired - re-minted for this session (' +
+        String(minted.leaseSeconds) +
+        's lease)' +
+        String.fromCharCode(10),
+    );
+    // Keep the new token for the rest of the session: every later Vault read in
+    // this process (another /model swap, a council run) reuses it.
+    process.env['VAULT_TOKEN'] = minted.token;
+    vaultToken = minted.token;
+    result = await vaultGet(addr, path, vaultToken);
   }
 
-  const raw = json?.data;
-  const configData: VaultConfig | undefined =
-    raw && 'data' in raw ? raw.data : raw;
+  if (result.status === 404 || result.status === 403) {
+    path = `secret/${modelName}/config`;
+    result = await vaultGet(addr, path, vaultToken);
+  }
+  const payload = result.payload;
+
+  const configData = extractVaultConfig(payload);
   if (!configData) {
-    console.error(`\n[Vault Debug] Failed Response from Vault:`, JSON.stringify(json));
+    // The Vault misconfiguration diagnostic stays user-visible, and stays on
+    // stderr: console.error wrote to stderr as well, and the message below is
+    // byte-identical to that call. It is written with process.stderr.write
+    // because the repo bans console.*, and the line breaks sit inside the
+    // template literal on purpose - the emitted text is exactly a newline, the
+    // label, the payload, then a newline.
+    process.stderr.write(
+      `
+[Vault Debug] Failed Response from Vault: ${JSON.stringify(payload)}
+`,
+    );
     throw new Error(`Model configuration not found at Vault path: ${path}`);
   }
   return configData;
@@ -278,13 +433,17 @@ async function fetchVaultUpdate(modelName: string, provider?: string) {
 
 const setModelCommand: SlashCommand = {
   name: 'set',
-  description: 'Set the model to use. Usage: /model set <model-name> [--persist]',
+  description:
+    'Set the model to use. Usage: /model set <model-name> [--persist]',
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: async (context: CommandContext, args: string) => {
     const parts = args.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) {
-      context.ui.addItem({ type: MessageType.ERROR, text: 'Usage: /model set <model-name> [--persist]' });
+      context.ui.addItem({
+        type: MessageType.ERROR,
+        text: 'Usage: /model set <model-name> [--persist]',
+      });
       return;
     }
     const modelName = parts[0];
@@ -293,7 +452,10 @@ const setModelCommand: SlashCommand = {
       context.services.config.setModel(modelName, !persist);
       const event = new ModelSlashCommandEvent(modelName);
       logModelSlashCommand(context.services.config, event);
-      context.ui.addItem({ type: MessageType.INFO, text: `Model set to ${modelName}${persist ? ' (persisted)' : ''}` });
+      context.ui.addItem({
+        type: MessageType.INFO,
+        text: `Model set to ${modelName}${persist ? ' (persisted)' : ''}`,
+      });
     }
   },
 };
@@ -313,7 +475,8 @@ const manageModelCommand: SlashCommand = {
 
 export const modelCommand: SlashCommand = {
   name: 'model',
-  description: 'Manage model configuration or switch via Sovereign ID (e.g., /model 101)',
+  description:
+    'Manage model configuration or switch via Sovereign ID (e.g., /model 101)',
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   subCommands: [manageModelCommand, setModelCommand],
@@ -322,18 +485,31 @@ export const modelCommand: SlashCommand = {
 
     // 3-digit Sovereign ID OR exact model name
     if (/^\d{3}$/.test(id) || id.includes(':') || id.includes('-')) {
-      context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Translating ID ${id}...` });
+      context.ui.addItem({
+        type: MessageType.INFO,
+        text: `[sovereign] Translating ID ${id}...`,
+      });
 
       const entry = await resolveShortcut(id);
       if (!entry) {
-        context.ui.addItem({ type: MessageType.ERROR, text: `[sovereign] Unknown model or shortcut: ${id}` });
+        context.ui.addItem({
+          type: MessageType.ERROR,
+          text: `[sovereign] Unknown model or shortcut: ${id}`,
+        });
         return;
       }
 
-      context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Swapping to model ${entry.model_id}...` });
+      context.ui.addItem({
+        type: MessageType.INFO,
+        text: `[sovereign] Swapping to model ${entry.model_id}...`,
+      });
 
       try {
-        const noTools = entry.tool_capability === 'thinker';
+        // Resolve the tool policy AFTER the swap targets are known but never
+        // from the catalogue alone: a caller override outranks tool_capability,
+        // so a doer row can no longer re-enable tools behind the caller's back
+        // (Ticket 164). See config/toolPolicy.ts for the precedence rules.
+        const toolLocked = isToolModeLocked();
 
         // Prefer the user's own Vault runtime config when available (mirrors
         // sovereign.js): a Vault base_url wins for the endpoint, otherwise the
@@ -359,10 +535,23 @@ export const modelCommand: SlashCommand = {
         }
 
         process.env['BARE_AI_API_KEY'] = (config?.api_key || 'none').trim();
-        process.env['BARE_AI_MODEL'] = (config?.model_name || entry.model_id).trim();
-        process.env['BARE_AI_NO_TOOLS'] = noTools ? 'true' : 'false';
+        process.env['BARE_AI_MODEL'] = (
+          config?.model_name || entry.model_id
+        ).trim();
+        // The helper writes BARE_AI_NO_TOOLS: it honours a caller override and
+        // only consults tool_capability when nothing was locked for this run.
+        const noTools = applyToolModeFromCapability(entry.tool_capability);
         if (noTools) {
-          context.ui.addItem({ type: MessageType.INFO, text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).` });
+          context.ui.addItem({
+            type: MessageType.INFO,
+            text: `[sovereign] Pure Reasoning mode engaged (Tools disabled).`,
+          });
+        }
+        if (toolLocked) {
+          context.ui.addItem({
+            type: MessageType.INFO,
+            text: `[sovereign] Tool policy '${getToolOverride()}' locked by the caller; this model's tool_capability '${entry.tool_capability}' was not applied.`,
+          });
         }
 
         const finalModel = (config?.model_name || entry.model_id).trim();
@@ -372,8 +561,12 @@ export const modelCommand: SlashCommand = {
           type: MessageType.INFO,
           text: `[sovereign] Hot-swap successful${entry.is_cloud ? '' : ' (local)'}.`,
         });
-      } catch (err: any) {
-        context.ui.addItem({ type: MessageType.ERROR, text: `[sovereign] Swap failed: ${err.message}` });
+      } catch (err: unknown) {
+        const reason = err instanceof Error ? err.message : String(err);
+        context.ui.addItem({
+          type: MessageType.ERROR,
+          text: `[sovereign] Swap failed: ${reason}`,
+        });
       }
       return;
     }

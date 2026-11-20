@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +10,7 @@ import {
   partListUnionToString,
   SESSION_FILE_PREFIX,
   CoreToolCallStatus,
+  loadConversationRecord,
   type Config,
   type ConversationRecord,
   type MessageRecord,
@@ -250,17 +252,21 @@ export const getAllSessionFiles = async (
   try {
     const files = await fs.readdir(chatsDir);
     const sessionFiles = files
-      .filter((f) => f.startsWith(SESSION_FILE_PREFIX) && f.endsWith('.json'))
+      .filter(
+        (f) =>
+          f.startsWith(SESSION_FILE_PREFIX) &&
+          (f.endsWith('.json') || f.endsWith('.jsonl')),
+      )
       .sort(); // Sort by filename, which includes timestamp
 
     const sessionPromises = sessionFiles.map(
       async (file): Promise<SessionFileEntry> => {
         const filePath = path.join(chatsDir, file);
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const content: ConversationRecord = JSON.parse(
-            await fs.readFile(filePath, 'utf8'),
-          );
+          const content = await loadConversationRecord(filePath);
+          if (!content) {
+            return { fileName: file, sessionInfo: null };
+          }
 
           // Validate required fields
           if (
@@ -310,7 +316,7 @@ export const getAllSessionFiles = async (
 
           const sessionInfo: SessionInfo = {
             id: content.sessionId,
-            file: file.replace('.json', ''),
+            file: file.replace(/\.jsonl?$/, ''),
             fileName: file,
             startTime: content.startTime,
             lastUpdated: content.lastUpdated,
@@ -514,10 +520,12 @@ export class SessionSelector {
     const sessionPath = path.join(chatsDir, sessionInfo.fileName);
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const sessionData: ConversationRecord = JSON.parse(
-        await fs.readFile(sessionPath, 'utf8'),
-      );
+      const sessionData = await loadConversationRecord(sessionPath);
+      if (!sessionData) {
+        throw new Error(
+          `Failed to load session ${sessionInfo.id}: session data not found`,
+        );
+      }
 
       const displayInfo = `Session ${sessionInfo.index}: ${sessionInfo.firstUserMessage} (${sessionInfo.messageCount} messages, ${formatRelativeTime(sessionInfo.lastUpdated)})`;
 

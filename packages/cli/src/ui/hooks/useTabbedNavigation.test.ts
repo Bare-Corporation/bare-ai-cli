@@ -257,7 +257,9 @@ describe('useTabbedNavigation', () => {
 
   describe('isNavigationBlocked', () => {
     it('blocks navigation when callback returns true', async () => {
-      const isNavigationBlocked = vi.fn(() => true);
+      const isNavigationBlocked = vi.fn(function () {
+        return true;
+      });
       const { result } = await renderHook(() =>
         useTabbedNavigation({ tabCount: 3, isNavigationBlocked }),
       );
@@ -271,7 +273,9 @@ describe('useTabbedNavigation', () => {
     });
 
     it('allows navigation when callback returns false', async () => {
-      const isNavigationBlocked = vi.fn(() => false);
+      const isNavigationBlocked = vi.fn(function () {
+        return false;
+      });
       const { result } = await renderHook(() =>
         useTabbedNavigation({ tabCount: 3, isNavigationBlocked }),
       );

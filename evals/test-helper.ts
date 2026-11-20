@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,22 +10,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
-import { TestRig } from '@google/bare-ai-cli-test-utils';
+import { TestRig } from '@bare-ai/cli-test-utils';
 import {
   createUnauthorizedToolError,
   parseAgentMarkdown,
-<<<<<<< HEAD
-} from '@bare-ai/core';
-=======
   Storage,
   getProjectHash,
   SESSION_FILE_PREFIX,
   PREVIEW_GEMINI_FLASH_MODEL,
   getErrorMessage,
-} from '@google/gemini-cli-core';
->>>>>>> f784e192f
+} from '@bare-ai/core';
 
-export * from '@google/bare-ai-cli-test-utils';
+export * from '@bare-ai/cli-test-utils';
 
 /**
  * The default model used for all evaluations.

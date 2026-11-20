@@ -21,9 +21,11 @@ vi.mock('../contexts/SessionContext.js', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    useSessionStats: vi.fn(() => ({
-      startNewPrompt: vi.fn(),
-    })),
+    useSessionStats: vi.fn(function () {
+      return {
+        startNewPrompt: vi.fn(),
+      };
+    }),
   };
 });
 

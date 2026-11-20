@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,18 +22,28 @@ vi.mock('./loggers.js', () => ({
 
 // Mock os module
 vi.mock('node:os', () => ({
-  platform: vi.fn(() => 'darwin'),
-  arch: vi.fn(() => 'x64'),
-  release: vi.fn(() => '22.6.0'),
+  platform: vi.fn(function () {
+    return 'darwin';
+  }),
+  arch: vi.fn(function () {
+    return 'x64';
+  }),
+  release: vi.fn(function () {
+    return '22.6.0';
+  }),
 }));
 
 // Mock fs module
 vi.mock('node:fs', () => ({
-  existsSync: vi.fn(() => false),
-  createWriteStream: vi.fn(() => ({
-    write: vi.fn(),
-    on: vi.fn(),
-  })),
+  existsSync: vi.fn(function () {
+    return false;
+  }),
+  createWriteStream: vi.fn(function () {
+    return {
+      write: vi.fn(),
+      on: vi.fn(),
+    };
+  }),
 }));
 
 describe('StartupProfiler', () => {
