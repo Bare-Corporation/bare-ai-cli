@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,8 +36,7 @@ vi.mock('./cleanup.js', () => ({
 
 // Mock the core modules
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
 
   return {
     ...original,
@@ -46,36 +46,40 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
       }
       return `API Error: ${String(error)}`;
     }),
-    JsonFormatter: vi.fn().mockImplementation(() => ({
-      formatError: vi.fn(
-        (error: Error, code?: string | number, sessionId?: string) =>
-          JSON.stringify(
-            {
-              ...(sessionId && { session_id: sessionId }),
-              error: {
-                type: error.constructor.name,
-                message: error.message,
-                ...(code && { code }),
+    JsonFormatter: vi.fn().mockImplementation(function () {
+      return {
+        formatError: vi.fn(
+          (error: Error, code?: string | number, sessionId?: string) =>
+            JSON.stringify(
+              {
+                ...(sessionId && { session_id: sessionId }),
+                error: {
+                  type: error.constructor.name,
+                  message: error.message,
+                  ...(code && { code }),
+                },
               },
-            },
-            null,
-            2,
-          ),
-      ),
-    })),
-    StreamJsonFormatter: vi.fn().mockImplementation(() => ({
-      emitEvent: vi.fn(),
-      convertToStreamStats: vi.fn().mockReturnValue({
-        total_tokens: 0,
-        input_tokens: 0,
-        output_tokens: 0,
-        cached: 0,
-        input: 0,
-        duration_ms: 0,
-        tool_calls: 0,
-        models: {},
-      }),
-    })),
+              null,
+              2,
+            ),
+        ),
+      };
+    }),
+    StreamJsonFormatter: vi.fn().mockImplementation(function () {
+      return {
+        emitEvent: vi.fn(),
+        convertToStreamStats: vi.fn().mockReturnValue({
+          total_tokens: 0,
+          input_tokens: 0,
+          output_tokens: 0,
+          cached: 0,
+          input: 0,
+          duration_ms: 0,
+          tool_calls: 0,
+          models: {},
+        }),
+      };
+    }),
     uiTelemetryService: {
       getMetrics: vi.fn().mockReturnValue({}),
     },

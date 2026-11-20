@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -293,7 +294,7 @@ describe('settings-validation', () => {
         expect(result.error.issues.length).toBeGreaterThan(0);
         // Should complain about missing 'name'
         const issue = result.error.issues.find(
-          (i) => i.code === 'invalid_type' && i.message.includes('Required'),
+          (i) => i.code === 'invalid_type' && i.message.includes('expected string'),
         );
         expect(issue).toBeDefined();
       }
@@ -321,7 +322,7 @@ describe('settings-validation', () => {
 
         expect(formatted).toContain('/path/to/settings.json');
         expect(formatted).toContain('model.name');
-        expect(formatted).toContain('Expected: string, but received: object');
+        expect(formatted).toContain('Invalid input: expected string, received object');
         expect(formatted).toContain('Please fix the configuration.');
         expect(formatted).toContain(
           'https://geminicli.com/docs/reference/configuration/',

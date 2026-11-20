@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -46,9 +47,9 @@ let mockExit: MockInstance;
 describe('deferred', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockExit = vi
-      .spyOn(process, 'exit')
-      .mockImplementation(() => undefined as never);
+    mockExit = vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
     setDeferredCommand(undefined as unknown as DeferredCommand); // Reset deferred command
   });
 

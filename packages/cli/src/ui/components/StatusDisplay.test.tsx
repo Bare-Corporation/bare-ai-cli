@@ -58,14 +58,26 @@ const createMockUIState = (overrides: UIStateOverrides = {}): UIState =>
   }) as UIState;
 
 const createMockConfig = (overrides = {}) => ({
-  getMcpClientManager: vi.fn().mockImplementation(() => ({
-    getBlockedMcpServers: vi.fn(() => []),
-    getMcpServers: vi.fn(() => ({})),
-  })),
-  getSkillManager: vi.fn().mockImplementation(() => ({
-    getSkills: vi.fn(() => ['skill1', 'skill2']),
-    getDisplayableSkills: vi.fn(() => ['skill1', 'skill2']),
-  })),
+  getMcpClientManager: vi.fn().mockImplementation(function () {
+    return {
+      getBlockedMcpServers: vi.fn(function () {
+        return [];
+      }),
+      getMcpServers: vi.fn(function () {
+        return {};
+      }),
+    };
+  }),
+  getSkillManager: vi.fn().mockImplementation(function () {
+    return {
+      getSkills: vi.fn(function () {
+        return ['skill1', 'skill2'];
+      }),
+      getDisplayableSkills: vi.fn(function () {
+        return ['skill1', 'skill2'];
+      }),
+    };
+  }),
   ...overrides,
 });
 

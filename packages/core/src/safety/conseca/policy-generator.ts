@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -72,7 +73,7 @@ Trusted Tools (Context):
 `;
 
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { zodSchemaToJsonSchema } from '../../utils/zodJsonSchema.js';
 
 const ToolPolicySchema = z.object({
   permissions: z.nativeEnum(SafetyCheckDecision),
@@ -115,7 +116,7 @@ export async function generatePolicy(
         model,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: zodToJsonSchema(SecurityPolicyResponseSchema, {
+          responseSchema: zodSchemaToJsonSchema(SecurityPolicyResponseSchema, {
             target: 'openApi3',
           }),
         },

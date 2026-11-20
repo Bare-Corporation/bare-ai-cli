@@ -1,11 +1,12 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { z } from 'zod';
-import { AuthProviderType } from '../config/config.js';
+import { AuthProviderType } from '../config/authProviderType.js';
 
 export interface ClientMetadata {
   ideType?: ClientMetadataIdeType;
@@ -376,7 +377,7 @@ export const RequiredMcpServerConfigSchema = z.object({
   oauth: RequiredMcpServerOAuthSchema.optional(),
   targetAudience: z.string().optional(),
   targetServiceAccount: z.string().optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
 
   // Common
   trust: z.boolean().optional(),
@@ -393,8 +394,8 @@ export type RequiredMcpServerConfig = z.infer<
 >;
 
 export const McpConfigDefinitionSchema = z.object({
-  mcpServers: z.record(McpServerConfigSchema).optional(),
-  requiredMcpServers: z.record(RequiredMcpServerConfigSchema).optional(),
+  mcpServers: z.record(z.string(), McpServerConfigSchema).optional(),
+  requiredMcpServers: z.record(z.string(), RequiredMcpServerConfigSchema).optional(),
 });
 
 export type McpConfigDefinition = z.infer<typeof McpConfigDefinitionSchema>;
@@ -411,7 +412,7 @@ export const AdminControlsSettingsSchema = z.object({
     .object({
       mcpEnabled: z.boolean().optional(),
       mcpConfig: McpConfigDefinitionSchema.optional(),
-      requiredMcpConfig: z.record(RequiredMcpServerConfigSchema).optional(),
+      requiredMcpConfig: z.record(z.string(), RequiredMcpServerConfigSchema).optional(),
     })
     .optional(),
   cliFeatureSetting: CliFeatureSettingSchema.optional(),

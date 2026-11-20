@@ -39,7 +39,9 @@ const { mockExtensionManager, mockGetExtensionManager, mockLoadSettings } =
   });
 
 vi.mock('../../config/extension-manager.js', () => ({
-  ExtensionManager: vi.fn().mockImplementation(() => mockExtensionManager),
+  ExtensionManager: vi.fn().mockImplementation(function () {
+    return mockExtensionManager;
+  }),
 }));
 
 vi.mock('../../config/extensions/extensionSettings.js', () => ({
@@ -89,9 +91,9 @@ describe('extensions configure command', () => {
     // Default behaviors
     mockLoadSettings.mockReturnValue({ merged: {} });
     mockGetExtensionManager.mockResolvedValue(mockExtensionManager);
-    (ExtensionManager as unknown as Mock).mockImplementation(
-      () => mockExtensionManager,
-    );
+    (ExtensionManager as unknown as Mock).mockImplementation(function () {
+      return mockExtensionManager;
+    });
   });
 
   afterEach(() => {

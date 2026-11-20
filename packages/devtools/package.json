@@ -1,6 +1,6 @@
 {
   "name": "@bare-ai/cli-devtools",
-  "version": "0.1.0-bare-ai",
+  "version": "0.1.1-bare-ai",
   "license": "Apache-2.0",
   "type": "module",
   "main": "dist/src/index.js",

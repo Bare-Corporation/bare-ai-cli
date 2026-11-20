@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 import { renderWithProviders } from '../../../test-utils/render.js';
@@ -13,7 +14,9 @@ vi.mock('ink', async () => {
   const actual = await vi.importActual('ink');
   return {
     ...actual,
-    useIsScreenReaderEnabled: vi.fn(() => false),
+    useIsScreenReaderEnabled: vi.fn(function () {
+      return false;
+    }),
   };
 });
 
@@ -21,7 +24,9 @@ vi.mock('@bare-ai/core', async () => {
   const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
-    supportsTrueColor: vi.fn(() => true),
+    supportsTrueColor: vi.fn(function () {
+      return true;
+    }),
   };
 });
 

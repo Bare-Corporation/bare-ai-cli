@@ -16,9 +16,8 @@ vi.mock('../../utils/skillUtils.js', () => ({
 }));
 
 const { debugLogger } = await vi.hoisted(async () => {
-  const { createMockDebugLogger } = await import(
-    '../../test-utils/mockDebugLogger.js'
-  );
+  const { createMockDebugLogger } =
+    await import('../../test-utils/mockDebugLogger.js');
   return createMockDebugLogger({ stripAnsi: false });
 });
 
@@ -37,7 +36,9 @@ vi.mock('../../config/extensions/consent.js', () => ({
 describe('skills link command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
   });
 
   describe('linkCommand', () => {

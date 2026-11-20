@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -32,14 +33,15 @@ const mockedCwd = vi.hoisted(() => vi.fn().mockReturnValue('/mock/cwd'));
 const mockedExit = vi.hoisted(() => vi.fn());
 
 vi.mock('@bare-ai/core', async () => {
-  const actual = await vi.importActual<
-    typeof import('@bare-ai/core')
-  >('@bare-ai/core');
+  const actual =
+    await vi.importActual<typeof import('@bare-ai/core')>('@bare-ai/core');
   return {
     ...actual,
     isHeadlessMode: vi.fn().mockReturnValue(false),
     FolderTrustDiscoveryService: {
-      discover: vi.fn(() => new Promise(() => {})),
+      discover: vi.fn(function () {
+        return new Promise(() => {});
+      }),
     },
   };
 });

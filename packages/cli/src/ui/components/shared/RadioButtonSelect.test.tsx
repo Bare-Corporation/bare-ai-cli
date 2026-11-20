@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,7 +21,9 @@ import {
 } from './BaseSelectionList.js';
 
 vi.mock('./BaseSelectionList.js', () => ({
-  BaseSelectionList: vi.fn(() => null),
+  BaseSelectionList: vi.fn(function () {
+    return null;
+  }),
 }));
 
 vi.mock('../../semantic-colors.js', () => ({

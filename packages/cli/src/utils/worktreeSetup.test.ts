@@ -10,8 +10,7 @@ import * as coreFunctions from '@bare-ai/core';
 
 // Mock dependencies
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     getProjectRootForWorktree: vi.fn(),
@@ -41,7 +40,9 @@ describe('setupWorktree', () => {
 
     // Mock process.cwd and process.chdir
     let currentPath = '/mock/project';
-    process.cwd = vi.fn().mockImplementation(() => currentPath);
+    process.cwd = vi.fn().mockImplementation(function () {
+      return currentPath;
+    });
     process.chdir = vi.fn().mockImplementation((newPath) => {
       currentPath = newPath;
     });

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,7 +15,9 @@ import {
 import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 
 vi.mock('./shared/RadioButtonSelect.js', () => ({
-  RadioButtonSelect: vi.fn(() => null),
+  RadioButtonSelect: vi.fn(function () {
+    return null;
+  }),
 }));
 
 describe('LogoutConfirmationDialog', () => {

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,6 +16,7 @@ import { MessageType } from '../types.js';
 import { GIT_COMMIT_INFO } from '../../generated/git-commit.js';
 import { formatBytes } from '../utils/formatters.js';
 import {
+  type AgentLoopContext,
   IdeClient,
   getVersion,
   INITIAL_HISTORY_LENGTH,
@@ -31,7 +33,8 @@ export const bugCommand: SlashCommand = {
   autoExecute: false,
   action: async (context: CommandContext, args?: string): Promise<void> => {
     const bugDescription = (args || '').trim();
-    const agentContext = context.services.agentContext;
+    const agentContext: AgentLoopContext | null | undefined =
+      context.services.agentContext;
     const config = agentContext?.config;
     const osVersion = `${process.platform} ${process.version}`;
     let sandboxEnv = 'no sandbox';
@@ -96,7 +99,7 @@ export const bugCommand: SlashCommand = {
     }
 
     let bugReportUrl =
-      'https://github.com/google-gemini/bare-ai-cli/issues/new?template=bug_report.yml&title={title}&info={info}&problem={problem}';
+      'https://github.com/Bare-Corporation/bare-ai-cli/issues/new?template=bug_report.yml&title={title}&info={info}&problem={problem}';
 
     const bugCommandSettings = config?.getBugCommand();
     if (bugCommandSettings?.urlTemplate) {

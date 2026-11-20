@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -29,11 +30,13 @@ import type { Config } from '../config/config.js';
 
 // Mock A2AClientManager
 vi.mock('./a2a-client-manager.js', () => ({
-  A2AClientManager: vi.fn().mockImplementation(() => ({
-    getClient: vi.fn(),
-    loadAgent: vi.fn(),
-    sendMessageStream: vi.fn(),
-  })),
+  A2AClientManager: vi.fn().mockImplementation(function () {
+    return {
+      getClient: vi.fn(),
+      loadAgent: vi.fn(),
+      sendMessageStream: vi.fn(),
+    };
+  }),
 }));
 
 // Mock A2AAuthProviderFactory

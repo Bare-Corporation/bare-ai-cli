@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -105,11 +106,13 @@ describe('A2AClientManager', () => {
       (_defaults, overrides) => overrides as unknown as ClientFactoryOptions,
     );
 
-    vi.mocked(createAuthenticatingFetchWithRetry).mockImplementation(() =>
-      authFetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response),
+    vi.mocked(createAuthenticatingFetchWithRetry).mockImplementation(
+      function () {
+        return authFetchMock.mockResolvedValue({
+          ok: true,
+          json: async () => ({}),
+        } as Response);
+      },
     );
 
     vi.stubGlobal(

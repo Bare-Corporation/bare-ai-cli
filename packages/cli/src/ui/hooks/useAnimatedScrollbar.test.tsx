@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -80,7 +81,9 @@ describe('useAnimatedScrollbar', () => {
     });
     const dateSpy = vi.spyOn(Date, 'now');
     let currentTime = 1000;
-    dateSpy.mockImplementation(() => currentTime);
+    dateSpy.mockImplementation(function () {
+      return currentTime;
+    });
 
     const { rerender } = await render(<TestComponent isFocused={false} />);
 
