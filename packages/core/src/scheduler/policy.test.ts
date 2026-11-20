@@ -278,7 +278,9 @@ describe('policy.ts', () => {
     it('should preserve the original mode set when a session allow triggers AUTO_EDIT', async () => {
       let currentMode = ApprovalMode.DEFAULT;
       const mockConfig = {
-        getApprovalMode: vi.fn(() => currentMode),
+        getApprovalMode: vi.fn(function () {
+          return currentMode;
+        }),
         setApprovalMode: vi.fn((mode: ApprovalMode) => {
           currentMode = mode;
         }),

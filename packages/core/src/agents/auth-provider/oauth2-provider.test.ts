@@ -15,20 +15,24 @@ vi.mock('@a2a-js/sdk/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@a2a-js/sdk/client')>();
   return {
     ...actual,
-    DefaultAgentCardResolver: vi.fn().mockImplementation(() => ({
-      resolve: mockResolve,
-    })),
+    DefaultAgentCardResolver: vi.fn().mockImplementation(function () {
+      return {
+        resolve: mockResolve,
+      };
+    }),
   };
 });
 
 // Mock all external dependencies.
 vi.mock('../../mcp/oauth-token-storage.js', () => {
-  const MCPOAuthTokenStorage = vi.fn().mockImplementation(() => ({
-    getCredentials: vi.fn().mockResolvedValue(null),
-    saveToken: vi.fn().mockResolvedValue(undefined),
-    deleteCredentials: vi.fn().mockResolvedValue(undefined),
-    isTokenExpired: vi.fn().mockReturnValue(false),
-  }));
+  const MCPOAuthTokenStorage = vi.fn().mockImplementation(function () {
+    return {
+      getCredentials: vi.fn().mockResolvedValue(null),
+      saveToken: vi.fn().mockResolvedValue(undefined),
+      deleteCredentials: vi.fn().mockResolvedValue(undefined),
+      isTokenExpired: vi.fn().mockReturnValue(false),
+    };
+  });
   return { MCPOAuthTokenStorage };
 });
 
@@ -84,9 +88,8 @@ vi.mock('../../utils/debugLogger.js', () => ({
 }));
 
 // Re-import mocked modules for assertions.
-const { MCPOAuthTokenStorage } = await import(
-  '../../mcp/oauth-token-storage.js'
-);
+const { MCPOAuthTokenStorage } =
+  await import('../../mcp/oauth-token-storage.js');
 const {
   refreshAccessToken,
   exchangeCodeForToken,

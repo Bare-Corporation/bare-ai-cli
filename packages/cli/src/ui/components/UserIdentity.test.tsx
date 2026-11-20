@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,9 +20,11 @@ vi.mock('@bare-ai/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
-    UserAccountManager: vi.fn().mockImplementation(() => ({
-      getCachedGoogleAccount: () => 'test@example.com',
-    })),
+    UserAccountManager: vi.fn().mockImplementation(function () {
+      return {
+        getCachedGoogleAccount: () => 'test@example.com',
+      };
+    }),
   };
 });
 
@@ -69,12 +72,11 @@ describe('<UserIdentity />', () => {
 
   it('should render login message if email is missing', async () => {
     // Modify the mock for this specific test
-    vi.mocked(UserAccountManager).mockImplementationOnce(
-      () =>
-        ({
-          getCachedGoogleAccount: () => undefined,
-        }) as unknown as UserAccountManager,
-    );
+    vi.mocked(UserAccountManager).mockImplementationOnce(function () {
+      return {
+        getCachedGoogleAccount: () => undefined,
+      } as unknown as UserAccountManager;
+    });
 
     const mockConfig = makeFakeConfig();
     vi.spyOn(mockConfig, 'getContentGeneratorConfig').mockReturnValue({

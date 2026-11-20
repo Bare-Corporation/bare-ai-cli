@@ -26,15 +26,16 @@ import { createMockMessageBus } from '@bare-ai/core/src/test-utils/mock-message-
 
 // Mock Core Scheduler
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
-    Scheduler: vi.fn().mockImplementation(() => ({
-      schedule: vi.fn().mockResolvedValue([]),
-      cancelAll: vi.fn(),
-      dispose: vi.fn(),
-    })),
+    Scheduler: vi.fn().mockImplementation(function () {
+      return {
+        schedule: vi.fn().mockResolvedValue([]),
+        cancelAll: vi.fn(),
+        dispose: vi.fn(),
+      };
+    }),
   };
 });
 
@@ -275,13 +276,12 @@ describe('useToolScheduler', () => {
 
     // Mock the specific return value for this test
     const { Scheduler } = await import('@bare-ai/core');
-    vi.mocked(Scheduler).mockImplementation(
-      () =>
-        ({
-          schedule: vi.fn().mockResolvedValue([completedToolCall]),
-          cancelAll: vi.fn(),
-        }) as unknown as Scheduler,
-    );
+    vi.mocked(Scheduler).mockImplementation(function () {
+      return {
+        schedule: vi.fn().mockResolvedValue([completedToolCall]),
+        cancelAll: vi.fn(),
+      } as unknown as Scheduler;
+    });
 
     const { result } = await renderHook(() =>
       useToolScheduler(onComplete, mockConfig, () => undefined),

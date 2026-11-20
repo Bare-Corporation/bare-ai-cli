@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -36,11 +37,12 @@ describe('ExtensionStorage', () => {
   beforeEach(() => {
     vi.mocked(os.homedir).mockReturnValue(mockHomeDir);
     vi.mocked(Storage).mockImplementation(
-      () =>
-        ({
+      function () {
+        return {
           getExtensionsDir: () =>
             path.join(mockHomeDir, '.gemini', 'extensions'),
-        }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        } as any;
+      }, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
     storage = new ExtensionStorage(extensionName);
   });

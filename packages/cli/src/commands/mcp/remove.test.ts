@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -42,11 +43,15 @@ vi.mock('../utils.js', () => ({
 }));
 
 vi.mock('../../config/trustedFolders.js', () => ({
-  isWorkspaceTrusted: vi.fn(() => ({
-    isTrusted: true,
-    source: undefined,
-  })),
-  isFolderTrustEnabled: vi.fn(() => false),
+  isWorkspaceTrusted: vi.fn(function () {
+    return {
+      isTrusted: true,
+      source: undefined,
+    };
+  }),
+  isFolderTrustEnabled: vi.fn(function () {
+    return false;
+  }),
 }));
 
 describe('mcp remove command', () => {

@@ -157,7 +157,7 @@ and will never be auto-unassigned.
 ### 6. Release automation
 
 This workflow handles the process of packaging and publishing new versions of
-Gemini CLI.
+Bare AI CLI.
 
 - **Workflow File**: `.github/workflows/release-manual.yml`
 - **When it runs**: On a daily schedule for "nightly" releases, and manually for

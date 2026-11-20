@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -46,9 +47,9 @@ describe('handleValidate', () => {
     debugLoggerLogSpy = vi.spyOn(debugLogger, 'log');
     debugLoggerWarnSpy = vi.spyOn(debugLogger, 'warn');
     debugLoggerErrorSpy = vi.spyOn(debugLogger, 'error');
-    processSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation(() => undefined as never);
+    processSpy = vi.spyOn(process, 'exit').mockImplementation(function () {
+      return undefined as never;
+    });
     tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'test-home'));
     tempWorkspaceDir = fs.mkdtempSync(path.join(tempHomeDir, 'test-workspace'));
     vi.spyOn(process, 'cwd').mockReturnValue(tempWorkspaceDir);

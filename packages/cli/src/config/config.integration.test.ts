@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -18,10 +19,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 import type { ConfigParameters } from '@bare-ai/core';
-import {
-  Config,
-  DEFAULT_FILE_FILTERING_OPTIONS,
-} from '@bare-ai/core';
+import { Config, DEFAULT_FILE_FILTERING_OPTIONS } from '@bare-ai/core';
 import { createTestMergedSettings } from './settings.js';
 import { http, HttpResponse } from 'msw';
 
@@ -49,9 +47,11 @@ vi.mock('@bare-ai/core', async () => {
   const actual = await vi.importActual('@bare-ai/core');
   return {
     ...actual,
-    FileDiscoveryService: vi.fn().mockImplementation(() => ({
-      initialize: vi.fn(),
-    })),
+    FileDiscoveryService: vi.fn().mockImplementation(function () {
+      return {
+        initialize: vi.fn(),
+      };
+    }),
     createToolRegistry: vi.fn().mockResolvedValue({}),
   };
 });

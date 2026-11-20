@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,10 +20,12 @@ vi.mock('./headless.js', () => ({
 }));
 vi.mock('./stdio.js', () => ({
   writeToStdout: vi.fn(),
-  createWorkingStdio: vi.fn(() => ({
-    stdout: process.stdout,
-    stderr: process.stderr,
-  })),
+  createWorkingStdio: vi.fn(function () {
+    return {
+      stdout: process.stdout,
+      stderr: process.stderr,
+    };
+  }),
 }));
 
 describe('getConsentForOauth', () => {

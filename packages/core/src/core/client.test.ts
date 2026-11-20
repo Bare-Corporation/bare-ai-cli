@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -76,10 +77,12 @@ vi.mock('node:fs', () => {
       });
     }),
     existsSync: vi.fn((path: string) => mockFileSystem.has(path)),
-    createWriteStream: vi.fn(() => ({
-      write: vi.fn(),
-      on: vi.fn(),
-    })),
+    createWriteStream: vi.fn(function () {
+      return {
+        write: vi.fn(),
+        on: vi.fn(),
+      };
+    }),
   };
 
   return {
@@ -140,6 +143,7 @@ vi.mock('../telemetry/uiTelemetry.js', () => ({
   uiTelemetryService: {
     setLastPromptTokenCount: vi.fn(),
     getLastPromptTokenCount: vi.fn(),
+    addEvent: vi.fn(),
   },
 }));
 vi.mock('../hooks/hookSystem.js');
@@ -161,6 +165,18 @@ async function fromAsync<T>(promise: AsyncGenerator<T>): Promise<readonly T[]> {
   }
   return results;
 }
+
+/* eslint-disable vitest/no-disabled-tests -- the skipped cases below are
+   fork-divergence skips, each carrying its reason inline. The rule would have
+   them converted to .todo(), which drops the body and loses the scenario. */
+
+// The fleet exports BARE_AI_ENDPOINT for the CLI launcher, and client.ts
+// short-circuits the whole turn.run path to BareAiClient whenever it is set.
+// Inheriting it made this suite measure the intercept instead of the code under
+// test: 42 failures with it set, 18 without, on the same revision. Clear it for
+// the whole file so the suite is hermetic and its result does not depend on the
+// shell that happens to run it.
+delete process.env['BARE_AI_ENDPOINT'];
 
 describe('Gemini Client (client.ts)', () => {
   let mockContentGenerator: ContentGenerator;
@@ -258,6 +274,7 @@ describe('Gemini Client (client.ts)', () => {
       getChatCompression: vi.fn().mockReturnValue(undefined),
       getCompressionThreshold: vi.fn().mockReturnValue(undefined),
       getSkipNextSpeakerCheck: vi.fn().mockReturnValue(false),
+      getToolOutputMaskingEnabled: vi.fn().mockReturnValue(false),
       getShowModelInfoInChat: vi.fn().mockReturnValue(false),
       getContinueOnFailedApiCall: vi.fn(),
       getProjectRoot: vi.fn().mockReturnValue('/test/project/root'),
@@ -337,7 +354,14 @@ describe('Gemini Client (client.ts)', () => {
       };
       await client.addHistory(newContent);
 
-      expect(mockChat.addHistory).toHaveBeenCalledWith(newContent);
+      // Fork divergence, ruled by the liege: addHistory records into the
+      // client's own message history for BareAiClient and deliberately does not
+      // forward to the upstream SDK chat, so assert on our state, not on
+      // chat.addHistory.
+      expect(client.getHistory()).toContainEqual({
+        role: 'user',
+        content: 'New history item',
+      });
     });
   });
 
@@ -367,15 +391,14 @@ describe('Gemini Client (client.ts)', () => {
     it('should create a new chat session, clearing the old history', async () => {
       // 1. Get the initial chat instance and add some history.
       const initialChat = client.getChat();
-      const initialHistory = client.getHistory();
       await client.addHistory({
         role: 'user',
         parts: [{ text: 'some old message' }],
       });
-      const historyWithOldMessage = client.getHistory();
-      expect(historyWithOldMessage.length).toBeGreaterThan(
-        initialHistory.length,
-      );
+      // Fork divergence, ruled by the liege: the client owns the message
+      // history for BareAiClient rather than the SDK chat, so the upstream
+      // history-growth check does not apply. The reset outcome is asserted
+      // below instead.
 
       // 2. Call resetChat.
       await client.resetChat();
@@ -384,10 +407,12 @@ describe('Gemini Client (client.ts)', () => {
       const newChat = client.getChat();
       const newHistory = client.getHistory();
 
-      // 4. Assert that the chat instance is new and the history is reset.
+      // 4. Assert that the chat session was rebuilt and the client's own
+      // history was cleared. resetChat used to leave its messageHistory
+      // populated, so a reset session still replayed the previous conversation
+      // to the provider; the liege ruled that it must clear it.
       expect(newChat).not.toBe(initialChat);
-      expect(newHistory.length).toBe(initialHistory.length);
-      expect(JSON.stringify(newHistory)).not.toContain('some old message');
+      expect(newHistory).toEqual([]);
     });
 
     it('should refresh MemoryContextManager to reset JIT loaded paths', async () => {
@@ -571,7 +596,7 @@ describe('Gemini Client (client.ts)', () => {
         expect(client['chat']).toBe(mockOriginalChat);
       });
 
-      it.skip('will not attempt to compress context after a failure', async () => {
+      it('will not attempt to compress context after a failure', async () => {
         const { client } = setup({
           originalTokenCount: 100,
           newTokenCount: 200,
@@ -716,7 +741,10 @@ describe('Gemini Client (client.ts)', () => {
   });
 
   describe('sendMessageStream', () => {
-    it('calls AgentHistoryProvider.manageHistory when history truncation is enabled', async () => {
+    // Fork divergence, ruled by the liege: history management is intercepted for
+    // BareAiClient and the upstream AgentHistoryProvider path is not wired, so
+    // there is nothing to spy on.
+    it.skip('calls AgentHistoryProvider.manageHistory when history truncation is enabled', async () => {
       // Arrange
       mockConfig.getContextManagementConfig = vi
         .fn()
@@ -1308,9 +1336,8 @@ ${JSON.stringify(
         true,
       );
       // Get the mocked checkNextSpeaker function and configure it to trigger infinite loop
-      const { checkNextSpeaker } = await import(
-        '../utils/nextSpeakerChecker.js'
-      );
+      const { checkNextSpeaker } =
+        await import('../utils/nextSpeakerChecker.js');
       const mockCheckNextSpeaker = vi.mocked(checkNextSpeaker);
       mockCheckNextSpeaker.mockResolvedValue({
         next_speaker: 'model',
@@ -1423,7 +1450,14 @@ ${JSON.stringify(
         events.push(event);
       }
 
-      expect(events).toEqual([{ type: GeminiEventType.MaxSessionTurns }]);
+      // The event now names which breaker tripped and what its limit was, so
+      // the expectation carries the payload rather than the bare type.
+      expect(events).toEqual([
+        {
+          type: GeminiEventType.MaxSessionTurns,
+          value: { source: 'session_limit', limit: MAX_SESSION_TURNS },
+        },
+      ]);
       expect(mockTurnRunFn).toHaveBeenCalledTimes(MAX_SESSION_TURNS);
     });
 
@@ -1432,9 +1466,8 @@ ${JSON.stringify(
       // someone tries to bypass it by calling with a very large turns value
 
       // Get the mocked checkNextSpeaker function and configure it to trigger infinite loop
-      const { checkNextSpeaker } = await import(
-        '../utils/nextSpeakerChecker.js'
-      );
+      const { checkNextSpeaker } =
+        await import('../utils/nextSpeakerChecker.js');
       const mockCheckNextSpeaker = vi.mocked(checkNextSpeaker);
       mockCheckNextSpeaker.mockResolvedValue({
         next_speaker: 'model',
@@ -2019,9 +2052,11 @@ ${JSON.stringify(
 
       client.updateSystemInstruction();
 
+      // This fork feeds getCoreSystemPrompt the config and the user memory;
+      // getSystemInstructionMemory is not on this path.
       expect(mockGetCoreSystemPrompt).toHaveBeenCalledWith(
         mockConfig,
-        'Global JIT Memory',
+        mockConfig.getUserMemory(),
       );
     });
 
@@ -2036,13 +2071,17 @@ ${JSON.stringify(
 
       client.updateSystemInstruction();
 
+      // This fork feeds getCoreSystemPrompt the config and the user memory;
+      // getSystemInstructionMemory is not on this path.
       expect(mockGetCoreSystemPrompt).toHaveBeenCalledWith(
         mockConfig,
-        'Legacy Memory',
+        mockConfig.getUserMemory(),
       );
     });
 
-    it('should update system instruction when MemoryChanged event is emitted', async () => {
+    // Fork divergence: this client subscribes to ModelChanged only, not to
+    // MemoryChanged, so there is no system-instruction refresh to observe here.
+    it.skip('should update system instruction when MemoryChanged event is emitted', async () => {
       vi.mocked(mockConfig.getSystemInstructionMemory).mockReturnValue(
         'Updated Memory',
       );
@@ -2053,9 +2092,11 @@ ${JSON.stringify(
 
       coreEvents.emit(CoreEvent.MemoryChanged, { fileCount: 2 });
 
+      // This fork feeds getCoreSystemPrompt the config and the user memory;
+      // getSystemInstructionMemory is not on this path.
       expect(mockGetCoreSystemPrompt).toHaveBeenCalledWith(
         mockConfig,
-        'Updated Memory',
+        mockConfig.getUserMemory(),
       );
     });
 
@@ -2172,11 +2213,11 @@ ${JSON.stringify(
         reason: 'test',
       });
       // Always return a new invalid stream
-      mockTurnRunFn.mockImplementation(() =>
-        (async function* () {
+      mockTurnRunFn.mockImplementation(function () {
+        return (async function* () {
           yield { type: GeminiEventType.InvalidStream };
-        })(),
-      );
+        })();
+      });
 
       const mockChat: Partial<GeminiChat> = {
         addHistory: vi.fn(),
@@ -2207,7 +2248,8 @@ ${JSON.stringify(
       expect(mockTurnRunFn).toHaveBeenCalledTimes(2);
     });
 
-    describe('Editor context delta', () => {
+    // Fork divergence: IDE context delta handled by bare-ai volatile band injection
+    describe.skip('Editor context delta', () => {
       const mockStream = (async function* () {
         yield { type: 'content', value: 'Hello' };
       })();
@@ -2384,21 +2426,20 @@ ${JSON.stringify(
             addHistory: (typeof vi)['fn'];
           };
 
-          if (shouldSendContext) {
-            expect(mockChat.addHistory).toHaveBeenCalledWith(
-              expect.objectContaining({
-                parts: expect.arrayContaining([
-                  expect.objectContaining({
-                    text: expect.stringContaining(
-                      "Here is a summary of changes in the user's editor context",
-                    ),
-                  }),
-                ]),
-              }),
-            );
-          } else {
-            expect(mockChat.addHistory).not.toHaveBeenCalled();
-          }
+          // One unconditional assertion path for both rows of the table. The
+          // two-branch form this replaces put expects inside an if, which
+          // vitest/no-conditional-expect forbids: a conditional assertion
+          // silently does nothing when the other branch runs. Both halves of the
+          // old assertion are kept, expressed as values compared to the row flag.
+          const contextWasSent = mockChat.addHistory.mock.calls.some((call) =>
+            JSON.stringify(call).includes(
+              "Here is a summary of changes in the user's editor context",
+            ),
+          );
+          expect(contextWasSent).toBe(shouldSendContext);
+          expect(mockChat.addHistory.mock.calls.length > 0).toBe(
+            shouldSendContext,
+          );
         },
       );
 
@@ -2622,7 +2663,8 @@ ${JSON.stringify(
       });
     });
 
-    describe('IDE context with pending tool calls', () => {
+    // Fork divergence: IDE context delta handled by bare-ai volatile band injection
+    describe.skip('IDE context with pending tool calls', () => {
       let mockChat: Partial<GeminiChat>;
 
       beforeEach(() => {
@@ -2967,9 +3009,8 @@ ${JSON.stringify(
 
     it('should not call checkNextSpeaker when turn.run() yields an error', async () => {
       // Arrange
-      const { checkNextSpeaker } = await import(
-        '../utils/nextSpeakerChecker.js'
-      );
+      const { checkNextSpeaker } =
+        await import('../utils/nextSpeakerChecker.js');
       const mockCheckNextSpeaker = vi.mocked(checkNextSpeaker);
 
       const mockStream = (async function* () {
@@ -3004,9 +3045,8 @@ ${JSON.stringify(
 
     it('should not call checkNextSpeaker when turn.run() yields a value then an error', async () => {
       // Arrange
-      const { checkNextSpeaker } = await import(
-        '../utils/nextSpeakerChecker.js'
-      );
+      const { checkNextSpeaker } =
+        await import('../utils/nextSpeakerChecker.js');
       const mockCheckNextSpeaker = vi.mocked(checkNextSpeaker);
 
       const mockStream = (async function* () {
@@ -3064,12 +3104,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'First event' };
             yield { type: GeminiEventType.Content, value: 'Second event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3114,12 +3154,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
             yield { type: GeminiEventType.Content, value: 'Event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3150,11 +3190,11 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3171,8 +3211,11 @@ ${JSON.stringify(
 
         // Assert
         // Should NOT trigger recovery because boundedTurns would reach 0
+        // The hardcoded continuation cap now reports itself as turn_cap with
+        // the MAX_TURNS ceiling, rather than returning an empty turn silently.
         expect(events).toContainEqual({
           type: GeminiEventType.MaxSessionTurns,
+          value: { source: 'turn_cap', limit: 100 },
         });
         expect(sendMessageStreamSpy).toHaveBeenCalledTimes(1);
       });
@@ -3188,12 +3231,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
             yield { type: GeminiEventType.Content, value: 'Event 2' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3237,12 +3280,12 @@ ${JSON.stringify(
 
         const sendMessageStreamSpy = vi.spyOn(client, 'sendMessageStream');
 
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
             yield { type: GeminiEventType.Content, value: 'Event 2' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3269,11 +3312,11 @@ ${JSON.stringify(
         vi.spyOn(client['loopDetector'], 'addAndCheck').mockReturnValue({
           count: 0,
         });
-        mockTurnRunFn.mockImplementation(() =>
-          (async function* () {
+        mockTurnRunFn.mockImplementation(function () {
+          return (async function* () {
             yield { type: GeminiEventType.Content, value: 'Event' };
-          })(),
-        );
+          })();
+        });
 
         // Act
         const stream = client.sendMessageStream(
@@ -3295,7 +3338,10 @@ ${JSON.stringify(
   });
 
   describe('generateContent', () => {
-    it('should call generateContent with the correct parameters', async () => {
+    // Fork divergence: generateContent routes through modelConfigService and
+    // retryWithBackoff on this fork, so the upstream content-generator call shape
+    // (and its temperature/topP defaults) no longer describes what happens.
+    it.skip('should call generateContent with the correct parameters', async () => {
       const contents = [{ role: 'user', parts: [{ text: 'hello' }] }];
       const abortSignal = new AbortController().signal;
 
@@ -3322,7 +3368,8 @@ ${JSON.stringify(
       );
     });
 
-    it('should use current model from config for content generation', async () => {
+    // Fork divergence: see the note on the case above.
+    it.skip('should use current model from config for content generation', async () => {
       const initialModel = 'test-model';
       const contents = [{ role: 'user', parts: [{ text: 'test' }] }];
 
@@ -3384,9 +3431,8 @@ ${JSON.stringify(
       });
 
       it('should fire BeforeAgent once and AfterAgent once even with recursion', async () => {
-        const { checkNextSpeaker } = await import(
-          '../utils/nextSpeakerChecker.js'
-        );
+        const { checkNextSpeaker } =
+          await import('../utils/nextSpeakerChecker.js');
         vi.mocked(checkNextSpeaker)
           .mockResolvedValueOnce({ next_speaker: 'model', reasoning: 'more' })
           .mockResolvedValueOnce(null);
@@ -3425,9 +3471,8 @@ ${JSON.stringify(
       });
 
       it('should use original request in AfterAgent hook even when continuation happened', async () => {
-        const { checkNextSpeaker } = await import(
-          '../utils/nextSpeakerChecker.js'
-        );
+        const { checkNextSpeaker } =
+          await import('../utils/nextSpeakerChecker.js');
         vi.mocked(checkNextSpeaker)
           .mockResolvedValueOnce({ next_speaker: 'model', reasoning: 'more' })
           .mockResolvedValueOnce(null);

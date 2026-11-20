@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -23,13 +24,25 @@ vi.mock('node:fs', () => ({
 
 vi.mock('node:os', () => ({
   default: {
-    homedir: vi.fn(() => '/home/test'),
-    hostname: vi.fn(() => 'test-host'),
-    userInfo: vi.fn(() => ({ username: 'test-user' })),
+    homedir: vi.fn(function () {
+      return '/home/test';
+    }),
+    hostname: vi.fn(function () {
+      return 'test-host';
+    }),
+    userInfo: vi.fn(function () {
+      return { username: 'test-user' };
+    }),
   },
-  homedir: vi.fn(() => '/home/test'),
-  hostname: vi.fn(() => 'test-host'),
-  userInfo: vi.fn(() => ({ username: 'test-user' })),
+  homedir: vi.fn(function () {
+    return '/home/test';
+  }),
+  hostname: vi.fn(function () {
+    return 'test-host';
+  }),
+  userInfo: vi.fn(function () {
+    return { username: 'test-user' };
+  }),
 }));
 
 describe('FileTokenStorage', () => {

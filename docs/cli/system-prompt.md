@@ -1,6 +1,6 @@
 # System Prompt Override (GEMINI_SYSTEM_MD)
 
-The core system instructions that guide Gemini CLI can be completely replaced
+The core system instructions that guide Bare AI CLI can be completely replaced
 with your own Markdown file. This feature is controlled via the
 `GEMINI_SYSTEM_MD` environment variable.
 
@@ -80,8 +80,7 @@ dynamically include built-in content:
 ```markdown
 # Custom System Prompt
 
-You are a helpful assistant. ${AgentSkills}
-${SubAgents}
+You are a helpful assistant. ${AgentSkills} ${SubAgents}
 
 ## Tooling
 

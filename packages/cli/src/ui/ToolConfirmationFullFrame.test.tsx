@@ -21,7 +21,9 @@ vi.mock('ink', async (importOriginal) => {
   const original = await importOriginal<typeof import('ink')>();
   return {
     ...original,
-    useIsScreenReaderEnabled: vi.fn(() => false),
+    useIsScreenReaderEnabled: vi.fn(function () {
+      return false;
+    }),
   };
 });
 
@@ -45,7 +47,9 @@ vi.mock('./hooks/useModelCommand.js');
 vi.mock('./hooks/slashCommandProcessor.js');
 vi.mock('./hooks/useConsoleMessages.js');
 vi.mock('./hooks/useTerminalSize.js', () => ({
-  useTerminalSize: vi.fn(() => ({ columns: 100, rows: 30 })),
+  useTerminalSize: vi.fn(function () {
+    return { columns: 100, rows: 30 };
+  }),
 }));
 
 describe('Full Terminal Tool Confirmation Snapshot', () => {

@@ -21,14 +21,15 @@ const { mockAcceptIntegrity } = vi.hoisted(() => ({
 
 // Mock PolicyIntegrityManager
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...original,
-    PolicyIntegrityManager: vi.fn().mockImplementation(() => ({
-      acceptIntegrity: mockAcceptIntegrity,
-      checkIntegrity: vi.fn(),
-    })),
+    PolicyIntegrityManager: vi.fn().mockImplementation(function () {
+      return {
+        acceptIntegrity: mockAcceptIntegrity,
+        checkIntegrity: vi.fn(),
+      };
+    }),
   };
 });
 

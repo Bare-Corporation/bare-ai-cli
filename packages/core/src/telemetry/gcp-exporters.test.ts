@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -25,23 +26,29 @@ const mockLogging = {
 };
 
 vi.mock('@google-cloud/opentelemetry-cloud-trace-exporter', () => ({
-  TraceExporter: vi.fn().mockImplementation(() => ({
-    export: vi.fn(),
-    shutdown: vi.fn(),
-    forceFlush: vi.fn(),
-  })),
+  TraceExporter: vi.fn().mockImplementation(function () {
+    return {
+      export: vi.fn(),
+      shutdown: vi.fn(),
+      forceFlush: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('@google-cloud/opentelemetry-cloud-monitoring-exporter', () => ({
-  MetricExporter: vi.fn().mockImplementation(() => ({
-    export: vi.fn(),
-    shutdown: vi.fn(),
-    forceFlush: vi.fn(),
-  })),
+  MetricExporter: vi.fn().mockImplementation(function () {
+    return {
+      export: vi.fn(),
+      shutdown: vi.fn(),
+      forceFlush: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock('@google-cloud/logging', () => ({
-  Logging: vi.fn().mockImplementation(() => mockLogging),
+  Logging: vi.fn().mockImplementation(function () {
+    return mockLogging;
+  }),
 }));
 
 describe('GCP Exporters', () => {

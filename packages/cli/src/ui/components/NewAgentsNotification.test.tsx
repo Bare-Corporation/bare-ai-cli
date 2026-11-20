@@ -77,12 +77,11 @@ describe('NewAgentsNotification', () => {
   });
 
   it('shows processing state when an option is selected', async () => {
-    const asyncOnSelect = vi.fn(
-      () =>
-        new Promise<void>(() => {
-          // Never resolve
-        }),
-    );
+    const asyncOnSelect = vi.fn(function () {
+      return new Promise<void>(() => {
+        // Never resolve
+      });
+    });
 
     const { lastFrame, stdin, unmount } = await render(
       <NewAgentsNotification agents={mockAgents} onSelect={asyncOnSelect} />,

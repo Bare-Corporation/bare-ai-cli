@@ -11,12 +11,14 @@ import type { A2AAuthConfig } from './types.js';
 
 // Mock token storage so OAuth2AuthProvider.initialize() works without disk I/O.
 vi.mock('../../mcp/oauth-token-storage.js', () => {
-  const MCPOAuthTokenStorage = vi.fn().mockImplementation(() => ({
-    getCredentials: vi.fn().mockResolvedValue(null),
-    saveToken: vi.fn().mockResolvedValue(undefined),
-    deleteCredentials: vi.fn().mockResolvedValue(undefined),
-    isTokenExpired: vi.fn().mockReturnValue(false),
-  }));
+  const MCPOAuthTokenStorage = vi.fn().mockImplementation(function () {
+    return {
+      getCredentials: vi.fn().mockResolvedValue(null),
+      saveToken: vi.fn().mockResolvedValue(undefined),
+      deleteCredentials: vi.fn().mockResolvedValue(undefined),
+      isTokenExpired: vi.fn().mockReturnValue(false),
+    };
+  });
   return { MCPOAuthTokenStorage };
 });
 

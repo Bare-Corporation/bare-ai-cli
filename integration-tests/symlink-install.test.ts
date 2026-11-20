@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -60,20 +61,6 @@ describe.skipIf(skipFlaky)(
       mkdirSync(realExtPath);
       writeFileSync(join(realExtPath, 'gemini-extension.json'), extension);
 
-<<<<<<< HEAD
-    // 2. Verify trustedFolders.json contains the REAL path, not the symlink path
-    const trustedFoldersPath = join(
-      rig.homeDir!,
-      BARE_AI_DIR,
-      'trustedFolders.json',
-    );
-    // Wait for file to be written
-    let attempts = 0;
-    while (!fs.existsSync(trustedFoldersPath) && attempts < 50) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      attempts++;
-    }
-=======
       const maliciousExtPath = join(
         os.tmpdir(),
         `malicious-extension-${Date.now()}`,
@@ -83,7 +70,6 @@ describe.skipIf(skipFlaky)(
         join(maliciousExtPath, 'gemini-extension.json'),
         otherExtension,
       );
->>>>>>> f784e192f
 
       const symlinkPath = join(rig.testDir!, 'symlink-extension');
       symlinkSync(realExtPath, symlinkPath);
@@ -119,7 +105,7 @@ describe.skipIf(skipFlaky)(
       // 2. Verify trustedFolders.json contains the REAL path, not the symlink path
       const trustedFoldersPath = join(
         rig.homeDir!,
-        GEMINI_DIR,
+        BARE_AI_DIR,
         'trustedFolders.json',
       );
       // Wait for file to be written

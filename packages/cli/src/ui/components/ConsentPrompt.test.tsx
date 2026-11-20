@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,11 +14,15 @@ import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 import { MarkdownDisplay } from '../utils/MarkdownDisplay.js';
 
 vi.mock('./shared/RadioButtonSelect.js', () => ({
-  RadioButtonSelect: vi.fn(() => null),
+  RadioButtonSelect: vi.fn(function () {
+    return null;
+  }),
 }));
 
 vi.mock('../utils/MarkdownDisplay.js', () => ({
-  MarkdownDisplay: vi.fn(() => null),
+  MarkdownDisplay: vi.fn(function () {
+    return null;
+  }),
 }));
 
 const MockedRadioButtonSelect = vi.mocked(RadioButtonSelect);

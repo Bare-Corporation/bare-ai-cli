@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -28,8 +29,7 @@ import { RELAUNCH_EXIT_CODE } from '../../utils/processUtils.js';
 
 // Mocks
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     clearCachedCredentialFile: vi.fn(),
@@ -322,9 +322,9 @@ describe('AuthDialog', () => {
 
     it('exits process for Sign in with Google when browser is suppressed', async () => {
       vi.useFakeTimers();
-      const exitSpy = vi
-        .spyOn(process, 'exit')
-        .mockImplementation(() => undefined as never);
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(function () {
+        return undefined as never;
+      });
       const logSpy = vi.spyOn(debugLogger, 'log').mockImplementation(() => {});
       vi.mocked(props.config.isBrowserLaunchSuppressed).mockReturnValue(true);
       mockedValidateAuthMethod.mockReturnValue(null);

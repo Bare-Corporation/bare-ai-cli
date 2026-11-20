@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -29,9 +30,9 @@ const mockedRunExitCleanup = runExitCleanup as Mock;
 
 describe('LoginWithGoogleRestartDialog', () => {
   const onDismiss = vi.fn();
-  const exitSpy = vi
-    .spyOn(process, 'exit')
-    .mockImplementation(() => undefined as never);
+  const exitSpy = vi.spyOn(process, 'exit').mockImplementation(function () {
+    return undefined as never;
+  });
 
   const mockConfig = {
     getRemoteAdminSettings: vi.fn(),

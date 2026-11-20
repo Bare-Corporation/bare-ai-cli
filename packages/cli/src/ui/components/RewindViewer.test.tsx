@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,14 +10,16 @@ import { act } from 'react';
 import { renderWithProviders } from '../../test-utils/render.js';
 import { RewindViewer } from './RewindViewer.js';
 import { waitFor } from '../../test-utils/async.js';
-import type {
-  ConversationRecord,
-  MessageRecord,
-} from '@bare-ai/core';
+import type { ConversationRecord, MessageRecord } from '@bare-ai/core';
 
 vi.mock('ink', async () => {
   const actual = await vi.importActual<typeof import('ink')>('ink');
-  return { ...actual, useIsScreenReaderEnabled: vi.fn(() => false) };
+  return {
+    ...actual,
+    useIsScreenReaderEnabled: vi.fn(function () {
+      return false;
+    }),
+  };
 });
 
 vi.mock('./CliSpinner.js', () => ({
@@ -33,8 +36,7 @@ vi.mock('../utils/formatters.js', async (importOriginal) => {
 });
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const original = await importOriginal<typeof import('@bare-ai/core')>();
 
   const partToStringRecursive = (part: unknown): string => {
     if (!part) {

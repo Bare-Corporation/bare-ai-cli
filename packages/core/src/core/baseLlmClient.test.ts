@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -686,7 +687,9 @@ describe('BaseLlmClient', () => {
       const firstModel = 'gemini-pro';
       const fallbackModel = 'gemini-flash';
       let activeModel = firstModel;
-      mockConfig.getActiveModel.mockImplementation(() => activeModel);
+      mockConfig.getActiveModel.mockImplementation(function () {
+        return activeModel;
+      });
       mockConfig.setActiveModel.mockImplementation((m) => {
         activeModel = m;
       });
@@ -835,7 +838,9 @@ describe('BaseLlmClient', () => {
       // Change active model after the first attempt
       let activeModel = firstModel;
       mockConfig.setActiveModel = vi.fn(); // Prevent setActiveModel from resetting getActiveModel mock
-      mockConfig.getActiveModel.mockImplementation(() => activeModel);
+      mockConfig.getActiveModel.mockImplementation(function () {
+        return activeModel;
+      });
 
       // First response empty -> triggers retry; second response valid
       mockGenerateContent

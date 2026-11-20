@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2025 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -26,11 +27,13 @@ const mockMaybeIncludeSchemaDepthContext = vi.fn();
 
 vi.mock('@google/genai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@google/genai')>();
-  const MockChat = vi.fn().mockImplementation(() => ({
-    sendMessageStream: mockSendMessageStream,
-    getHistory: mockGetHistory,
-    maybeIncludeSchemaDepthContext: mockMaybeIncludeSchemaDepthContext,
-  }));
+  const MockChat = vi.fn().mockImplementation(function () {
+    return {
+      sendMessageStream: mockSendMessageStream,
+      getHistory: mockGetHistory,
+      maybeIncludeSchemaDepthContext: mockMaybeIncludeSchemaDepthContext,
+    };
+  });
   return {
     ...actual,
     Chat: MockChat,
