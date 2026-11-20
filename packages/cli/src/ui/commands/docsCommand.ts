@@ -19,7 +19,7 @@ export const docsCommand: SlashCommand = {
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: async (context: CommandContext): Promise<void> => {
-    const docsUrl = 'https://docs.bare-erp.com';
+    const docsUrl = 'https://github.com/Bare-Corporation/bare-ai-cli';
 
     if (process.env['SANDBOX'] && process.env['SANDBOX'] !== 'sandbox-exec') {
       context.ui.addItem(
