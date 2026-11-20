@@ -342,7 +342,7 @@ jobs:
           ref: '${{ github.event.inputs.branch_ref || github.ref }}'
 
       - name: 'Initialize CodeQL'
-        uses: 'github/codeql-action/init@df559355d593797519d70b90fc8edd5db049e7a2' # ratchet:github/codeql-action/init@v3
+        uses: 'github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd' # ratchet:github/codeql-action/init@v3
         with:
           languages: 'javascript'
 
