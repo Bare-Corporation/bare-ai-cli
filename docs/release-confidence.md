@@ -1,7 +1,7 @@
 # Release confidence strategy
 
 This document outlines the strategy for gaining confidence in every release of
-Gemini CLI. It serves as a checklist and quality gate for release manager to
+Bare AI CLI. It serves as a checklist and quality gate for release manager to
 ensure we are shipping a high-quality product.
 
 ## The goal
@@ -74,7 +74,7 @@ manually run through this checklist.
         `npm uninstall -g @google/gemini-cli`
   - [ ] Clear npx cache (optional but recommended): `npm cache clean --force`
   - [ ] Install the preview version: `npm install -g @google/gemini-cli@preview`
-  - [ ] Verify version: `gemini --version`
+  - [ ] Verify version: `bare --version`
 
 - **Authentication:**
   - [ ] In interactive mode run `/auth` and verify all sign in flows work:
@@ -83,8 +83,8 @@ manually run through this checklist.
     - [ ] Vertex AI
 
 - **Basic prompting:**
-  - [ ] Run `gemini "Tell me a joke"` and verify a sensible response.
-  - [ ] Run in interactive mode: `gemini`. Ask a follow-up question to test
+  - [ ] Run `bare "Tell me a joke"` and verify a sensible response.
+  - [ ] Run in interactive mode: `bare`. Ask a follow-up question to test
         context.
 
 - **Piped input:**
