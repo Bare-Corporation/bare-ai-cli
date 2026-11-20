@@ -5,27 +5,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import extract from 'extract-zip';
+import yauzl from 'yauzl';
+import type { Entry, ZipFile } from 'yauzl';
+import { createWriteStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import type { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
 /**
  * Hardened zip extraction shared by the extension and skill installers.
  *
- * extract-zip 2.0.1, and every earlier published version, has no patched
- * release for GHSA-7pqw-9j4j-h8q3 / GHSA-jmr9-qjv8-65gv. It does reject an
- * entry whose parent directory canonicalises outside the destination, which
- * blocks the classic "write a file through a symlink" chain, but it still
- * calls fs.symlink() with an archive-controlled target and leaves that link
- * on disk. Extracting a third-party archive before the user has consented to
- * it therefore lets the archive plant links outside the target directory.
+ * This used to delegate to extract-zip 2.0.1, but every published release of
+ * extract-zip is affected by GHSA-7pqw-9j4j-h8q3 and GHSA-jmr9-qjv8-65gv and
+ * none is patched: extract-zip hands an archive-controlled target straight to
+ * fs.symlink(), so an archive can plant links that point outside the
+ * destination. The dangerous call sits inside the dependency, so it cannot be
+ * fixed from the outside, and the dependency is gone. Extraction is done here
+ * directly over yauzl, the reader extract-zip wrapped.
  *
- * This helper closes that gap in two passes:
- *   1. an onEntry hook that aborts before the entry is written, rejecting
- *      symlink entries, absolute paths, Windows drive prefixes, '..'
- *      segments, and any destination that resolves outside the target;
- *   2. a post-extraction walk that removes and reports any symlink that
- *      still reached disk, as defence in depth.
+ * The guarantees are unchanged:
+ *   1. every entry is checked before anything is written, rejecting symlink
+ *      entries, absolute paths, Windows drive prefixes, '..' segments, and any
+ *      destination that resolves outside the target;
+ *   2. a file is only written once its parent directory's real path is
+ *      confirmed to be inside the target, so a symlink that already existed in
+ *      the destination cannot be used as a write-through;
+ *   3. no symlink is ever created, and a post-extraction walk removes and
+ *      reports any symlink that somehow reached disk, as defence in depth.
  */
 
 /** The subset of a yauzl entry the safety checks need. */
@@ -34,9 +41,10 @@ export interface ZipEntryLike {
   readonly externalFileAttributes: number;
 }
 
-/** Unix file type mask and symlink type bits, as used by extract-zip. */
+/** Unix file type mask and type bits, as recorded in the central directory. */
 const S_IFMT = 0o170000;
 const S_IFLNK = 0o120000;
+const S_IFDIR = 0o040000;
 
 /** A literal backslash, built without a source escape. */
 const BACKSLASH = String.fromCharCode(92);
@@ -63,6 +71,14 @@ export function getZipEntryMode(entry: ZipEntryLike): number {
 /** True when the entry is a Unix symlink rather than a file or directory. */
 export function isSymlinkEntry(entry: ZipEntryLike): boolean {
   return (getZipEntryMode(entry) & S_IFMT) === S_IFLNK;
+}
+
+/** True when the entry describes a directory rather than a file. */
+export function isDirectoryEntry(entry: ZipEntryLike): boolean {
+  return (
+    entry.fileName.endsWith('/') ||
+    (getZipEntryMode(entry) & S_IFMT) === S_IFDIR
+  );
 }
 
 /**
@@ -162,6 +178,70 @@ export async function assertNoSymlinks(root: string): Promise<void> {
   );
 }
 
+/** Opens a zip for lazy, entry-at-a-time reading. */
+function openZip(zipPath: string): Promise<ZipFile> {
+  return new Promise<ZipFile>((resolve, reject) => {
+    yauzl.open(zipPath, { lazyEntries: true }, (error, zipFile) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(zipFile);
+    });
+  });
+}
+
+/**
+ * Throws unless candidateDir canonicalises inside root, so a symlink that
+ * already existed in the destination cannot be used to write through it.
+ */
+async function assertResolvesInsideRoot(
+  root: string,
+  candidateDir: string,
+): Promise<void> {
+  const [realRoot, realDir] = await Promise.all([
+    fs.realpath(root),
+    fs.realpath(candidateDir),
+  ]);
+  if (realDir !== realRoot && !realDir.startsWith(realRoot + path.sep)) {
+    throw new UnsafeZipEntryError(
+      `Refusing to write through "${candidateDir}", which resolves outside ${realRoot}`,
+    );
+  }
+}
+
+/** Validates a single entry and writes it under targetDir. */
+async function extractEntry(
+  zipFile: ZipFile,
+  entry: Entry,
+  targetDir: string,
+): Promise<void> {
+  assertSafeZipEntry(entry, targetDir);
+
+  const destination = path.resolve(targetDir, entry.fileName);
+
+  if (isDirectoryEntry(entry)) {
+    await fs.mkdir(destination, { recursive: true });
+    return;
+  }
+
+  const parent = path.dirname(destination);
+  await fs.mkdir(parent, { recursive: true });
+  await assertResolvesInsideRoot(targetDir, parent);
+
+  const stream = await new Promise<Readable>((resolve, reject) => {
+    zipFile.openReadStream(entry, (error, entryStream) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(entryStream);
+    });
+  });
+
+  await pipeline(stream, createWriteStream(destination));
+}
+
 /**
  * Extracts zipPath into targetDir, refusing entries that could escape it.
  */
@@ -170,11 +250,40 @@ export async function safeExtractZip(
   targetDir: string,
 ): Promise<void> {
   const resolvedTarget = path.resolve(targetDir);
-  await extract(zipPath, {
-    dir: resolvedTarget,
-    onEntry: (entry) => {
-      assertSafeZipEntry(entry, resolvedTarget);
-    },
+  await fs.mkdir(resolvedTarget, { recursive: true });
+
+  const zipFile = await openZip(zipPath);
+
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+
+    const fail = (error: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      zipFile.close();
+      reject(error);
+    };
+
+    zipFile.on('error', fail);
+    zipFile.on('end', () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve();
+    });
+    zipFile.on('entry', (entry: Entry) => {
+      extractEntry(zipFile, entry, resolvedTarget).then(() => {
+        if (!settled) {
+          zipFile.readEntry();
+        }
+      }, fail);
+    });
+
+    zipFile.readEntry();
   });
+
   await assertNoSymlinks(resolvedTarget);
 }

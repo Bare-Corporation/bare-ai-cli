@@ -22,7 +22,7 @@ import * as os from 'node:os';
 import * as fs from 'node:fs';
 import * as https from 'node:https';
 import * as tar from 'tar';
-import * as extract from 'extract-zip';
+import { safeExtractZip } from '../../utils/safeExtractZip.js';
 import type { ExtensionManager } from '../extension-manager.js';
 import { fetchJson } from './github_fetch.js';
 import { EventEmitter } from 'node:events';
@@ -33,8 +33,7 @@ import type {
 import type { ExtensionConfig } from '../extension.js';
 
 vi.mock('@bare-ai/core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@bare-ai/core')>();
+  const actual = await importOriginal<typeof import('@bare-ai/core')>();
   return {
     ...actual,
     Storage: {
@@ -54,7 +53,9 @@ vi.mock('node:os');
 vi.mock('node:fs');
 vi.mock('node:https');
 vi.mock('tar');
-vi.mock('extract-zip');
+vi.mock('../../utils/safeExtractZip.js', () => ({
+  safeExtractZip: vi.fn(),
+}));
 vi.mock('./github_fetch.js');
 vi.mock('../extension-manager.js');
 // Mock settings.ts to avoid top-level side effects if possible, or just rely on Storage mock
@@ -320,10 +321,12 @@ describe('github.ts', () => {
         { owner: 'owner', repo: 'repo' },
       );
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.failureReason).toBe('failed to fetch release data');
-      }
+      const failure = result as {
+        success: boolean;
+        failureReason?: string;
+      };
+      expect(failure.success).toBe(false);
+      expect(failure.failureReason).toBe('failed to fetch release data');
     });
 
     it('should use correct headers for release assets', async () => {
@@ -636,10 +639,12 @@ describe('github.ts', () => {
       expect(tar.x).toHaveBeenCalled();
     });
 
-    it('should extract zip using extract-zip', async () => {
-      vi.mocked(extract.default || extract).mockResolvedValue(undefined);
+    it('should extract zip using the hardened safeExtractZip helper', async () => {
+      vi.mocked(safeExtractZip).mockResolvedValue(undefined);
+
       await extractFile('file.zip', '/dest');
-      // Check if extract was called. Note: extract-zip export might be default or named depending on mock
+
+      expect(safeExtractZip).toHaveBeenCalledWith('file.zip', '/dest');
     });
 
     it('should throw for unsupported extensions', async () => {

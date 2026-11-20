@@ -71,11 +71,11 @@
     "cliui": {
       "wrap-ansi": "7.0.0"
     },
-    "glob": "^12.0.0",
+    "glob": "^14.0.2",
     "node-domexception": "npm:empty@^0.10.1",
     "prebuild-install": "npm:nop@1.0.0",
     "cross-spawn": "^7.0.6",
-    "minimatch": "^10.2.2",
+    "minimatch": "^11.0.1",
     "protobufjs": "7.6.5",
     "tar": "7.5.22",
     "@tootallnate/once": "3.0.1",
@@ -123,9 +123,8 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "glob": "^12.0.0",
+    "glob": "^14.0.2",
     "globals": "^16.0.0",
-    "google-artifactregistry-auth": "^3.4.0",
     "husky": "^9.1.7",
     "json": "^11.0.0",
     "lint-staged": "^16.1.6",
@@ -148,7 +147,6 @@
     "yargs": "^17.7.2"
   },
   "dependencies": {
-    "@joshua.litt/get-ripgrep": "^0.0.3",
     "@tootallnate/once": "3.0.1",
     "chokidar": "^5.0.0",
     "ink": "npm:@jrichman/ink@6.4.11",
