@@ -420,6 +420,7 @@ import { A2AClientManager } from '../agents/a2a-client-manager.js';
 import { type McpContext } from '../tools/mcp-client.js';
 import type { EnvironmentSanitizationConfig } from '../services/environmentSanitization.js';
 import { getErrorMessage } from '../utils/errors.js';
+import type { AuthProviderType } from './authProviderType.js';
 
 export type { FileFilteringOptions };
 export {
@@ -468,11 +469,7 @@ export class MCPServerConfig {
   ) {}
 }
 
-export enum AuthProviderType {
-  DYNAMIC_DISCOVERY = 'dynamic_discovery',
-  GOOGLE_CREDENTIALS = 'google_credentials',
-  SERVICE_ACCOUNT_IMPERSONATION = 'service_account_impersonation',
-}
+export { AuthProviderType } from './authProviderType.js';
 
 export interface SandboxConfig {
   enabled: boolean;

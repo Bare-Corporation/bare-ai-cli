@@ -73,7 +73,7 @@ Trusted Tools (Context):
 `;
 
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { zodSchemaToJsonSchema } from '../../utils/zodJsonSchema.js';
 
 const ToolPolicySchema = z.object({
   permissions: z.nativeEnum(SafetyCheckDecision),
@@ -116,7 +116,7 @@ export async function generatePolicy(
         model,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: zodToJsonSchema(SecurityPolicyResponseSchema, {
+          responseSchema: zodSchemaToJsonSchema(SecurityPolicyResponseSchema, {
             target: 'openApi3',
           }),
         },

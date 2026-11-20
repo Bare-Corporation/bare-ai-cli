@@ -69,6 +69,7 @@ export * from './core/apiKeyCredentialStorage.js';
 
 // Export utilities
 export * from './utils/fetch.js';
+export * from './utils/zodJsonSchema.js';
 export { homedir, tmpdir } from './utils/paths.js';
 export * from './utils/paths.js';
 export * from './utils/checks.js';
