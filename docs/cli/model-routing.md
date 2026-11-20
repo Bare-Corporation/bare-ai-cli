@@ -1,6 +1,6 @@
 # Model routing
 
-Gemini CLI includes a model routing feature that automatically switches to a
+Bare AI CLI includes a model routing feature that automatically switches to a
 fallback model in case of a model failure. This feature is enabled by default
 and provides resilience when the primary model is unavailable.
 
@@ -28,8 +28,8 @@ policies.
 
 ### Local Model Routing (Experimental)
 
-Gemini CLI supports using a local model for routing decisions. When configured,
-Gemini CLI will use a locally-running **Gemma** model to make routing decisions
+Bare AI CLI supports using a local model for routing decisions. When configured,
+Bare AI CLI will use a locally-running **Gemma** model to make routing decisions
 (instead of sending routing decisions to a hosted model). This feature can help
 reduce costs associated with hosted model usage while offering similar routing
 decision latency and quality.
@@ -42,7 +42,8 @@ For more details on how to configure local model routing, see
 
 ### Model selection precedence
 
-The model used by Gemini CLI is determined by the following order of precedence:
+The model used by Bare AI CLI is determined by the following order of
+precedence:
 
 1.  **`--model` command-line flag:** A model specified with the `--model` flag
     when launching the CLI will always be used.

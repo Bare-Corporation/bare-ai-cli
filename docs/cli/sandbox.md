@@ -1,11 +1,11 @@
-# Sandboxing in Gemini CLI
+# Sandboxing in Bare AI CLI
 
-This document provides a guide to sandboxing in Gemini CLI, including
+This document provides a guide to sandboxing in Bare AI CLI, including
 prerequisites, quickstart, and configuration.
 
 ## Prerequisites
 
-Before using sandboxing, you need to install and set up Gemini CLI:
+Before using sandboxing, you need to install and set up Bare AI CLI:
 
 ```bash
 npm install -g @google/gemini-cli
@@ -14,7 +14,7 @@ npm install -g @google/gemini-cli
 To verify the installation:
 
 ```bash
-gemini --version
+bare --version
 ```
 
 ## Overview of sandboxing
@@ -81,7 +81,7 @@ strong security barrier between AI operations and the host OS.
 - Docker installed and running
 - gVisor/runsc runtime configured
 
-When you set `sandbox: "runsc"`, Gemini CLI runs
+When you set `sandbox: "runsc"`, Bare AI CLI runs
 `docker run --runtime=runsc ...` to execute containers with gVisor isolation.
 runsc is not auto-detected; you must specify it explicitly (e.g.
 `GEMINI_SANDBOX=runsc` or `sandbox: "runsc"`).
@@ -103,7 +103,7 @@ such as Snapcraft and Rockcraft.
 
 - Linux only.
 - LXC/LXD must be installed (`snap install lxd` or `apt install lxd`).
-- A container must be created and running before starting Gemini CLI. Gemini
+- A container must be created and running before starting Bare AI CLI. Gemini
   does **not** create the container automatically.
 
 **Quick setup**:
@@ -117,7 +117,7 @@ lxc launch ubuntu:24.04 gemini-sandbox
 
 # Enable LXC sandboxing
 export GEMINI_SANDBOX=lxc
-gemini -p "build the project"
+bare -p "build the project"
 ```
 
 **Custom container name**:
@@ -125,7 +125,7 @@ gemini -p "build the project"
 ```bash
 export GEMINI_SANDBOX=lxc
 export GEMINI_SANDBOX_IMAGE=my-snapcraft-container
-gemini -p "build the snap"
+bare -p "build the snap"
 ```
 
 **Limitations**:
@@ -139,8 +139,8 @@ gemini -p "build the snap"
 ## Tool sandboxing
 
 Tool-level sandboxing provides granular isolation for individual tool executions
-(like `shell_exec` and `write_file`) instead of sandboxing the entire Gemini CLI
-process.
+(like `shell_exec` and `write_file`) instead of sandboxing the entire Bare AI
+CLI process.
 
 This approach offers better integration with your local environment for non-tool
 tasks (like UI rendering and configuration loading) while still providing
@@ -167,18 +167,18 @@ you can disable it by setting `security.toolSandboxing` to `false` in your
 
 ## Sandbox expansion
 
-Sandbox expansion is a dynamic permission system that lets Gemini CLI request
+Sandbox expansion is a dynamic permission system that lets Bare AI CLI request
 additional permissions for a command when needed.
 
 When a sandboxed command fails due to permission restrictions (like restricted
 file paths or network access), or when a command is proactively identified as
-requiring extra permissions (like `npm install`), Gemini CLI will present you
+requiring extra permissions (like `npm install`), Bare AI CLI will present you
 with a "Sandbox Expansion Request."
 
 ### How sandbox expansion works
 
-1.  **Detection**: Gemini CLI detects a sandbox denial or proactively identifies
-    a command that requires extra permissions.
+1.  **Detection**: Bare AI CLI detects a sandbox denial or proactively
+    identifies a command that requires extra permissions.
 2.  **Request**: A modal dialog is shown, explaining which additional
     permissions (e.g., specific directories or network access) are required.
 3.  **Approval**: If you approve the expansion, the command is executed with the
@@ -192,7 +192,7 @@ can access.
 
 ```bash
 # Enable sandboxing with command flag
-gemini -s -p "analyze the code structure"
+bare -s -p "analyze the code structure"
 ```
 
 **Use environment variable**
@@ -201,14 +201,14 @@ gemini -s -p "analyze the code structure"
 
 ```bash
 export GEMINI_SANDBOX=true
-gemini -p "run the test suite"
+bare -p "run the test suite"
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
 $env:GEMINI_SANDBOX="true"
-gemini -p "run the test suite"
+bare -p "run the test suite"
 ```
 
 **Configure in settings.json**
@@ -310,7 +310,7 @@ $env:SANDBOX_SET_UID_GID="false"  # Disable UID/GID mapping
 **Missing commands**
 
 - Add to a custom Dockerfile. Automatic `BUILD_SANDBOX` builds are only
-  available when running Gemini CLI from source; npm installs need a prebuilt
+  available when running Bare AI CLI from source; npm installs need a prebuilt
   image instead.
 - Install via `sandbox.bashrc`.
 
@@ -335,10 +335,10 @@ DEBUG=1 gemini -s -p "debug command"
 
 ```bash
 # Check environment
-gemini -s -p "run shell command: env | grep SANDBOX"
+bare -s -p "run shell command: env | grep SANDBOX"
 
 # List mounts
-gemini -s -p "run shell command: mount | grep workspace"
+bare -s -p "run shell command: mount | grep workspace"
 ```
 
 ## Security notes
