@@ -2,7 +2,10 @@
 /**
  * @license
  * Copyright 2026 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * @license
  */
 /* eslint-disable no-undef, @typescript-eslint/no-unused-vars */
 /**
@@ -51,6 +54,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Agent } from 'undici';
+import { runRoleSync } from './roleSync.js';
 
 // TLS verification bypass intentionally removed: the Vault certificate carries a
 // valid IP SAN and is trusted by the system trust store, so strict certificate
@@ -705,6 +709,21 @@ async function main() {
     // stays interactive while the prompt text is read from disk by the CLI.
     // Fallback: a legacy in-environment prompt small enough to be an argument is
     // still passed inline as -i.
+    // API-first role resolution with local fallback (see roleSync.js).
+    // This runs BEFORE the CLI reads the handoff file, so a refreshed role reaches
+    // THIS session exactly once: the swap replaces the role prefix the launcher
+    // already wrote, instead of appending a second copy of the role.
+    // A failure here is never fatal - it degrades to the local role and says why.
+    const roleSync = await runRoleSync({
+      env: process.env,
+      home: homedir(),
+      baseUrl: COUNCIL_API_BASE_URL,
+      fetchImpl: fetch,
+      fetchOptions: vaultFetchOptions,
+      promptFile: process.env.BARE_AI_SYSTEM_PROMPT_FILE,
+    });
+    console.error(roleSync.line);
+
     const spawnArgs = ['bundle/bare-ai.js', '--yolo'];
     const promptFile = resolvePromptFile();
     if (promptFile) {
