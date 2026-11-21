@@ -75,11 +75,18 @@ describe('shouldReplace', () => {
     });
   });
 
-  it('declines a body an order of magnitude smaller', () => {
+  it('declines ANY smaller registry body', () => {
     const existing = 'x'.repeat(1000);
     expect(shouldReplace(existing, 'small', false)).toEqual({
       replace: false,
-      reason: 'shrink-guard',
+      reason: 'shrink',
+    });
+  });
+
+  it('declines a body that is one character shorter', () => {
+    expect(shouldReplace('a'.repeat(100), 'b'.repeat(99), false)).toEqual({
+      replace: false,
+      reason: 'shrink',
     });
   });
 
@@ -91,8 +98,8 @@ describe('shouldReplace', () => {
     });
   });
 
-  it('replaces a comparable body', () => {
-    expect(shouldReplace('a'.repeat(100), 'b'.repeat(90), false)).toEqual({
+  it('replaces a body that grew', () => {
+    expect(shouldReplace('a'.repeat(100), 'b'.repeat(110), false)).toEqual({
       replace: true,
       reason: 'changed',
     });
@@ -295,7 +302,10 @@ describe('runRoleSync', () => {
     });
 
     expect(result.wrote).toBe(false);
-    expect(result.line).toContain('cache=shrink-guard');
+    expect(result.source).toBe('local-kept');
+    expect(result.line).toBe(
+      '[sovereign] role: local-kept (registry smaller than local)',
+    );
     expect(t.readRole()).toBe('R'.repeat(1000));
   });
 
@@ -308,6 +318,8 @@ describe('runRoleSync', () => {
       rolePath: t.rolePath,
       fetchImpl: () => Promise.reject(new Error('must not be called')),
     });
-    expect(result.line).toBe('[sovereign] role: local-fallback (no-api-key)');
+    expect(result.line).toBe(
+      '[sovereign] role: local-fallback (no-api-key: vault-unreachable)',
+    );
   });
 });

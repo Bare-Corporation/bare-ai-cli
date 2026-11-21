@@ -28,6 +28,7 @@
  */
 
 import { Buffer } from 'node:buffer';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
@@ -68,11 +69,15 @@ export function shouldReplace(existing, incoming, allowShrink) {
   if (!next.trim()) return { replace: false, reason: 'empty-body' };
   const current = normaliseText(existing);
   if (current === next) return { replace: false, reason: 'unchanged' };
-  // A body an order of magnitude smaller than the local copy is far more likely
-  // to be a bad response than a deliberate retirement, so it is refused unless
-  // the operator opts out.
-  if (!allowShrink && current.length > 0 && next.length < current.length / 10) {
-    return { replace: false, reason: 'shrink-guard' };
+  // STRICT: ANY smaller registry body is refused, not just an order-of-magnitude
+  // one. role.md is also where this node keeps lessons that have not been
+  // published yet, so losing a few kilobytes is losing work that exists nowhere
+  // else. BARE_ROLE_ALLOW_SHRINK=1 is the deliberate opt-out.
+  // NOTE: deliberately stricter than bare-role-sync.py, which tolerates a 50%
+  // drop; a pull path must not be the only thing standing between the node and
+  // unpublished local content.
+  if (!allowShrink && current.length > 0 && next.length < current.length) {
+    return { replace: false, reason: 'shrink' };
   }
   return { replace: true, reason: 'changed' };
 }
@@ -270,12 +275,164 @@ export function applyPromptSwap(promptFile, candidates, newRoleText, deps) {
  * Run the whole sync and return ONE status line plus the resolved role text.
  * deps carries the filesystem so tests never touch the real node.
  */
+/**
+ * Parse a shell env file into a plain object.
+ * Accepts both "export K=V" and bare "K=V", and strips one layer of quotes.
+ */
+export function parseVaultEnv(text) {
+  const out = {};
+  for (const raw of String(text || '').split(LF)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq === -1) continue;
+    let key = line.slice(0, eq).trim();
+    if (key.startsWith('export ')) key = key.slice(7).trim();
+    let value = line.slice(eq + 1).trim();
+    const quoted =
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"));
+    if (quoted && value.length >= 2) value = value.slice(1, -1);
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * This node's fleet suffix ("11" for machine bare-ai-11).
+ * Order matches bare-role-sync.py: explicit override, then the node_id files,
+ * then the tailnet address. Returns '' when none can be determined, and the
+ * caller then declines the Vault path rather than guessing which node it is.
+ */
+export function nodeSuffix(home, env, deps) {
+  const candidates = [];
+  const override = String(env.BARE_NODE_SUFFIX || '').trim();
+  if (override) candidates.push(override);
+  for (const rel of ['.bare-ai/node_id', '.bare-ai/config/node_id']) {
+    try {
+      candidates.push(String(deps.readFile(join(home, rel), 'utf8')).trim());
+    } catch {
+      // Not present on this node; try the next source.
+    }
+  }
+  for (const value of candidates) {
+    const digits = value.replace(/[^0-9]/g, '');
+    if (digits) return String(Number(digits)).padStart(2, '0');
+  }
+  try {
+    const out = String(deps.execCapture('tailscale', ['ip', '-4']) || '');
+    for (const line of out.split(LF)) {
+      const parts = line.trim().split('.');
+      if (
+        parts.length === 4 &&
+        parts[0] === '100' &&
+        /^[0-9]+$/.test(parts[3])
+      ) {
+        return String(Number(parts[3])).padStart(2, '0');
+      }
+    }
+  } catch {
+    // tailscale absent or offline; the caller falls back to local.
+  }
+  return '';
+}
+
+/**
+ * Obtain this node's own API key from Vault.
+ *
+ * WHY: the launcher does not export a council key, so without this the node would
+ * always take the local-fallback path. The node already holds an AppRole and a
+ * machine secret, so the key can be fetched at use time rather than configured
+ * twice in two places.
+ *
+ * Both AppRole classes are supported, as measured on this fleet: a CIDR-bound role
+ * with a stale VAULT_SECRET_ID still present makes Vault answer HTTP 400, so a 400
+ * with a secret_id is retried role_id-only. Never throws: every failure comes back
+ * as a reason, so the caller degrades to local instead of dying at launch.
+ */
+export async function fetchVaultKey(options) {
+  const env = options.env || {};
+  const home = options.home;
+  const deps = options.deps;
+  const timeoutMs = options.timeoutMs || 3000;
+
+  let text = '';
+  try {
+    text = String(
+      deps.readFile(join(home, '.bare-ai', 'config', 'vault.env'), 'utf8'),
+    );
+  } catch {
+    return { key: '', reason: 'no-vault-env' };
+  }
+  const vault = parseVaultEnv(text);
+  const addr = String(vault.VAULT_ADDR || '').replace(SLASHES, '');
+  const roleId = String(vault.VAULT_ROLE_ID || '').trim();
+  if (!addr || !roleId) return { key: '', reason: 'incomplete-vault-env' };
+
+  const suffix = nodeSuffix(home, env, deps);
+  if (!suffix) return { key: '', reason: 'no-node-suffix' };
+
+  const Controller = globalThis.AbortController;
+  const controller = new Controller();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const call = (url, init) =>
+    options.fetchImpl(url, {
+      ...init,
+      signal: controller.signal,
+      ...(options.fetchOptions || {}),
+    });
+
+  try {
+    const ident = { role_id: roleId };
+    if (vault.VAULT_SECRET_ID) ident.secret_id = vault.VAULT_SECRET_ID;
+    const login = (payload) =>
+      call(addr + '/v1/auth/approle/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+    let res = await login(ident);
+    if (!res.ok && res.status === 400 && ident.secret_id) {
+      delete ident.secret_id;
+      res = await login(ident);
+    }
+    if (!res.ok) return { key: '', reason: 'vault-login-' + res.status };
+    const body = await res.json().catch(() => null);
+    const token = body && body.auth && body.auth.client_token;
+    if (!token) return { key: '', reason: 'vault-login-no-token' };
+
+    const secretPath = 'secret/data/machines/bare-ai-' + suffix;
+    const secretRes = await call(addr + '/v1/' + secretPath, {
+      method: 'GET',
+      headers: { 'X-Vault-Token': token },
+    });
+    if (!secretRes.ok)
+      return { key: '', reason: 'vault-read-' + secretRes.status };
+    const secretBody = await secretRes.json().catch(() => null);
+    const data = (secretBody && secretBody.data && secretBody.data.data) || {};
+    const key = String(data.taskbus_api_key || data.api_key || '').trim();
+    if (!key) return { key: '', reason: 'no-key-in-machine-secret' };
+    return { key, reason: 'vault' };
+  } catch (err) {
+    const timedOut = err && err.name === 'AbortError';
+    return {
+      key: '',
+      reason: timedOut ? 'vault-timeout' : 'vault-unreachable',
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function runRoleSync(options) {
   const env = options.env || {};
   const home = options.home || homedir();
   const deps = {
     readFile: readFileSync,
     copyFile: copyFileSync,
+    execCapture: (cmd, args) =>
+      execFileSync(cmd, args, { encoding: 'utf8', timeout: 4000 }),
     ...(options.deps || {}),
   };
   const rolePath = options.rolePath || join(home, '.bare-ai', 'role.md');
@@ -288,6 +445,27 @@ export async function runRoleSync(options) {
   };
 
   const config = resolveConfig(env, home, deps.readFile);
+
+  // No BARE_COUNCIL_API_KEY exported? Try this node's own Vault credential before
+  // giving up: the node already holds an AppRole and a machine secret, so the key
+  // does not have to be configured a second time in the launcher.
+  if (!config.enabled && config.reason === 'no-api-key') {
+    const vault = await fetchVaultKey({
+      env,
+      home,
+      fetchImpl: options.fetchImpl,
+      fetchOptions: options.fetchOptions,
+      deps,
+      timeoutMs: Number(env.BARE_VAULT_TIMEOUT_MS || 3000),
+    });
+    if (vault.key) {
+      config.enabled = true;
+      config.apiKey = vault.key;
+      config.reason = 'api-key-from-vault';
+    } else {
+      config.reason = 'no-api-key: ' + vault.reason;
+    }
+  }
   if (!config.enabled) {
     return {
       source: 'local-fallback',
@@ -317,6 +495,21 @@ export async function runRoleSync(options) {
   const before = localRoleText();
   const decision = shouldReplace(before, fetched.text, config.allowShrink);
   const resolved = normaliseText(fetched.text);
+
+  // A registry body smaller than the local copy means local holds work the
+  // registry does not. Keep local, inject nothing, and say so: silently
+  // swapping in the shorter body is the failure this guard exists to prevent.
+  if (decision.reason === 'shrink') {
+    return {
+      source: 'local-kept',
+      line: '[sovereign] role: local-kept (registry smaller than local)',
+      roleText: before,
+      injected: false,
+      wrote: false,
+      version: fetched.version,
+      bytes: Buffer.byteLength(normaliseText(before), 'utf8'),
+    };
+  }
   let wrote = false;
   if (decision.replace) {
     try {
