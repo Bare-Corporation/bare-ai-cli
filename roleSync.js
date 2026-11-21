@@ -64,11 +64,21 @@ export function sha256(text) {
  * Returns a reason rather than a bare boolean so the log line can say WHY it
  * declined, which is the difference between a guard and a silent no-op.
  */
+export function trimTrailingNewlines(value) {
+  return normaliseText(value).replace(/[\n]+$/, '');
+}
+
 export function shouldReplace(existing, incoming, allowShrink) {
   const next = normaliseText(incoming);
   if (!next.trim()) return { replace: false, reason: 'empty-body' };
+  // Compare with trailing newlines trimmed on BOTH sides. The registry stores the
+  // body without a trailing newline, so a local file that ends in one is always
+  // exactly one byte "bigger" - which would otherwise trip the shrink guard on
+  // every single sync and make the API path unreachable.
   const current = normaliseText(existing);
-  if (current === next) return { replace: false, reason: 'unchanged' };
+  const nextTrim = trimTrailingNewlines(next);
+  const currentTrim = trimTrailingNewlines(current);
+  if (currentTrim === nextTrim) return { replace: false, reason: 'unchanged' };
   // STRICT: ANY smaller registry body is refused, not just an order-of-magnitude
   // one. role.md is also where this node keeps lessons that have not been
   // published yet, so losing a few kilobytes is losing work that exists nowhere
@@ -76,7 +86,11 @@ export function shouldReplace(existing, incoming, allowShrink) {
   // NOTE: deliberately stricter than bare-role-sync.py, which tolerates a 50%
   // drop; a pull path must not be the only thing standing between the node and
   // unpublished local content.
-  if (!allowShrink && current.length > 0 && next.length < current.length) {
+  if (
+    !allowShrink &&
+    currentTrim.length > 0 &&
+    nextTrim.length < currentTrim.length
+  ) {
     return { replace: false, reason: 'shrink' };
   }
   return { replace: true, reason: 'changed' };
