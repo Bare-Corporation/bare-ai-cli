@@ -12,6 +12,7 @@ import type { LoadedSettings } from '../../config/settings.js';
 const getPackageJson = vi.hoisted(() => vi.fn());
 const debugLogger = vi.hoisted(() => ({
   warn: vi.fn(),
+  debug: vi.fn(),
 }));
 vi.mock('@bare-ai/core', () => ({
   getPackageJson,
@@ -152,5 +153,65 @@ describe('checkForUpdates', () => {
       expect(result?.message).toContain('1.2.3-nightly.1 → 1.2.3-nightly.2');
       expect(result?.update.latest).toBe('1.2.3-nightly.2');
     });
+  });
+});
+
+describe('checkForUpdates with an unpublished package', () => {
+  let mockSettings: LoadedSettings;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    delete process.env['DEV'];
+    mockSettings = {
+      merged: {
+        general: {
+          enableAutoUpdateNotification: true,
+        },
+      },
+    } as LoadedSettings;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function packageNotFound(): Error {
+    const err = new Error("Package '@bare-ai/cli' could not be found");
+    // The name is what the production code matches on; the class comes from
+    // package-json and a duplicated copy in the tree would defeat instanceof.
+    err.name = 'PackageNotFoundError';
+    return err;
+  }
+
+  it('suppresses PackageNotFoundError instead of warning', async () => {
+    getPackageJson.mockResolvedValue({
+      name: '@bare-ai/cli',
+      version: '1.0.0',
+    });
+    latestVersion.mockRejectedValue(packageNotFound());
+
+    const result = await checkForUpdates(mockSettings);
+
+    expect(result).toBeNull();
+    // The regression: this printed "Failed to check for updates:
+    // PackageNotFoundError..." on every shutdown of a git checkout, which is
+    // the normal state of this fleet's nodes.
+    expect(debugLogger.warn).not.toHaveBeenCalled();
+    expect(debugLogger.debug).toHaveBeenCalled();
+  });
+
+  it('still warns for a genuine failure', async () => {
+    // Control: the suppression must be narrow. A network outage is a real
+    // problem and has to remain visible.
+    getPackageJson.mockResolvedValue({
+      name: '@bare-ai/cli',
+      version: '1.0.0',
+    });
+    latestVersion.mockRejectedValue(new Error('ETIMEDOUT'));
+
+    const result = await checkForUpdates(mockSettings);
+
+    expect(result).toBeNull();
+    expect(debugLogger.warn).toHaveBeenCalled();
   });
 });

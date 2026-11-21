@@ -16,6 +16,8 @@ import {
   shortenPath,
   normalizePath,
   resolveToRealPath,
+  isPlausiblePathCandidate,
+  MAX_PATH_CANDIDATE_LENGTH,
   makeRelative,
   deduplicateAbsolutePaths,
   toPathKey,
@@ -762,5 +764,89 @@ describe('normalizePath', () => {
       mockPlatform('linux');
       expect(toPathKey('/Tmp/Foo')).toBe(path.normalize('/Tmp/Foo'));
     });
+  });
+});
+
+describe('isPlausiblePathCandidate', () => {
+  it('accepts ordinary paths, absolute and relative', () => {
+    expect(isPlausiblePathCandidate('/repo/src/index.ts')).toBe(true);
+    expect(isPlausiblePathCandidate('src/index.ts')).toBe(true);
+    expect(isPlausiblePathCandidate('.')).toBe(true);
+  });
+
+  it('rejects text spanning lines', () => {
+    // The @-command scanner accepts a quoted token and its character class
+    // allows newlines inside those quotes, so a pasted markdown prompt arrives
+    // looking like a path. A line break is how it is told apart.
+    const lf = String.fromCharCode(10);
+    const cr = String.fromCharCode(13);
+    expect(isPlausiblePathCandidate('line one' + lf + 'line two')).toBe(false);
+    expect(isPlausiblePathCandidate('line one' + cr + 'line two')).toBe(false);
+    expect(isPlausiblePathCandidate('trailing' + lf)).toBe(false);
+  });
+
+  it('rejects anything longer than the OS can hold', () => {
+    const atLimit = 'a'.repeat(MAX_PATH_CANDIDATE_LENGTH);
+    const overLimit = 'a'.repeat(MAX_PATH_CANDIDATE_LENGTH + 1);
+    expect(isPlausiblePathCandidate(atLimit)).toBe(true);
+    expect(isPlausiblePathCandidate(overLimit)).toBe(false);
+    expect(isPlausiblePathCandidate('a'.repeat(5000))).toBe(false);
+  });
+
+  it('rejects NUL, the empty string and non-strings', () => {
+    const nul = String.fromCharCode(0);
+    expect(isPlausiblePathCandidate('a' + nul + 'b')).toBe(false);
+    expect(isPlausiblePathCandidate('')).toBe(false);
+    expect(isPlausiblePathCandidate(undefined)).toBe(false);
+    expect(isPlausiblePathCandidate(null)).toBe(false);
+    expect(isPlausiblePathCandidate(42)).toBe(false);
+    expect(isPlausiblePathCandidate({ path: '/repo' })).toBe(false);
+  });
+});
+
+describe('resolveToRealPath on candidates that are not paths', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns instead of throwing for a multi-line blob', () => {
+    // The regression this guards: this value reached realpathSync, raised
+    // ENAMETOOLONG, and because the caller awaited it from a React effect the
+    // rejection was unhandled and killed the session on quit.
+    const blob = 'line one' + String.fromCharCode(10) + 'line two';
+    expect(() => resolveToRealPath(blob)).not.toThrow();
+    expect(typeof resolveToRealPath(blob)).toBe('string');
+  });
+
+  it('returns instead of throwing for a 5000-character candidate', () => {
+    const long = '/tmp/' + 'x'.repeat(5000);
+    expect(() => resolveToRealPath(long)).not.toThrow();
+    expect(typeof resolveToRealPath(long)).toBe('string');
+  });
+
+  it('survives ENAMETOOLONG from the filesystem itself', () => {
+    // Proves the robustRealpath branch directly rather than relying on whether
+    // this host happens to raise ENAMETOOLONG for a synthetic long name.
+    const err = new Error('name too long') as NodeJS.ErrnoException;
+    err.code = 'ENAMETOOLONG';
+    vi.spyOn(fs, 'realpathSync').mockImplementation(() => {
+      throw err;
+    });
+    const lstatErr = new Error('name too long') as NodeJS.ErrnoException;
+    lstatErr.code = 'ENAMETOOLONG';
+    vi.spyOn(fs, 'lstatSync').mockImplementation(() => {
+      throw lstatErr;
+    });
+
+    const resolved = resolveToRealPath('/tmp/whatever');
+    expect(typeof resolved).toBe('string');
+    expect(resolved.length).toBeGreaterThan(0);
+  });
+
+  it('still reports a genuinely malformed path string', () => {
+    // The guard must not turn resolveToRealPath into a function that accepts
+    // anything: NUL is still an error, as it was before this change.
+    const nul = String.fromCharCode(0);
+    expect(() => resolveToRealPath('/tmp/' + nul)).toThrow(/Invalid path/);
   });
 });

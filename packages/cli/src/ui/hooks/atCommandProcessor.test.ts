@@ -7,7 +7,7 @@
 
 import type { Mock } from 'vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { handleAtCommand } from './atCommandProcessor.js';
+import { checkPermissions, handleAtCommand } from './atCommandProcessor.js';
 import type { Config, DiscoveredMCPResource } from '@bare-ai/core';
 import {
   FileDiscoveryService,
@@ -1480,5 +1480,75 @@ describe('handleAtCommand', () => {
     expect(result.processedQuery).toContainEqual(
       expect.objectContaining({ text: expectedNudge }),
     );
+  });
+});
+
+describe('checkPermissions guards text that is not a path', () => {
+  let tmpDir: string;
+  let config: Config;
+
+  beforeAll(async () => {
+    tmpDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'at-perm-'));
+    await fsPromises.writeFile(path.join(tmpDir, 'real.txt'), 'contents');
+    config = {
+      getTargetDir: () => tmpDir,
+      getAgentRegistry: () => undefined,
+      getResourceRegistry: () => ({ findResourceByUri: () => undefined }),
+      validatePathAccess: () => true,
+    } as unknown as Config;
+  });
+
+  afterAll(async () => {
+    await fsPromises.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('still reports a genuine file reference (control)', async () => {
+    // Without this case the guards below could be passing because the whole
+    // function stopped working, which would prove nothing.
+    const result = await checkPermissions('@real.txt', config);
+    expect(result).toHaveLength(1);
+    expect(result[0].endsWith('real.txt')).toBe(true);
+  });
+
+  it('ignores a quoted multi-line prompt instead of throwing', async () => {
+    // The crash: the scanner's quoted-token branch allows newlines, so pasted
+    // markdown arrives as one path, realpathSync raised ENAMETOOLONG, and the
+    // rejection escaped the React effect that awaits this.
+    const lf = String.fromCharCode(10);
+    const query = '@"' + 'line one' + lf + 'line two' + lf + 'line three"';
+    let result: string[] = [];
+    await expect(
+      (async () => {
+        result = await checkPermissions(query, config);
+      })(),
+    ).resolves.toBeUndefined();
+    expect(result).toEqual([]);
+  });
+
+  it('ignores an over-long token', async () => {
+    const query = '@' + 'a'.repeat(5000);
+    const result = await checkPermissions(query, config);
+    expect(result).toEqual([]);
+  });
+
+  it('skips the text but keeps the real file in the same query', async () => {
+    const lf = String.fromCharCode(10);
+    const query = '@"prompt' + lf + 'text" @real.txt';
+    const result = await checkPermissions(query, config);
+    expect(result).toHaveLength(1);
+    expect(result[0].endsWith('real.txt')).toBe(true);
+  });
+
+  it('requests no permission when the candidate cannot be resolved', async () => {
+    // Second line of defence: a candidate that passes the plausibility test but
+    // still fails resolution must not abort the submit path.
+    // Object.assign rather than a spread: spreading an instance loses the
+    // prototype, which lint rejects and which would make this mock describe
+    // something the real Config is not.
+    const brokenConfig = Object.assign({}, config, {
+      getTargetDir: () => '\u0000not-a-directory',
+    }) as Config;
+    const result = await checkPermissions('@real.txt', brokenConfig);
+    expect(result).toEqual([]);
   });
 });

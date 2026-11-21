@@ -388,6 +388,50 @@ export function assertValidPathString(p: unknown): asserts p is string {
 }
 
 /**
+ * The longest candidate worth handing to the filesystem.
+ *
+ * Linux caps a whole path at PATH_MAX (4096) and one component at NAME_MAX
+ * (255); other platforms are looser but not unbounded. Anything past this
+ * cannot name a file anywhere this CLI runs, so it is TEXT that merely looks
+ * like a path and must never reach a syscall.
+ */
+export const MAX_PATH_CANDIDATE_LENGTH = 4096;
+
+/**
+ * Whether a string could plausibly name a filesystem path.
+ *
+ * Cheap and conservative on purpose: it answers whether this is worth a
+ * syscall, not whether it exists. Implausible means it holds a NUL, spans
+ * lines, or is longer than any path the OS accepts.
+ * longer than any path the OS accepts.
+ *
+ * WHY THIS EXISTS: the @-command scanner accepts a quoted token, and the
+ * character class inside those quotes deliberately allows newlines. A pasted
+ * multi-line prompt therefore arrives looking like one path; handing it to
+ * realpathSync raised ENAMETOOLONG, and because the caller awaited an async
+ * function from a React effect, that exception surfaced as an unhandled
+ * rejection and took the session down on quit. Text is not a path, and a
+ * line break is the cheap way to tell them apart.
+ */
+export function isPlausiblePathCandidate(p: unknown): p is string {
+  if (typeof p !== 'string' || p.length === 0) {
+    return false;
+  }
+  if (p.length > MAX_PATH_CANDIDATE_LENGTH) {
+    return false;
+  }
+  if (p.includes('\0')) {
+    return false;
+  }
+  // No supported platform permits a line break inside a path component.
+  for (const char of p) {
+    if (char === '\n' || char === '\r') {
+      return false;
+    }
+  }
+  return true;
+}
+/**
  * Resolves a path to its real path, sanitizing it first.
  * - Removes 'file://' protocol if present.
  * - Decodes URI components (e.g. %20 -> space).
@@ -426,7 +470,14 @@ function robustRealpath(p: string, visited = new Set<string>()): string {
       e &&
       typeof e === 'object' &&
       'code' in e &&
-      (e.code === 'ENOENT' || e.code === 'EISDIR')
+      (e.code === 'ENOENT' ||
+        e.code === 'EISDIR' ||
+        // A name too long to be a real path is treated like an absent one:
+        // resolve the parent and keep the segment as given. The parent chain
+        // is short, so no over-long syscall is ever attempted and an absurd
+        // input yields a string instead of an exception callers do not expect.
+        e.code === 'ENAMETOOLONG' ||
+        e.code === 'EINVAL')
     ) {
       try {
         const stat = fs.lstatSync(p);
@@ -438,14 +489,15 @@ function robustRealpath(p: string, visited = new Set<string>()): string {
       } catch (lstatError: unknown) {
         // Not a symlink, or lstat failed. Re-throw if it's not an expected
         // ENOENT (e.g., a permissions error), otherwise resolve parent.
-        if (
-          !(
-            lstatError &&
-            typeof lstatError === 'object' &&
-            'code' in lstatError &&
-            (lstatError.code === 'ENOENT' || lstatError.code === 'EISDIR')
-          )
-        ) {
+        if (!(
+          lstatError &&
+          typeof lstatError === 'object' &&
+          'code' in lstatError &&
+          (lstatError.code === 'ENOENT' ||
+            lstatError.code === 'EISDIR' ||
+            lstatError.code === 'ENAMETOOLONG' ||
+            lstatError.code === 'EINVAL')
+        )) {
           throw lstatError;
         }
       }

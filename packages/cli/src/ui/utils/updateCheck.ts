@@ -49,6 +49,23 @@ function getBestAvailableUpdate(
   return semver.gt(stable, nightly) ? stable : nightly;
 }
 
+/**
+ * Whether an error is npm reporting that the package is not on the registry.
+ *
+ * Matched on the error NAME rather than with instanceof: the class comes from
+ * package-json, and a second copy of that package in the dependency tree
+ * yields a class that fails instanceof while still carrying the name. A name
+ * check cannot be fooled that way, and it costs nothing.
+ */
+function isPackageNotFoundError(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'name' in e &&
+    e.name === 'PackageNotFoundError'
+  );
+}
+
 export async function checkForUpdates(
   settings: LoadedSettings,
 ): Promise<UpdateObject | null> {
@@ -109,6 +126,18 @@ export async function checkForUpdates(
 
     return null;
   } catch (e) {
+    // A git checkout of this CLI is not published to npm, so there is no
+    // published version to compare against. That is the normal state of every
+    // node in this fleet - updates arrive by git, through bare-update - so
+    // reporting it as a warning on each shutdown is noise that trains the
+    // operator to ignore the warnings that matter. Say it once, quietly, at
+    // debug level, and treat the outcome as 'no update available'.
+    if (isPackageNotFoundError(e)) {
+      debugLogger.debug(
+        'Update check skipped: this package is not published to the npm registry.',
+      );
+      return null;
+    }
     debugLogger.warn('Failed to check for updates: ' + e);
     return null;
   }

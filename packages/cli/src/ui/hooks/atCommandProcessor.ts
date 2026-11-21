@@ -15,6 +15,7 @@ import {
   isNodeError,
   unescapePath,
   resolveToRealPath,
+  isPlausiblePathCandidate,
   fileExists,
   ReadManyFilesTool,
   REFERENCE_CONTENT_START,
@@ -189,9 +190,32 @@ export async function checkPermissions(
     const pathName = part.content.substring(1);
     if (!pathName) continue;
 
-    const resolvedPathName = resolveToRealPath(
-      path.resolve(config.getTargetDir(), pathName),
-    );
+    // A pasted prompt is not a path.
+    //
+    // The scanner accepts a quoted token, and the character class inside the
+    // quotes allows newlines, so a multi-line markdown blob arrives here as one
+    // candidate. Resolving it reached realpathSync, which raised ENAMETOOLONG;
+    // because this function is awaited from a React effect, that exception
+    // surfaced as an unhandled rejection and killed the session on quit.
+    // Skipping it is not merely defensive - text was never a permission
+    // question, so there is nothing to ask the user about.
+    if (!isPlausiblePathCandidate(pathName)) continue;
+
+    let resolvedPathName: string;
+    try {
+      resolvedPathName = resolveToRealPath(
+        path.resolve(config.getTargetDir(), pathName),
+      );
+    } catch (error) {
+      // Best-effort: an unresolvable candidate requests no permission rather
+      // than aborting the submit path. This is the second line of defence
+      // behind the plausibility test above, for anything that passes it and
+      // still cannot be resolved (a race with a deleted parent, say).
+      debugLogger.debug(
+        'Skipping unresolvable @-path candidate: ' + getErrorMessage(error),
+      );
+      continue;
+    }
 
     if (config.validatePathAccess(resolvedPathName, 'read')) {
       if (await fileExists(resolvedPathName)) {
@@ -448,7 +472,7 @@ async function readMcpResources(
           isClientInitiated: true,
           resultDisplay: `Successfully read resource ${resource.uri}`,
           confirmationDetails: undefined,
-        } as IndividualToolCallDisplay,
+        },
       };
     } catch (error) {
       return {
@@ -463,7 +487,7 @@ async function readMcpResources(
           isClientInitiated: true,
           resultDisplay: `Error reading resource ${resource.uri}: ${getErrorMessage(error)}`,
           confirmationDetails: undefined,
-        } as IndividualToolCallDisplay,
+        },
       };
     }
   });
