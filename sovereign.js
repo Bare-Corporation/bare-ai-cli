@@ -219,19 +219,28 @@ const COUNCIL_API_BASE_URL =
   process.env.COUNCIL_API_BASE_URL || 'https://api.bare-ai.net';
 const CATALOG_MAX_AGE_SEC = Number(process.env.CATALOG_MAX_AGE_SEC || 3600);
 
-// Extract the model id from argv (--model <id> or first positional).
+// Extract the model id from argv (--model <id>, or the FIRST positional).
+//
+// WHY THE FIRST POSITIONAL ONLY: this used to accept any non-flag token, so
+// `node sovereign.js --resume <uuid>` read the SESSION UUID as the model id and
+// routed the launch to secret/data/<uuid>/config, which the node's AppRole
+// refuses with HTTP 403 - the resume died in Vault before the CLI saw it. A
+// flag's VALUE is never a model id, and the launcher always names the model
+// explicitly with --model; the positional form exists for a direct
+// `node sovereign.js 013`.
 function modelFromArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--model' && argv[i + 1]) return argv[i + 1];
   }
-  for (const a of argv) {
-    if (
-      !a.startsWith('-') &&
-      !a.startsWith('http') &&
-      !a.includes(' ') &&
-      !a.includes(':')
-    )
-      return a;
+  const first = argv[0];
+  if (
+    first &&
+    !first.startsWith('-') &&
+    !first.startsWith('http') &&
+    !first.includes(' ') &&
+    !first.includes(':')
+  ) {
+    return first;
   }
   return null;
 }
@@ -783,4 +792,4 @@ if (invokedDirectly) {
   main();
 }
 
-export { getVaultContext, getVaultContextOrFallback };
+export { getVaultContext, getVaultContextOrFallback, modelFromArgs };
