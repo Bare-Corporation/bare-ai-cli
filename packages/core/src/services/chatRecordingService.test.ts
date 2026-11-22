@@ -126,6 +126,12 @@ describe('ChatRecordingService', () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
+    // The node:fs module mock wraps the real functions in vi.fn, and
+    // restoreAllMocks does not reset those wrappers. Without this, the
+    // throwing implementations installed by the ENOSPC cases act on every
+    // later test in the file.
+    vi.mocked(fs.appendFileSync).mockRestore();
+    vi.mocked(fs.mkdirSync).mockRestore();
     if (testTempDir) {
       await fs.promises.rm(testTempDir, { recursive: true, force: true });
     }
@@ -1218,6 +1224,98 @@ describe('ChatRecordingService', () => {
       expect(lastMkdir).toBeLessThan(lastWrite);
 
       mkdirSyncSpy.mockRestore();
+    });
+  });
+
+  describe('discardConversationlessTranscript', () => {
+    const sessionId = 'c0d7662c-67ca-4348-9218-252b22f323dd';
+
+    function recorderFor(promptId: string): ChatRecordingService {
+      return new ChatRecordingService(
+        Object.assign({}, mockConfig, { promptId }),
+      );
+    }
+
+    it('removes the superseded stub and leaves the kept file alone', async () => {
+      // The chat the client builds during initialisation, before a resume is
+      // known: it opens a transcript for the session it was given.
+      const stub = recorderFor(sessionId);
+      await stub.initialize();
+      const stubPath = stub.getConversationFilePath()!;
+      // A notice is not a conversation, so it must not protect the stub.
+      stub.recordMessage({
+        type: 'info',
+        content: 'Context compressed from 79% to 2%.',
+        model: undefined,
+      });
+
+      // The real transcript the resumed session appends to.
+      const keptPath = path.join(
+        path.dirname(stubPath),
+        'session-2026-11-22T19-44-c0d7662c.jsonl',
+      );
+      fs.writeFileSync(
+        keptPath,
+        JSON.stringify({
+          sessionId,
+          projectHash: 'test-project-hash',
+          startTime: '2026-11-22T19:44:25.219Z',
+          lastUpdated: '2026-11-22T19:44:25.219Z',
+        }) + '\n',
+      );
+
+      const removed = await stub.discardConversationlessTranscript(
+        sessionId,
+        keptPath,
+      );
+
+      expect(removed).toBe(stubPath);
+      expect(fs.existsSync(stubPath)).toBe(false);
+      expect(fs.existsSync(keptPath)).toBe(true);
+      expect(stub.getConversationFilePath()).toBeNull();
+    });
+
+    it('never removes a transcript that already holds a conversation', async () => {
+      const recorder = recorderFor(sessionId);
+      await recorder.initialize();
+      recorder.recordMessage({ type: 'user', content: 'ping', model: 'm' });
+      const filePath = recorder.getConversationFilePath()!;
+
+      const removed = await recorder.discardConversationlessTranscript(
+        sessionId,
+        path.join(path.dirname(filePath), 'another-session.jsonl'),
+      );
+
+      expect(removed).toBeNull();
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+
+    it('never removes a transcript belonging to a different session', async () => {
+      const recorder = recorderFor('a-different-session-id');
+      await recorder.initialize();
+      const filePath = recorder.getConversationFilePath()!;
+
+      const removed = await recorder.discardConversationlessTranscript(
+        sessionId,
+        null,
+      );
+
+      expect(removed).toBeNull();
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+
+    it('never removes the file it is told to keep', async () => {
+      const recorder = recorderFor(sessionId);
+      await recorder.initialize();
+      const filePath = recorder.getConversationFilePath()!;
+
+      const removed = await recorder.discardConversationlessTranscript(
+        sessionId,
+        filePath,
+      );
+
+      expect(removed).toBeNull();
+      expect(fs.existsSync(filePath)).toBe(true);
     });
   });
 });

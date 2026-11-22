@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2026 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -309,9 +310,7 @@ export class GeminiClient {
     const message: Message = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       role: (content.role === 'model' ? 'assistant' : content.role) as
-        | 'user'
-        | 'assistant'
-        | 'system',
+        'user' | 'assistant' | 'system',
       content: (content.parts ?? [])
         .map((part) => (part as { text?: string }).text ?? '')
         .join(''),
@@ -395,7 +394,21 @@ export class GeminiClient {
     history: Content[],
     resumedSessionData?: ResumedSessionData,
   ): Promise<void> {
-    this.chat = await this.startChat(history, resumedSessionData);
+    // The chat built during initialisation has already opened a transcript
+    // file, before the resumed session was known. Keep a handle on that
+    // recorder so its stub can be removed once the resumed file is open:
+    // otherwise every resume leaves an empty transcript beside the real one,
+    // carrying the same session id and a NEWER timestamp, which is the file
+    // session listings and "resume the latest" then land on.
+    const supersededRecorder = this.chat?.getChatRecordingService();
+    const resumedChat = await this.startChat(history, resumedSessionData);
+    this.chat = resumedChat;
+    if (resumedSessionData && supersededRecorder) {
+      await supersededRecorder.discardConversationlessTranscript(
+        resumedSessionData.conversation.sessionId,
+        resumedChat.getChatRecordingService().getConversationFilePath(),
+      );
+    }
     // Ticket 693: seed the provider-facing history from the resumed turns.
     // startChat only builds the SDK chat object; on the fleet path
     // BareAiClient replays THIS array, so leaving it empty meant a resumed
@@ -1458,8 +1471,9 @@ export class GeminiClient {
           stopHookActive,
         );
 
-        // Cast to AfterAgentHookOutput for access to shouldClearContext()
-        const afterAgentOutput = hookOutput as AfterAgentHookOutput | undefined;
+        // Annotated rather than cast: the AfterAgent output is what carries
+        // shouldClearContext(), and hookOutput is already assignable to it.
+        const afterAgentOutput: AfterAgentHookOutput | undefined = hookOutput;
 
         if (afterAgentOutput?.shouldStopExecution()) {
           const contextCleared = afterAgentOutput.shouldClearContext();

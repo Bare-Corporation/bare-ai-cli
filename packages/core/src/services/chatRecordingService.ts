@@ -675,6 +675,55 @@ export class ChatRecordingService {
   }
 
   /**
+   * Removes a transcript this process opened for `sessionId` when a resume
+   * replaced it before any conversation was recorded.
+   *
+   * Resuming creates a chat, and therefore a transcript file, during client
+   * initialisation - before the resumed session is known. The resumed chat
+   * then opens a second recorder on the real file, so without this the stub is
+   * left behind as the NEWER file carrying the SAME session id, and session
+   * listings (and "resume the latest") land on the empty one.
+   *
+   * Only a file that belongs to this recorder, is not `keepFilePath`, carries
+   * the same session id and holds no `user` or `gemini` message is removed:
+   * notices such as a compression record are not a conversation.
+   *
+   * @returns the removed path, or null when nothing was safe to remove.
+   */
+  async discardConversationlessTranscript(
+    sessionId: string,
+    keepFilePath: string | null,
+  ): Promise<string | null> {
+    const file = this.conversationFile;
+    if (!file) return null;
+    if (keepFilePath && path.resolve(file) === path.resolve(keepFilePath)) {
+      return null;
+    }
+    if (!path.basename(file).startsWith(SESSION_FILE_PREFIX)) return null;
+
+    try {
+      const record =
+        this.cachedConversation ?? (await loadConversationRecord(file));
+      if (!record || record.sessionId !== sessionId) return null;
+      const hasConversation = record.messages.some(
+        (message) => message.type === 'user' || message.type === 'gemini',
+      );
+      if (hasConversation) return null;
+
+      await fs.promises.unlink(file);
+      this.conversationFile = null;
+      this.cachedConversation = null;
+      return file;
+    } catch (error) {
+      debugLogger.warn(
+        'Could not discard the superseded empty transcript:',
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
    * Deletes a session file by sessionId, filename, or basename.
    * Derives an 8-character shortId to find and delete all associated files
    * (parent and subagents).
