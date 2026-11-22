@@ -1225,6 +1225,7 @@ export class GeminiClient {
         // writes, so a resumed session sees the same history either way.
         try {
           const recorder = this.getChat().getChatRecordingService();
+          recorder.recordModel(modelToUse);
           recorder.recordMessage({
             model: modelToUse,
             type: 'user',

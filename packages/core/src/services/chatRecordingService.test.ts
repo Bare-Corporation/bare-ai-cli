@@ -1318,4 +1318,69 @@ describe('ChatRecordingService', () => {
       expect(fs.existsSync(filePath)).toBe(true);
     });
   });
+
+  describe('recordModel', () => {
+    it('writes the configured model into a new session header', async () => {
+      await chatRecordingService.initialize();
+      const sessionFile = chatRecordingService.getConversationFilePath()!;
+
+      const conversation = (await loadConversationRecord(
+        sessionFile,
+      )) as ConversationRecord;
+
+      expect(conversation.model).toBe('gemini-pro');
+    });
+
+    it('refreshes the recorded model when a turn resolves to another one', async () => {
+      await chatRecordingService.initialize();
+      chatRecordingService.recordModel('deepseek-v4-flash');
+
+      const sessionFile = chatRecordingService.getConversationFilePath()!;
+      const conversation = (await loadConversationRecord(
+        sessionFile,
+      )) as ConversationRecord;
+
+      expect(conversation.model).toBe('deepseek-v4-flash');
+      expect(chatRecordingService.getConversation()?.model).toBe(
+        'deepseek-v4-flash',
+      );
+    });
+
+    it('does not write a record when the model has not changed', async () => {
+      await chatRecordingService.initialize();
+      const appendFileSyncSpy = vi.mocked(fs.appendFileSync);
+      appendFileSyncSpy.mockClear();
+
+      chatRecordingService.recordModel('gemini-pro');
+
+      expect(appendFileSyncSpy).not.toHaveBeenCalled();
+    });
+
+    it('ignores a missing model rather than clearing the recorded one', async () => {
+      await chatRecordingService.initialize();
+
+      chatRecordingService.recordModel(undefined);
+
+      expect(chatRecordingService.getConversation()?.model).toBe('gemini-pro');
+    });
+
+    it('reads the recorded model back when a session is resumed', async () => {
+      const recorder = new ChatRecordingService(
+        Object.assign({}, mockConfig, { promptId: 'resume-model-session' }),
+      );
+      await recorder.initialize();
+      recorder.recordModel('deepseek-v4-flash');
+      const filePath = recorder.getConversationFilePath()!;
+      const record = (await loadConversationRecord(
+        filePath,
+      )) as ConversationRecord;
+
+      const resumed = new ChatRecordingService(
+        Object.assign({}, mockConfig, { promptId: 'resume-model-session' }),
+      );
+      await resumed.initialize({ conversation: record, filePath });
+
+      expect(resumed.getConversation()?.model).toBe('deepseek-v4-flash');
+    });
+  });
 });

@@ -1,6 +1,7 @@
 /**
  * @license
  * Copyright 2026 Google LLC
+ * Copyright 2026 Bare-AI, a trading name of Consulting Hailing Services LTD
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -101,6 +102,12 @@ export interface ConversationRecord {
   directories?: string[];
   /** The kind of conversation (main agent or subagent) */
   kind?: 'main' | 'subagent';
+  /**
+   * The model the most recent turn ran on. Written when the session is created
+   * and refreshed whenever a turn resolves to a different model, so a resume
+   * can continue on the model the session was actually using.
+   */
+  model?: string;
 }
 
 /**
@@ -137,4 +144,5 @@ export interface PartialMetadataRecord {
   memoryScratchpad?: MemoryScratchpad;
   directories?: string[];
   kind?: 'main' | 'subagent';
+  model?: string;
 }

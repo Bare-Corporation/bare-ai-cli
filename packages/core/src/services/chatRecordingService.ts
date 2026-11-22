@@ -276,6 +276,7 @@ export async function loadConversationRecord(
       memoryScratchpad: metadata.memoryScratchpad,
       directories: metadata.directories,
       kind: metadata.kind,
+      model: metadata.model,
       messages: options?.metadataOnly ? [] : loadedMessages,
       messageCount: options?.metadataOnly
         ? metadataMessages.length || messageIds.length
@@ -427,6 +428,9 @@ export class ChatRecordingService {
           lastUpdated: new Date().toISOString(),
           kind: this.kind,
           directories,
+          // No turn has run yet, so start from the configured model; it is
+          // refreshed by recordModel if a turn resolves to a different one.
+          model: this.context.config.getModel(),
         };
 
         this.appendRecord(initialMetadata);
@@ -662,6 +666,25 @@ export class ChatRecordingService {
       this.updateMetadata({ directories: [...directories] });
     } catch (error) {
       debugLogger.error('Error saving directories to chat history.', error);
+    }
+  }
+
+  /**
+   * Record the model a turn resolved to in the session metadata.
+   *
+   * Written once per distinct value, not once per turn: a session that stays
+   * on one model carries a single field, and a session that switches (a /model
+   * hot-swap, or a fallback) ends with the model of its LAST turn - which is
+   * what a resume should continue on.
+   */
+  recordModel(model: string | undefined): void {
+    if (!model) return;
+    if (!this.conversationFile || !this.cachedConversation) return;
+    if (this.cachedConversation.model === model) return;
+    try {
+      this.updateMetadata({ model });
+    } catch (error) {
+      debugLogger.warn('Error saving the session model.', error);
     }
   }
 
