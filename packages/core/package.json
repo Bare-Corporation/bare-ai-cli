@@ -101,7 +101,7 @@
     "@types/fast-levenshtein": "^0.0.4",
     "@types/js-yaml": "^4.0.9",
     "@types/picomatch": "^4.0.1",
-    "msw": "^2.3.4",
+    "msw": "^3.0.7",
     "typescript": "^5.3.3",
     "vitest": "^4.1.12"
   },
