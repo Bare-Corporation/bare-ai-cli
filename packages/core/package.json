@@ -66,7 +66,7 @@
     "https-proxy-agent": "^7.0.6",
     "ignore": "^7.0.16",
     "ipaddr.js": "^1.9.1",
-    "js-yaml": "^4.3.1",
+    "js-yaml": "^5.5.0",
     "marked": "^15.0.12",
     "mime": "4.1.2",
     "mnemonist": "^0.40.8",
