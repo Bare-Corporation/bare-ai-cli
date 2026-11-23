@@ -214,7 +214,7 @@ jobs:
       - name: 'Publish Test Report (for non-forks)'
         if: |-
           ${{ always() && (github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: 'dorny/test-reporter@dc3a92680fcc15842eef52e8c4606ea7ce6bd3f3' # ratchet:dorny/test-reporter@v2
+        uses: 'dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a' # ratchet:dorny/test-reporter@v2
         with:
           name: 'Test Results (Node ${{ runner.os }}, ${{ matrix.node-version }}, ${{ matrix.shard }})'
           path: 'packages/*/junit.xml'
@@ -303,7 +303,7 @@ jobs:
       - name: 'Publish Test Report (for non-forks)'
         if: |-
           ${{ always() && (github.event.pull_request.head.repo.full_name == github.repository) }}
-        uses: 'dorny/test-reporter@dc3a92680fcc15842eef52e8c4606ea7ce6bd3f3' # ratchet:dorny/test-reporter@v2
+        uses: 'dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a' # ratchet:dorny/test-reporter@v2
         with:
           name: 'Test Results (Node ${{ runner.os }}, ${{ matrix.node-version }}, ${{ matrix.shard }})'
           path: 'packages/*/junit.xml'
